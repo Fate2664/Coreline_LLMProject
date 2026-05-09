@@ -84,6 +84,7 @@ public class PlayerController : MonoBehaviour
     {
         gameInput.Move -= OnMove;
         gameInput.Look -= OnLook;
+        gameInput.Jump -= OnJump;
     }
 
     #endregion

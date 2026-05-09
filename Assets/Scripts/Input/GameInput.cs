@@ -55,12 +55,12 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
 
     public void OnInteract(InputAction.CallbackContext context)
     {
-        Interact.Invoke(context.phase == InputActionPhase.Performed);
+        Interact.Invoke(context.ReadValueAsButton());
     }
 
     public void OnPrimaryAttack(InputAction.CallbackContext context)
     {
-        PrimaryAttack.Invoke(context.phase == InputActionPhase.Performed);
+        PrimaryAttack.Invoke(context.ReadValueAsButton());
     }
 
     public void OnLook(InputAction.CallbackContext context)
@@ -70,7 +70,7 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
 
     public void OnJump(InputAction.CallbackContext context)
     {
-        Jump.Invoke(context.phase == InputActionPhase.Performed);
+        Jump.Invoke(context.ReadValueAsButton());
     }
 
     #endregion
