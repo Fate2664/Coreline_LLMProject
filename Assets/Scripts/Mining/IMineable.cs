@@ -2,7 +2,6 @@ using UnityEngine;
 
 public interface IMineable
 {
-    bool CanBeMined { get; }
     void Mine(MiningHit hit);
 }
 

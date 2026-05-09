@@ -3,23 +3,29 @@ using UnityEngine;
 
 public class MiningController : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] private GameInput gameInput;
-    [SerializeField] private PickaxeSwingView pickaxeSwingView;
+    private const int MaxMiningHits = 8;
+
+    [Header("References")] [SerializeField]
+    private GameInput gameInput;
+
+    [SerializeField] private PickaxeAnimation pickaxeAnimation;
+    [SerializeField] private Transform pickaxeHitbox;
 
     [Header("Mining")] [SerializeField] private LayerMask mineableLayers = ~0;
-    [SerializeField] private float miningRange = 3f;
-    [SerializeField] private float miningInterval = 0.35f;
-    [SerializeField] private float hitDelay = 0.12f;
+    [SerializeField] private Vector3 pickaxeHitboxHalfExtents = new Vector3(0.15f, 0.15f, 0.15f);
+    [SerializeField] private float miningInterval = 0.2f;
+    [SerializeField] private float hitDelay = 0.05f;
     [SerializeField] private float damagePerHit = 1f;
 
-    private Transform miningOrigin;
+    [Header("VFX")] [SerializeField] private ParticleSystem sparkParticles;
+    [SerializeField] private ParticleSystem rockParticles;
+
     private bool isPrimaryAttackHeld;
     private Coroutine miningRoutine;
+    private readonly Collider[] miningHits = new Collider[MaxMiningHits];
 
     private void Start()
     {
-        miningOrigin = Camera.main.transform;
         gameInput.PrimaryAttack += OnPrimaryAttack;
     }
 
@@ -45,14 +51,14 @@ public class MiningController : MonoBehaviour
             miningRoutine = null;
         }
 
-        pickaxeSwingView?.ReturnToRest();
+        pickaxeAnimation?.ReturnToRest();
     }
 
     private IEnumerator MiningLoop()
     {
         while (isPrimaryAttackHeld)
         {
-            pickaxeSwingView?.PlaySwing(miningInterval);
+            pickaxeAnimation?.PlaySwing(miningInterval);
 
             yield return new WaitForSeconds(hitDelay);
             TryMineTarget();
@@ -66,14 +72,60 @@ public class MiningController : MonoBehaviour
 
     private void TryMineTarget()
     {
-        if (!Physics.Raycast(miningOrigin.position, miningOrigin.forward, out RaycastHit hit, miningRange,
-                mineableLayers, QueryTriggerInteraction.Ignore))
+        int hitCount = Physics.OverlapBoxNonAlloc(
+            pickaxeHitbox.position,
+            pickaxeHitboxHalfExtents,
+            miningHits,
+            pickaxeHitbox.rotation,
+            mineableLayers,
+            QueryTriggerInteraction.Ignore);
+
+        if (hitCount == 0)
             return;
 
-        IMineable mineable = hit.collider.GetComponentInParent<IMineable>();
-        if (mineable == null || !mineable.CanBeMined)
+        IMineable mineable = null;
+        Vector3 hitPoint = Vector3.zero;
+        float closestDistanceSqr = float.MaxValue;
+
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider collider = miningHits[i];
+            if (collider == null)
+                continue;
+
+            IMineable candidateMineable = collider.GetComponentInParent<IMineable>();
+            if (candidateMineable == null)
+                continue;
+
+            Vector3 candidateHitPoint = collider.ClosestPoint(pickaxeHitbox.position);
+            float distanceSqr = (candidateHitPoint - pickaxeHitbox.position).sqrMagnitude;
+
+            if (distanceSqr >= closestDistanceSqr)
+                continue;
+
+            closestDistanceSqr = distanceSqr;
+            mineable = candidateMineable;
+            hitPoint = candidateHitPoint;
+        }
+
+        if (mineable == null)
             return;
 
-        mineable.Mine(new MiningHit(miningOrigin, hit.point, hit.normal, damagePerHit));
+        Vector3 hitNormal = pickaxeHitbox.position - hitPoint;
+        if (hitNormal.sqrMagnitude < 0.0001f)
+            hitNormal = -pickaxeHitbox.forward;
+        else
+            hitNormal.Normalize();
+
+        Vector3 spawnPosition = hitPoint + hitNormal * 0.2f;
+        Quaternion rotation = Quaternion.LookRotation(hitNormal);
+        ParticleSystem sparkVFX = Instantiate(sparkParticles, spawnPosition, rotation);
+        ParticleSystem rockVFX = Instantiate(rockParticles, spawnPosition, rotation);
+        sparkVFX.Play();
+        rockVFX.Play();
+        Destroy(rockVFX.gameObject, rockVFX.main.duration + rockVFX.main.startLifetime.constantMax);
+        Destroy(sparkVFX.gameObject, sparkVFX.main.duration + sparkVFX.main.startLifetime.constantMax);
+
+        mineable.Mine(new MiningHit(pickaxeHitbox, hitPoint, hitNormal, damagePerHit));
     }
 }

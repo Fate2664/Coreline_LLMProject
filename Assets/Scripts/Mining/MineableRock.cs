@@ -5,7 +5,8 @@ public class MineableRock : MonoBehaviour, IMineable
 {
     [SerializeField] private float maxHealth = 3f;
     [SerializeField] private bool destroyOnDepleted = true;
-
+    [SerializeField] private ParticleSystem rockBreakParticles;
+    
     [Header("Events")]
     [SerializeField] private UnityEvent onHit;
     [SerializeField] private UnityEvent onDepleted;
@@ -32,7 +33,10 @@ public class MineableRock : MonoBehaviour, IMineable
 
         currentHealth = 0f;
         onDepleted.Invoke();
-
+        
+        ParticleSystem rockParticles = Instantiate(rockBreakParticles, transform.position, transform.rotation);
+        rockParticles.Play();
+        Destroy(rockParticles, rockBreakParticles.main.duration + rockBreakParticles.main.startLifetime.constantMax);
         if (destroyOnDepleted)
             Destroy(gameObject);
     }

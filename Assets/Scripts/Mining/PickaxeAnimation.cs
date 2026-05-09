@@ -1,7 +1,7 @@
 using DG.Tweening;
 using UnityEngine;
 
-public class PickaxeSwingView : MonoBehaviour
+public class PickaxeAnimation : MonoBehaviour
 {
     [Header("Swing")]
     [SerializeField] private Vector3 swingRotation = new(55f, -18f, 14f);
