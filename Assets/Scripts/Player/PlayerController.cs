@@ -1,5 +1,6 @@
 using System;
 using Coreline;
+using Nova;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -32,6 +33,12 @@ public class PlayerController : MonoBehaviour
     [Space(10)] 
     [Header("Connections")] 
     [SerializeField] private GameInput gameInput;
+    [SerializeField] private UIBlock2D InventoryRoot;
+    [SerializeField] private UIManager uiManager;
+    [SerializeField] private BuildPlacer buildPlacer;
+    
+    [HideInInspector]
+    public bool IsInventoryOpen => InventoryRoot.gameObject.activeSelf;
     #endregion
 
     #region Private Variables
@@ -110,7 +117,7 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
-    #region Movement & Camera Methods
+    #region Movement & Camera & Toggle Methods
 
     private void HandleMovement()
     {
@@ -143,6 +150,25 @@ public class PlayerController : MonoBehaviour
         
         if (IsGrounded() || jumpCooldownTimer.IsFinished)
             jumpCooldownTimer.Reset();
+    }
+
+    public void ToggleInventory()
+    {
+        if (InventoryRoot.gameObject.activeSelf)
+        {
+            InventoryRoot.gameObject.SetActive(false);
+        }
+        else
+        {
+            InventoryRoot.gameObject.SetActive(true);
+            uiManager?.RefreshInventory();
+
+            if (buildPlacer.enabled)
+            {
+                buildPlacer.enabled = false;
+                uiManager?.UnEquipItem();
+            }
+        }
     }
 
     #endregion
