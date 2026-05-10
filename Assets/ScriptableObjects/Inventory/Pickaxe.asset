@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2a6c2e77f14dc0458f2398327f99021, type: 3}
+  m_Name: Pickaxe
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.ToolItemSO
+  itemDesc:
+    Name: Pickaxe
+    ToolTip: This is a pickaxe
+    Icon: {fileID: 21300000, guid: a52d0879baacd427fb4b6227dab8952c, type: 3}
+  toolType: 0

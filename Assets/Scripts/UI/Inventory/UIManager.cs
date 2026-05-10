@@ -16,7 +16,6 @@ public class UIManager : MonoBehaviour, ITimeTracker
     [SerializeField] private ItemDatabase ItemDatabase = null;
     [SerializeField] private ItemView EquipItemRoot = null;
     [SerializeField] private ItemView closeButtonRoot = null;
-    [SerializeField] private ItemView fenceButtonRoot = null;
     [SerializeField] private ItemView destructionButtonRoot = null;
     [Space(10)]
     [Header("Grid Layout")]
@@ -50,13 +49,14 @@ public class UIManager : MonoBehaviour, ITimeTracker
 
     public void AddItemToInventory(InventoryItemData item, int count = 1)
     {
-        if (item == null) return;
-        
+        //look for existing item in inventory
         var existing = Items.Find(x => !x.isEmpty && x.item == item);
+        //If there is existing item there -> increment count
         if (existing != null && existing.count + count != InventoryItem.maxCount)
         {
             existing.IncreaseCount(count);
         }
+        //Else add the item in a new item slot
         else
         {
             int emptyIndex = Items.FindIndex(x => x.isEmpty);
@@ -122,14 +122,6 @@ public class UIManager : MonoBehaviour, ITimeTracker
             closeButtonRoot.UIBlock.AddGestureHandler<Gesture.OnUnhover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleUnhover);
             closeButtonRoot.UIBlock.AddGestureHandler<Gesture.OnPress, InventoryButtonVisuals>(InventoryButtonVisuals.HandlePress);
             closeButtonRoot.UIBlock.AddGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(InventoryButtonVisuals.HandleRelease);
-        }
-
-        if (fenceButtonRoot != null)
-        {
-            fenceButtonRoot.UIBlock.AddGestureHandler<Gesture.OnHover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleHover);
-            fenceButtonRoot.UIBlock.AddGestureHandler<Gesture.OnUnhover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleUnhover);
-            fenceButtonRoot.UIBlock.AddGestureHandler<Gesture.OnPress, InventoryButtonVisuals>(InventoryButtonVisuals.HandlePress);
-            fenceButtonRoot.UIBlock.AddGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(InventoryButtonVisuals.HandleRelease);
         }
 
         if (destructionButtonRoot != null)

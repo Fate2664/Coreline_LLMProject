@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 3432093671694803377}
   - component: {fileID: 3180213997122602657}
   - component: {fileID: 4718635792784982419}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: EquipedItem
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -318,7 +318,7 @@ MonoBehaviour:
         ItemRoot: {fileID: 3432093671694803377}
         ContentRoot: {fileID: 4864321435482221507}
         Image: {fileID: 7267347564201748}
-        Count: {fileID: 0}
+        Count: {fileID: 5420266099175630903}
         ToolTipRoot: {fileID: 664978841161320533}
         ToolTipText: {fileID: 791520434205299859}
         ToolTipDelay: 0.5
@@ -385,7 +385,7 @@ GameObject:
   - component: {fileID: 7909652683421611992}
   - component: {fileID: 5137788745829130905}
   - component: {fileID: 7267347564201748}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: IconImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -677,7 +677,7 @@ GameObject:
   - component: {fileID: 5888338251051388104}
   - component: {fileID: 3652740809386717979}
   - component: {fileID: 4864321435482221507}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Content
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -903,7 +903,7 @@ GameObject:
   - component: {fileID: 3122554311829427509}
   - component: {fileID: 365632731333859625}
   - component: {fileID: 4901797256216119119}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: TextRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1198,7 +1198,7 @@ GameObject:
   - component: {fileID: 1844529693693888108}
   - component: {fileID: 791520434205299859}
   - component: {fileID: 1642410249680653469}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: TipText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1572,8 +1572,8 @@ GameObject:
   - component: {fileID: 4248278919770458359}
   - component: {fileID: 5420266099175630903}
   - component: {fileID: 4054543693500653710}
-  m_Layer: 0
-  m_Name: TextBlock
+  m_Layer: 5
+  m_Name: Count
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1944,7 +1944,7 @@ GameObject:
   - component: {fileID: 1547672185415844540}
   - component: {fileID: 664978841161320533}
   - component: {fileID: 3619453813414323501}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ToolTipRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}

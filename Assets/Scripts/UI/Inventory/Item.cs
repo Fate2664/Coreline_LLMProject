@@ -6,7 +6,16 @@ namespace Coreline
 {
     public enum ToolType
     {
-        
+        Pickaxe
+    }
+
+    public enum OreType
+    {
+        Coal,
+        Iron,
+        Gold,
+        Diamond,
+        Emerald
     }
 
     [System.Serializable]

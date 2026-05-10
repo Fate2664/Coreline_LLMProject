@@ -14,6 +14,7 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public event UnityAction<bool> PrimaryAttack  =  delegate { };
     public event UnityAction<bool> Interact  =  delegate { };
     public event UnityAction<bool> Jump = delegate { }; 
+    public event UnityAction<bool> ToggleInventory = delegate { };
     
     //UI Actions
     public event UnityAction<bool> Exit  =  delegate { };
@@ -71,6 +72,11 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public void OnJump(InputAction.CallbackContext context)
     {
         Jump.Invoke(context.ReadValueAsButton());
+    }
+
+    public void OnToggleInventory(InputAction.CallbackContext context)
+    {
+        ToggleInventory.Invoke(context.ReadValueAsButton());
     }
 
     #endregion

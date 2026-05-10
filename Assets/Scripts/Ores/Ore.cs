@@ -4,6 +4,8 @@ namespace Coreline
 {
     public class Ore : Entity
     {
+        [SerializeField] private OreData oreData;
+        
         private Rigidbody rb;
 
         private void Awake()
@@ -22,6 +24,10 @@ namespace Coreline
         {
             if (!other.CompareTag("Player"))
                 return;
+            //Add ore to inventory
+            UIManager uiManager = FindObjectOfType<UIManager>();
+            if (uiManager == null) return;
+            uiManager.AddItemToInventory(oreData.inventoryItemData, oreData.pickupAmount);
             
             Destroy(gameObject);
         }

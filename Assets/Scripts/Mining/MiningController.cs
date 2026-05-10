@@ -24,17 +24,7 @@ public class MiningController : MonoBehaviour
     private Coroutine miningRoutine;
     private readonly Collider[] miningHits = new Collider[MaxMiningHits];
 
-    private void Start()
-    {
-        gameInput.PrimaryAttack += OnPrimaryAttack;
-    }
-
-    private void OnDestroy()
-    {
-        gameInput.PrimaryAttack -= OnPrimaryAttack;
-    }
-
-    private void OnPrimaryAttack(bool isPressed)
+    public void OnPrimaryAttack(bool isPressed)
     {
         isPrimaryAttackHeld = isPressed;
 

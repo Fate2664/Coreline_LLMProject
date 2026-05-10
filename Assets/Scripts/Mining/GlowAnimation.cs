@@ -51,7 +51,7 @@ public class GlowAnimation : MonoBehaviour
                 ApplyEmission(currentIntensity);
             }, glowIntensity, duration)
             .SetLoops(-1, LoopType.Yoyo)
-            .SetEase(Ease.InOutSine);
+            .SetEase(Ease.InOutExpo);
     }
 
     private void ApplyEmission(float intensity)
