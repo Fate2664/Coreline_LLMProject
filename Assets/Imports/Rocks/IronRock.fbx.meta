@@ -1,9 +1,19 @@
 fileFormatVersion: 2
-guid: 9d31233b7a2ab9749b69f7890a55e144
+guid: 869ff3334017e1c41acab13bcf5007c6
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: IronMAT
+    second: {fileID: 2100000, guid: c3f8499f8246264489bbd326d8ed0879, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PandaMat.001
+    second: {fileID: 2100000, guid: f58cb23243cba3a4e9591e1babf7c876, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

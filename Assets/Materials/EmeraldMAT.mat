@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: GoldMAT
+  m_Name: EmeraldMAT
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -117,9 +117,9 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.909804, g: 0.882353, b: 0.2784314, a: 1}
-    - _Color: {r: 0.909804, g: 0.882353, b: 0.27843136, a: 1}
-    - _EmissionColor: {r: 0.8148468, g: 0.76052475, b: 0.042311423, a: 81.6247}
+    - _BaseColor: {r: 0.7960785, g: 0.11764707, b: 0.7568628, a: 1}
+    - _Color: {r: 0.7960785, g: 0.11764703, b: 0.7568628, a: 1}
+    - _EmissionColor: {r: 0.590619, g: 0.015208514, b: 0.52711535, a: 81.6247}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

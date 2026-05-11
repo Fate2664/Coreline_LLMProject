@@ -5,9 +5,7 @@ using UnityEditor;
 public class MineableRock : MonoBehaviour, IMineable
 {
     [SerializeField] private float maxHealth = 3f;
-    [SerializeField] private bool destroyOnDepleted = true;
-    [SerializeField] private ParticleSystem rockBreakParticles;
-    
+
     public event UnityAction OnDepleted = delegate { };
 
     private float currentHealth;
@@ -19,25 +17,20 @@ public class MineableRock : MonoBehaviour, IMineable
         currentHealth = maxHealth;
     }
 
-    public void Mine(MiningHit hit)
+    public bool Mine(MiningHit hit)
     {
         if (!CanBeMined)
-            return;
+            return false;
 
         currentHealth -= hit.Damage;
-        
+
         if (currentHealth > 0f)
-            return;
+            return false;
 
         currentHealth = 0f;
         OnDepleted.Invoke();
-        
-        ParticleSystem rockParticles = Instantiate(rockBreakParticles, transform.position, transform.rotation);
-        rockParticles.Play();
-        Destroy(rockParticles, rockBreakParticles.main.duration + rockBreakParticles.main.startLifetime.constantMax);
-        if (destroyOnDepleted)
-        {
-            Destroy(gameObject);
-        }
+
+        Destroy(gameObject);
+        return true;
     }
 }
