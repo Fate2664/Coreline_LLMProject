@@ -1,40 +1,43 @@
-using System;
-using System.Collections.Generic;
-using System.Numerics;
-using Nova;
 using UnityEngine;
-using UnityEngine.Events;
-using Vector3 = UnityEngine.Vector3;
 
 public class PlayerInteractionDetector : MonoBehaviour
 {
-    private GameInput input;
+    [SerializeField] private GameInput input;
     private PlayerController player;
     private IInteractable currentTarget;
     private Collider currentIteractableObject;
+    private bool wasInteractPressed;
+
     public IInteractable CurrentTarget => currentTarget;
     public Collider CurrentIteractableObject => currentIteractableObject;
 
     private void Awake()
     {
         player = GetComponent<PlayerController>();
-        input = GetComponent<GameInput>();
+        input ??= GetComponent<GameInput>();
     }
 
     private void Update()
     {
-        if (input.IsInteractPressed)
+        if (input == null)
         {
-            if (currentTarget != null)
-            {
-                currentTarget.Interact(player);
-            }
+            return;
         }
+
+        bool isInteractPressed = input.IsInteractPressed;
+
+        if (isInteractPressed && !wasInteractPressed && currentTarget != null)
+        {
+            currentTarget.Interact(player);
+        }
+
+        wasInteractPressed = isInteractPressed;
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.TryGetComponent<IInteractable>(out IInteractable interactable))
+        IInteractable interactable = other.GetComponentInParent<IInteractable>();
+        if (interactable != null)
         {
             currentTarget = interactable;
             currentIteractableObject = other;
@@ -43,8 +46,11 @@ public class PlayerInteractionDetector : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.TryGetComponent<IInteractable>(out IInteractable interactable) && interactable == currentTarget)
+        IInteractable interactable = other.GetComponentInParent<IInteractable>();
+        if (interactable != null && interactable == currentTarget)
+        {
             currentTarget = null;
-        currentIteractableObject = null;
+            currentIteractableObject = null;
+        }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using Coreline;
+using Coreline.Robots;
 using Nova;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -37,6 +38,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private BuildPlacer buildPlacer;
 
     [HideInInspector] public bool IsInventoryOpen => InventoryRoot.gameObject.activeSelf;
+    private bool IsUiInputBlocked => IsInventoryOpen || RobotChatUIController.IsAnyOpen;
 
     #endregion
 
@@ -62,7 +64,7 @@ public class PlayerController : MonoBehaviour
     private void OnJump(bool pressed) => jumpPressed = pressed;
     private void OnPrimaryAttack(bool pressed)
     {
-        if (IsInventoryOpen) return;
+        if (IsUiInputBlocked) return;
         miningController.OnPrimaryAttack(pressed);
     }
     private void OnToggleInventory(bool pressed) => toggleInventoryPressed = pressed;
@@ -125,7 +127,7 @@ public class PlayerController : MonoBehaviour
         if (toggleInventoryPressed)
             ToggleInventory();
         
-        if (IsInventoryOpen)
+        if (IsUiInputBlocked)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -153,7 +155,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleMovement()
     {
-        if (IsInventoryOpen) return;
+        if (IsUiInputBlocked) return;
 
         Vector3 currentVelocity = rb.linearVelocity;
         Vector3 moveDirection = (orientation.right * moveInput.x + orientation.forward * moveInput.y).normalized;
@@ -167,7 +169,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleLook()
     {
-        if (IsInventoryOpen) return;
+        if (IsUiInputBlocked) return;
 
         cameraYaw += lookInput.x * lookSensitivity * lookSensMultiplier;
         cameraPitch -= lookInput.y * lookSensitivity * lookSensMultiplier;
@@ -178,7 +180,7 @@ public class PlayerController : MonoBehaviour
 
     private void HandleJump()
     {
-        if (!jumpPressed || !IsGrounded() || jumpCooldownTimer.IsRunning || IsInventoryOpen)
+        if (!jumpPressed || !IsGrounded() || jumpCooldownTimer.IsRunning || IsUiInputBlocked)
             return;
 
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
