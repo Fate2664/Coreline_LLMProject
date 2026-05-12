@@ -19,6 +19,7 @@ public class MiningController : MonoBehaviour
 
     [Header("VFX")] [SerializeField] private ParticleSystem sparkParticles;
     [SerializeField] private ParticleSystem rockParticles;
+    [SerializeField] private ParticleSystem rockBreakParticles;
 
     private bool isPrimaryAttackHeld;
     private Coroutine miningRoutine;
@@ -116,6 +117,12 @@ public class MiningController : MonoBehaviour
         Destroy(rockVFX.gameObject, rockVFX.main.duration + rockVFX.main.startLifetime.constantMax);
         Destroy(sparkVFX.gameObject, sparkVFX.main.duration + sparkVFX.main.startLifetime.constantMax);
 
-        mineable.Mine(new MiningHit(pickaxeHitbox, hitPoint, hitNormal, damagePerHit));
+        bool wasDepleted = mineable.Mine(new MiningHit(pickaxeHitbox, hitPoint, hitNormal, damagePerHit));
+        if (!wasDepleted)
+            return;
+
+        ParticleSystem rockBreakVFX = Instantiate(rockBreakParticles, spawnPosition, rotation);
+        rockBreakVFX.Play();
+        Destroy(rockBreakVFX.gameObject, rockBreakVFX.main.duration + rockBreakVFX.main.startLifetime.constantMax);
     }
 }

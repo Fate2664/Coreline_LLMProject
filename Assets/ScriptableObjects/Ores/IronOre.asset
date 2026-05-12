@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf97cb59e5d0411bbbddaba921c2f530, type: 3}
+  m_Name: IronOre
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.OreData
+  prefab: {fileID: 8074086322867707095, guid: 6abd88943311bbb4ea24bde5f6d5f1c2, type: 3}
+  inventoryItemData: {fileID: 11400000, guid: 374f20701770bac4aa5c50bb8f1ac181, type: 2}
+  pickupAmount: 1

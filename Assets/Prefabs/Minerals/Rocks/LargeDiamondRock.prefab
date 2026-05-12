@@ -176,8 +176,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MineableRock
   maxHealth: 15
-  destroyOnDepleted: 1
-  rockBreakParticles: {fileID: 7440191685052868192, guid: 8eb6d4f7c530eac4cbc15fc50726beb5, type: 3}
 --- !u!114 &3619420991944665767
 MonoBehaviour:
   m_ObjectHideFlags: 0

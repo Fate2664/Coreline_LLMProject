@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 2667812859656861954}
   - component: {fileID: 5982454873222833542}
   - component: {fileID: 5296801566578060333}
-  - component: {fileID: 8178347256237483139}
   - component: {fileID: 7543357833051166087}
   m_Layer: 0
   m_Name: GoldOre
@@ -109,27 +108,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!65 &8178347256237483139
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1115064809116736739}
-  m_Material: {fileID: 13400000, guid: 76d0f3e974b3baf45912cb85e1aa4c90, type: 2}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 512
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.17, y: 0.06, z: 0.17}
-  m_Center: {x: 0, y: 0.03, z: 0}
 --- !u!65 &7543357833051166087
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -149,7 +127,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.23, y: 0.11, z: 0.23}
+  m_Size: {x: 0.43, y: 0.11, z: 0.43}
   m_Center: {x: 0, y: 0.03, z: 0}
 --- !u!1001 &4130736403092077063
 PrefabInstance:
@@ -159,6 +137,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7958805314693273468}
     m_Modifications:
+    - target: {fileID: 4547116147144087810, guid: c5bdfddb22c2e9f46a56c6f0ef2bfb47, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 13400000, guid: 76d0f3e974b3baf45912cb85e1aa4c90, type: 2}
+    - target: {fileID: 4547116147144087810, guid: c5bdfddb22c2e9f46a56c6f0ef2bfb47, type: 3}
+      propertyPath: m_ExcludeLayers.m_Bits
+      value: 512
+      objectReference: {fileID: 0}
     - target: {fileID: 5263997233999498454, guid: c5bdfddb22c2e9f46a56c6f0ef2bfb47, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

@@ -1,4 +1,7 @@
+using UnityEngine.Events;
+
 public interface IMineable
 {
-    void Mine(MiningHit hit);
+    bool Mine(MiningHit hit);
+    public event UnityAction OnDepleted;
 }
