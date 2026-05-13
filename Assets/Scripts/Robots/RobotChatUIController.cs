@@ -10,13 +10,16 @@ namespace Coreline.Robots
         private const string PlayerTargetId = "player";
 
         [SerializeField] private NeocortexTextChatInput chatInput;
+        [SerializeField] private NeocortexChatPanel chatPanel;
         [SerializeField] private OllamaRobotCommandClient commandClient;
         [SerializeField] private bool hideOnStart = true;
         [SerializeField] private bool unlockCursorWhileOpen = true;
-        [SerializeField] private bool closeAfterSubmit = true;
+        [SerializeField] private bool closeAfterSubmit;
+        [SerializeField] private bool clearMessagesOnOpen;
         [SerializeField] private float playerReturnStoppingDistance = 2f;
 
         private bool isSubscribed;
+        private bool isCommandClientSubscribed;
         private bool isOpen;
         private CommandTarget playerTarget;
 
@@ -39,11 +42,13 @@ namespace Coreline.Robots
         private void OnEnable()
         {
             SubscribeToInput();
+            SubscribeToCommandClient();
         }
 
         private void OnDisable()
         {
             UnsubscribeFromInput();
+            UnsubscribeFromCommandClient();
 
             if (isOpen)
             {
@@ -83,12 +88,18 @@ namespace Coreline.Robots
 
             EnsureReferences();
             SubscribeToInput();
+            SubscribeToCommandClient();
             EnsurePlayerTarget(player);
 
             ActiveRobot = robot;
             commandClient.SetTargetRobot(robot);
             isOpen = true;
             IsAnyOpen = true;
+
+            if (clearMessagesOnOpen)
+            {
+                chatPanel?.ClearMessages();
+            }
 
             if (unlockCursorWhileOpen)
             {
@@ -123,10 +134,12 @@ namespace Coreline.Robots
             }
 
             EnsureReferences();
+            chatPanel?.AddMessage(prompt, isUser: true);
+
             commandClient.SetTargetRobot(ActiveRobot);
             commandClient.SubmitPrompt(prompt);
 
-            if (closeAfterSubmit)
+            if (closeAfterSubmit && chatPanel == null)
             {
                 Close();
             }
@@ -135,6 +148,7 @@ namespace Coreline.Robots
         private void EnsureReferences()
         {
             chatInput ??= GetComponentInChildren<NeocortexTextChatInput>(true);
+            chatPanel ??= GetComponentInChildren<NeocortexChatPanel>(true);
 
             if (GetComponent<RobotCommandPromptBuilder>() == null)
             {
@@ -201,6 +215,101 @@ namespace Coreline.Robots
 
             chatInput.OnSendButtonClicked.RemoveListener(SubmitPrompt);
             isSubscribed = false;
+        }
+
+        private void SubscribeToCommandClient()
+        {
+            if (isCommandClientSubscribed)
+            {
+                return;
+            }
+
+            EnsureReferences();
+
+            if (commandClient == null)
+            {
+                return;
+            }
+
+            commandClient.OnCommandAccepted.AddListener(HandleCommandAccepted);
+            commandClient.OnCommandRejected.AddListener(HandleCommandRejected);
+            isCommandClientSubscribed = true;
+        }
+
+        private void UnsubscribeFromCommandClient()
+        {
+            if (!isCommandClientSubscribed || commandClient == null)
+            {
+                return;
+            }
+
+            commandClient.OnCommandAccepted.RemoveListener(HandleCommandAccepted);
+            commandClient.OnCommandRejected.RemoveListener(HandleCommandRejected);
+            isCommandClientSubscribed = false;
+        }
+
+        private void HandleCommandAccepted(string acceptedCommandJson)
+        {
+            AddRobotMessage("Message understood.");
+        }
+
+        private void HandleCommandRejected(string reason)
+        {
+            AddRobotMessage(BuildRejectedResponse(reason));
+        }
+
+        private void AddRobotMessage(string message)
+        {
+            if (chatPanel == null)
+            {
+                Debug.Log($"[{nameof(RobotChatUIController)}] {message}", this);
+                return;
+            }
+
+            chatPanel.AddMessage(message, isUser: false);
+        }
+
+        private static string BuildRejectedResponse(string reason)
+        {
+            string resource = ExtractResourceFromMissingResourceError(reason);
+            if (!string.IsNullOrWhiteSpace(resource))
+            {
+                return $"I can't see any {resource} nodes in the area.";
+            }
+
+            if (IsInstructionUnderstandingError(reason))
+            {
+                return "I didn't understand your instruction. Please try again.";
+            }
+
+            return "I didn't understand your instruction. Please try again.";
+        }
+
+        private static string ExtractResourceFromMissingResourceError(string reason)
+        {
+            const string prefix = "No visible resource node found for '";
+            if (string.IsNullOrWhiteSpace(reason) || !reason.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
+            int start = prefix.Length;
+            int end = reason.IndexOf('\'', start);
+            return end > start ? reason.Substring(start, end - start) : string.Empty;
+        }
+
+        private static bool IsInstructionUnderstandingError(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                return true;
+            }
+
+            return reason.Contains("parse", System.StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("JSON", System.StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("Unsupported robot action", System.StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("Unknown command target", System.StringComparison.OrdinalIgnoreCase) ||
+                   reason.Contains("cannot execute action", System.StringComparison.OrdinalIgnoreCase);
         }
 
         public static RobotChatUIController FindOrCreateInScene()

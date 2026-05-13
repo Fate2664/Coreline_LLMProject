@@ -57,7 +57,7 @@ namespace Coreline.Robots
         {
             error = string.Empty;
 
-            if (ShouldExpandMineResourceCommand(command, registry))
+            if (ShouldExpandMineResourceCommand(command, registry, robotPosition))
             {
                 return TryExpandMineResourceCommand(command, registry, robot, robotPosition, validated, out error);
             }
@@ -84,15 +84,15 @@ namespace Coreline.Robots
             switch (command.ActionType)
             {
                 case RobotCommandAction.Move:
-                    return RequireTarget(command, registry, out error);
+                    return RequireTarget(command, registry, robotPosition, out error);
                 case RobotCommandAction.MineResource:
                     return ValidateMineCommand(command, registry, robotPosition, out error);
                 case RobotCommandAction.Scan:
-                    return RequireTarget(command, registry, out error);
+                    return string.IsNullOrWhiteSpace(command.target) || RequireTarget(command, registry, robotPosition, out error);
                 case RobotCommandAction.Pickup:
                     return ValidatePickupCommand(command, registry, robotPosition, out error);
                 case RobotCommandAction.Deliver:
-                    return ValidateDeliverCommand(command, registry, out error);
+                    return ValidateDeliverCommand(command, registry, robotPosition, out error);
                 case RobotCommandAction.Wait:
                 case RobotCommandAction.Stop:
                     return true;
@@ -102,13 +102,13 @@ namespace Coreline.Robots
             }
         }
 
-        private bool ShouldExpandMineResourceCommand(RobotCommand command, CommandTargetRegistry registry)
+        private bool ShouldExpandMineResourceCommand(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition)
         {
             return expandResourceMiningToAllVisibleNodes &&
                    resolveResourceTargets &&
                    command.ActionType == RobotCommandAction.MineResource &&
                    !string.IsNullOrWhiteSpace(command.resource) &&
-                   !TryGetValidTarget(command, registry, out _);
+                   !TryGetValidTarget(command, registry, robotPosition, out _);
         }
 
         private bool TryExpandMineResourceCommand(RobotCommand command, CommandTargetRegistry registry, BaseRobotController robot,
@@ -158,7 +158,7 @@ namespace Coreline.Robots
         {
             error = string.Empty;
 
-            if (TryGetValidTarget(command, registry, out CommandTarget target))
+            if (TryGetValidTarget(command, registry, robotPosition, out CommandTarget target))
             {
                 return ValidateMineTarget(command, target, out error);
             }
@@ -168,14 +168,20 @@ namespace Coreline.Robots
                 return ValidateMineTarget(command, resourceTarget, out error);
             }
 
-            return RequireTarget(command, registry, out error);
+            if (!string.IsNullOrWhiteSpace(command.resource))
+            {
+                error = $"No visible resource node found for '{command.resource}'. Move the mining robot inside a scanning robot radius first.";
+                return false;
+            }
+
+            return RequireTarget(command, registry, robotPosition, out error);
         }
 
         private bool ValidatePickupCommand(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition, out string error)
         {
             error = string.Empty;
 
-            if (TryGetValidTarget(command, registry, out CommandTarget target))
+            if (TryGetValidTarget(command, registry, robotPosition, out CommandTarget target))
             {
                 return ValidatePickupTarget(command, target, out error);
             }
@@ -185,7 +191,7 @@ namespace Coreline.Robots
                 return true;
             }
 
-            return RequireTarget(command, registry, out error);
+            return RequireTarget(command, registry, robotPosition, out error);
         }
 
         private static bool ValidateMineTarget(RobotCommand command, CommandTarget target, out string error)
@@ -220,20 +226,20 @@ namespace Coreline.Robots
             return true;
         }
 
-        private static bool TryGetValidTarget(RobotCommand command, CommandTargetRegistry registry, out CommandTarget target)
+        private static bool TryGetValidTarget(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition, out CommandTarget target)
         {
             target = null;
-            return !string.IsNullOrWhiteSpace(command.target) && registry.TryGetTarget(command.target, out target);
+            return !string.IsNullOrWhiteSpace(command.target) && registry.TryGetTarget(command.target, robotPosition, out target);
         }
 
-        private bool ValidateDeliverCommand(RobotCommand command, CommandTargetRegistry registry, out string error)
+        private bool ValidateDeliverCommand(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition, out string error)
         {
-            if (!RequireTarget(command, registry, out error))
+            if (!RequireTarget(command, registry, robotPosition, out error))
             {
                 return false;
             }
 
-            CommandTarget target = GetTarget(command, registry);
+            CommandTarget target = GetTarget(command, registry, robotPosition);
             if (target.TargetType != CommandTargetType.Storage && target.TargetType != CommandTargetType.Refinery)
             {
                 error = $"Target '{command.target}' is not a storage or refinery target.";
@@ -243,7 +249,7 @@ namespace Coreline.Robots
             return true;
         }
 
-        private static bool RequireTarget(RobotCommand command, CommandTargetRegistry registry, out string error)
+        private static bool RequireTarget(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition, out string error)
         {
             error = string.Empty;
 
@@ -253,7 +259,7 @@ namespace Coreline.Robots
                 return false;
             }
 
-            if (!registry.TryGetTarget(command.target, out _))
+            if (!registry.TryGetTarget(command.target, robotPosition, out _))
             {
                 error = $"Unknown command target '{command.target}'.";
                 return false;
@@ -262,9 +268,9 @@ namespace Coreline.Robots
             return true;
         }
 
-        private static CommandTarget GetTarget(RobotCommand command, CommandTargetRegistry registry)
+        private static CommandTarget GetTarget(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition)
         {
-            registry.TryGetTarget(command.target, out CommandTarget target);
+            registry.TryGetTarget(command.target, robotPosition, out CommandTarget target);
             return target;
         }
     }

@@ -9,8 +9,10 @@ namespace Coreline.Robots
         private string baseSystemPrompt =
             "You translate player instructions into robot command JSON for a Unity mining game. " +
             "Return only valid JSON. Do not include markdown, explanations, or extra text. " +
-            "Allowed actions are move, mine_resource, scan, pickup, deliver, wait, and stop. " +
+            "Allowed actions are move, mine_resource, pickup, deliver, wait, and stop. " +
             "Use only target ids from the available target list. Never put target type names like ResourceNode, Storage, or Refinery in the target field. " +
+            "Resource node targets are only available when the target robot is inside a scanning robot radius and the node is inside that same radius. " +
+            "Do not issue scan commands; scanning robots reveal nearby resources passively. " +
             "If the player asks for a resource by name, set the resource field and omit target unless a specific target id is requested. " +
             "Resource-only mining means mine every visible matching resource node. If the player states a specific number of nodes, set node_count to that node count. Omit node_count and amount otherwise. " +
             "If the player asks the robot to return, come back, or return to me, add a move command with target player after the requested work. " +
@@ -22,13 +24,20 @@ namespace Coreline.Robots
 
         public string BuildSystemPrompt(CommandTargetRegistry registry)
         {
+            return BuildSystemPrompt(registry, null);
+        }
+
+        public string BuildSystemPrompt(CommandTargetRegistry registry, BaseRobotController viewerRobot)
+        {
             StringBuilder builder = new();
             builder.AppendLine(baseSystemPrompt);
             builder.AppendLine();
             builder.AppendLine("Command schema:");
-            builder.AppendLine("{\"action\":\"move|mine_resource|scan|pickup|deliver|wait|stop\",\"target\":\"target_id\",\"resource\":\"coal|iron|gold|diamond|emerald\",\"priority\":\"low|normal|high\",\"amount\":1,\"node_count\":2}");
+            builder.AppendLine("{\"action\":\"move|mine_resource|pickup|deliver|wait|stop\",\"target\":\"target_id\",\"resource\":\"coal|iron|gold|diamond|emerald\",\"priority\":\"low|normal|high\",\"amount\":1,\"node_count\":2}");
             builder.AppendLine();
             builder.AppendLine("The target value must match an id from the available target list exactly. The target value must not be a target type label.");
+            builder.AppendLine("Resource nodes are available only when the target robot and the resource node are both inside a scanning robot radius.");
+            builder.AppendLine("Do not create scan commands. If no matching resource is visible, do not invent a target id.");
             builder.AppendLine("For resource requests like mine coal, prefer {\"action\":\"mine_resource\",\"resource\":\"coal\",\"priority\":\"normal\"} unless the player names a specific target id.");
             builder.AppendLine("Do not include amount for vague requests like mine coal or mine some coal; that means mine all visible matching nodes.");
             builder.AppendLine("If the player gives a specific node count, set node_count to that count, for example mine two coal nodes -> {\"action\":\"mine_resource\",\"resource\":\"coal\",\"node_count\":2,\"priority\":\"normal\"}.");
@@ -38,13 +47,18 @@ namespace Coreline.Robots
 
             if (!includeTargetsInUserPrompt)
             {
-                AppendTargets(builder, registry);
+                AppendTargets(builder, registry, viewerRobot);
             }
 
             return builder.ToString();
         }
 
         public string BuildUserPrompt(string playerPrompt, CommandTargetRegistry registry)
+        {
+            return BuildUserPrompt(playerPrompt, registry, null);
+        }
+
+        public string BuildUserPrompt(string playerPrompt, CommandTargetRegistry registry, BaseRobotController viewerRobot)
         {
             if (!includeTargetsInUserPrompt)
             {
@@ -53,14 +67,14 @@ namespace Coreline.Robots
 
             StringBuilder builder = new();
             builder.AppendLine("Available command targets:");
-            AppendTargets(builder, registry);
+            AppendTargets(builder, registry, viewerRobot);
             builder.AppendLine();
             builder.AppendLine("Player instruction:");
             builder.AppendLine(playerPrompt);
             return builder.ToString();
         }
 
-        private void AppendTargets(StringBuilder builder, CommandTargetRegistry registry)
+        private void AppendTargets(StringBuilder builder, CommandTargetRegistry registry, BaseRobotController viewerRobot)
         {
             if (registry == null)
             {
@@ -69,9 +83,16 @@ namespace Coreline.Robots
             }
 
             int count = 0;
+            bool hasViewerPosition = viewerRobot != null;
+            Vector3 viewerPosition = hasViewerPosition ? viewerRobot.transform.position : Vector3.zero;
+
             foreach (CommandTarget target in registry.Targets)
             {
-                if (target == null)
+                bool visible = hasViewerPosition
+                    ? registry.IsTargetVisible(target, viewerPosition)
+                    : registry.IsTargetVisible(target);
+
+                if (target == null || !visible)
                 {
                     continue;
                 }

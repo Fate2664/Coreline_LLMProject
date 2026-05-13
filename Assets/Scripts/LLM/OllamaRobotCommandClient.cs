@@ -81,7 +81,9 @@ namespace Coreline.Robots
             }
 
             request.ModelName = modelName;
-            string prompt = promptBuilder != null ? promptBuilder.BuildUserPrompt(playerPrompt, Registry) : playerPrompt;
+            string prompt = promptBuilder != null
+                ? promptBuilder.BuildUserPrompt(playerPrompt, Registry, targetRobot)
+                : playerPrompt;
             OnPromptSubmitted.Invoke(playerPrompt);
             request.Send(prompt);
         }
@@ -100,7 +102,7 @@ namespace Coreline.Robots
             request.OnChatResponseReceived += OnChatResponseReceived;
 
             string systemPrompt = promptBuilder != null
-                ? promptBuilder.BuildSystemPrompt(Registry)
+                ? promptBuilder.BuildSystemPrompt(Registry, targetRobot)
                 : "Return only robot command JSON for a Unity mining game.";
 
             request.AddSystemMessage(systemPrompt);
@@ -171,6 +173,7 @@ namespace Coreline.Robots
         {
             promptBuilder ??= GetComponent<RobotCommandPromptBuilder>();
             commandValidator ??= GetComponent<RobotCommandValidator>();
+            targetRobot ??= FindFirstObjectByType<MiningRobotController>();
             targetRobot ??= FindFirstObjectByType<BaseRobotController>();
             targetRegistry ??= CommandTargetRegistry.Instance;
         }

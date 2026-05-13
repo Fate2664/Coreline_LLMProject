@@ -20,8 +20,6 @@ namespace Coreline.Robots
         protected CommandTargetRegistry Registry => targetRegistry != null ? targetRegistry : CommandTargetRegistry.Instance;
         protected NavMeshAgent Agent => robot.Agent;
 
-        public bool IsExecuting => activeRoutine != null;
-        public RobotCommand ActiveCommand => activeCommand;
 
         protected virtual void Awake()
         {
@@ -201,7 +199,7 @@ namespace Coreline.Robots
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(command.target) && registry.TryGetTarget(command.target, out target))
+            if (!string.IsNullOrWhiteSpace(command.target) && registry.TryGetTarget(command.target, transform.position, out target))
             {
                 return true;
             }

@@ -8,12 +8,16 @@ namespace Coreline.Robots
         private static CommandTargetRegistry instance;
 
         [SerializeField] private bool rebuildOnAwake = true;
+        [SerializeField] private bool resourceNodesRequireScan = true;
 
         private readonly Dictionary<string, CommandTarget> targetsById = new(System.StringComparer.OrdinalIgnoreCase);
         private readonly List<CommandTarget> targets = new();
+        private readonly List<ScanningRobotController> scanners = new();
 
         public static CommandTargetRegistry Instance => instance;
         public IReadOnlyList<CommandTarget> Targets => targets;
+        public IReadOnlyList<ScanningRobotController> Scanners => scanners;
+        public bool ResourceNodesRequireScan => resourceNodesRequireScan;
 
         private void Awake()
         {
@@ -84,8 +88,9 @@ namespace Coreline.Robots
         {
             targets.Clear();
             targetsById.Clear();
+            scanners.RemoveAll(scanner => scanner == null);
 
-            CommandTarget[] sceneTargets = FindObjectsByType<CommandTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            CommandTarget[] sceneTargets = FindObjectsByType<CommandTarget>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             foreach (CommandTarget target in sceneTargets)
             {
                 Register(target);
@@ -94,6 +99,16 @@ namespace Coreline.Robots
 
         public bool TryGetTarget(string targetId, out CommandTarget target)
         {
+            return TryGetTarget(targetId, null, out target);
+        }
+
+        public bool TryGetTarget(string targetId, Vector3 viewerPosition, out CommandTarget target)
+        {
+            return TryGetTarget(targetId, (Vector3?)viewerPosition, out target);
+        }
+
+        private bool TryGetTarget(string targetId, Vector3? viewerPosition, out CommandTarget target)
+        {
             target = null;
 
             if (string.IsNullOrWhiteSpace(targetId))
@@ -101,13 +116,19 @@ namespace Coreline.Robots
                 return false;
             }
 
-            if (targetsById.TryGetValue(targetId, out target) && target != null)
+            if (targetsById.TryGetValue(targetId, out target) && IsTargetVisible(target, viewerPosition))
             {
                 return true;
             }
 
             Rebuild();
-            return targetsById.TryGetValue(targetId, out target) && target != null;
+            if (targetsById.TryGetValue(targetId, out target) && IsTargetVisible(target, viewerPosition))
+            {
+                return true;
+            }
+
+            target = null;
+            return false;
         }
 
         public bool TryFindNearestResource(string resource, Vector3 origin, out CommandTarget target)
@@ -134,7 +155,9 @@ namespace Coreline.Robots
                     continue;
                 }
 
-                if (candidate.TargetType != targetType || !candidate.MatchesResource(resource))
+                if (!IsTargetVisible(candidate, origin) ||
+                    candidate.TargetType != targetType ||
+                    !candidate.MatchesResource(resource))
                 {
                     continue;
                 }
@@ -165,7 +188,9 @@ namespace Coreline.Robots
                     continue;
                 }
 
-                if (candidate.TargetType == targetType && candidate.MatchesResource(resource))
+                if (IsTargetVisible(candidate, origin) &&
+                    candidate.TargetType == targetType &&
+                    candidate.MatchesResource(resource))
                 {
                     results.Add(candidate);
                 }
@@ -179,6 +204,79 @@ namespace Coreline.Robots
             });
 
             return results;
+        }
+
+        public void RegisterScanner(ScanningRobotController scanner)
+        {
+            if (scanner == null || scanners.Contains(scanner))
+            {
+                return;
+            }
+
+            scanners.Add(scanner);
+        }
+
+        public void UnregisterScanner(ScanningRobotController scanner)
+        {
+            if (scanner == null)
+            {
+                return;
+            }
+
+            scanners.Remove(scanner);
+        }
+
+        public bool IsTargetVisible(CommandTarget target)
+        {
+            return IsTargetVisible(target, null);
+        }
+
+        public bool IsTargetVisible(CommandTarget target, Vector3 viewerPosition)
+        {
+            return IsTargetVisible(target, (Vector3?)viewerPosition);
+        }
+
+        private bool IsTargetVisible(CommandTarget target, Vector3? viewerPosition)
+        {
+            if (target == null || !target.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            if (target.TargetType != CommandTargetType.ResourceNode)
+            {
+                return true;
+            }
+
+            return !resourceNodesRequireScan ||
+                   viewerPosition.HasValue &&
+                   IsResourceVisibleFrom(target, viewerPosition.Value);
+        }
+
+        private bool IsResourceVisibleFrom(CommandTarget target, Vector3 viewerPosition)
+        {
+            for (int i = scanners.Count - 1; i >= 0; i--)
+            {
+                ScanningRobotController scanner = scanners[i];
+                if (scanner == null)
+                {
+                    scanners.RemoveAt(i);
+                    continue;
+                }
+
+                if (!scanner.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                if (scanner.IsPositionInScanRange(viewerPosition) &&
+                    scanner.IsPositionInScanRange(target.DestinationPosition))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
