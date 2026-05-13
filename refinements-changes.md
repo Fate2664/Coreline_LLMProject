@@ -324,3 +324,107 @@ Result:
 
 - The dynamically assigned resource node should now drive the runtime spine aim, not just appear in the constraint inspector.
 - Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Populated Collection Robot Mining-Robot Dropdown
+
+Updated the collection robot chat dropdown so it is filled from the active mining robots in the scene.
+
+Changed:
+
+- Updated `RobotChatUIController` to find the custom Nova `DropDownSetting` item view in the collection robot chat.
+- Added dropdown click, hover, press, release, outside-click collapse, and selection handling.
+- Populates the dropdown with every active `MiningRobotController` in the scene when a collecting robot chat opens.
+- Uses each mining robot's `CommandTarget.TargetId`, so renamed mining robots appear by their current player-facing names.
+- Hides the mining-robot dropdown when the chat is opened for a non-collecting robot.
+- Stores the selected mining robot on `CollectingRobotController`.
+- Updated `DropDownVisuals` so it can refresh a runtime data source and notify selection changes.
+- Updated `MultiOptionSetting` so runtime option lists clamp selection safely.
+
+Result:
+
+- Opening the collection robot chat should show all active mining robots in the Nova dropdown.
+- Selecting a dropdown item updates the collecting robot's selected mining robot reference for future collection logic.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Added None Default To Collection Mining-Robot Dropdown
+
+Updated the collection robot mining-robot dropdown so it can explicitly have no selected mining robot.
+
+Changed:
+
+- Added `None` as the first dropdown option.
+- Made `None` the default selection when the collecting robot has no existing selected mining robot.
+- Mapped dropdown index `0` to a null `SelectedMiningRobot`.
+- Shifted real mining robot options to start after `None`.
+
+Result:
+
+- Opening the collection robot chat defaults the mining robot selector to `None`.
+- Selecting a mining robot still stores that mining robot on `CollectingRobotController`.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Improved Robot Target Names And Dropdown Refresh
+
+Updated robot command-target naming and fixed the collection dropdown list refresh.
+
+Changed:
+
+- `BaseRobotController` now ensures every robot has a `CommandTarget` registered as `CommandTargetType.Robot`.
+- Default robot target ids are type-aware:
+  - Mining robots use `MiningRobot_#`.
+  - Collection robots use `CollectionRobot_#`.
+  - Scanning robots use `ScanningRobot_#`.
+- Existing custom robot names are preserved unless they are blank, generic, or already duplicated.
+- `RobotNameText` is populated with the active robot's command-target id when chat opens.
+- If `RobotNameText` is backed by a Nova `TextField`, editing it updates the active robot's command-target id.
+- The collection dropdown now reads mining robot labels from `MiningRobotController.RobotTargetId`.
+- `DropDownVisuals.Expand` now activates the expanded root before setting and refreshing the Nova `ListView` data source.
+
+Result:
+
+- Robot names shown in the chat and dropdown now match command-target registry ids.
+- The collection dropdown should show mining robot options immediately without needing to scroll first.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Restored Robot ChatPanel Messages
+
+Fixed the robot chat UI not showing the submitted prompt or robot response.
+
+Changed:
+
+- `RobotChatUIController` now finds the child `NeocortexChatPanel`.
+- Adds the player's prompt to the chat panel before sending it to Ollama.
+- Subscribes to `OllamaRobotCommandClient.OnCommandAccepted` and `OnCommandRejected`.
+- Adds a robot response message after a command is accepted or rejected.
+- Keeps the chat open when a chat panel exists, so the response remains visible.
+- Added optional `clearMessagesOnOpen` support back to the chat controller.
+
+Result:
+
+- Submitted prompts should now appear in the chat panel.
+- Accepted commands show `Message understood.`
+- Rejected commands show a readable failure message instead of only logging to the console.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+## 2026-05-13
+
+### Added Collection Robot Follow-And-Collect Logic
+
+Implemented the collection robot logic for collecting visible dropped ores and optionally following an assigned mining robot.
+
+Changed:
+
+- Updated `CollectingRobotCommandExecutor` so `pickup` with no target collects all visible pickup items inside the collecting robot's vision trigger.
+- Added support for `pickup` targeting a robot, which makes the collecting robot follow that robot and collect visible nearby pickup items while following.
+- Pickup commands targeting the selected mining robot, or follow-style pickup actions, follow the selected miner and collect nearby visible items.
+- Kept explicit pickup-item targets working as before.
+- Updated pickup validation so collecting robots can accept targetless visible-collection commands and robot-target follow-collection commands.
+- Added parser aliases for collection language such as `collect_ores`, `gather_ores`, and `follow_and_collect`.
+- Normalized generic resource terms like `ore` and `ores` to mean any pickup resource.
+- Updated the Ollama prompt context so collection prompts produce either targetless pickup commands or pickup commands targeting the selected mining robot id.
+
+Result:
+
+- With dropdown set to `None`, prompts like `Collect all ores that you can see` should collect pickup items inside the collection robot's sphere trigger vision.
+- With a mining robot selected, prompts like `Follow this robot and pickup all ores nearby` should target that mining robot, follow it, and collect visible ores along the route.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.

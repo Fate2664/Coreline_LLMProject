@@ -56,7 +56,7 @@ namespace Coreline.Robots
         {
             action = NormalizeToken(action);
             target = NormalizeTargetAlias(NormalizeToken(target));
-            resource = NormalizeToken(resource);
+            resource = NormalizeResourceAlias(NormalizeToken(resource));
             priority = NormalizeToken(priority);
 
             if (amount <= 0)
@@ -104,7 +104,22 @@ namespace Coreline.Robots
                     return RobotCommandAction.Scan;
                 case "pickup":
                 case "pick_up":
+                case "pickup_ore":
+                case "pickup_ores":
                 case "collect":
+                case "collect_ore":
+                case "collect_ores":
+                case "collect_all":
+                case "collect_all_ores":
+                case "collect_nearby":
+                case "collect_nearby_ores":
+                case "gather":
+                case "gather_ore":
+                case "gather_ores":
+                case "follow_and_collect":
+                case "follow_collect":
+                case "follow_and_pickup":
+                case "follow_pickup":
                     return RobotCommandAction.Pickup;
                 case "deliver":
                 case "dropoff":
@@ -151,8 +166,38 @@ namespace Coreline.Robots
                 case "player_position":
                 case "current_player":
                     return "player";
+                case "this_robot":
+                case "selected_robot":
+                case "assigned_robot":
+                case "selected_mining_robot":
+                case "assigned_mining_robot":
+                case "miner":
+                case "mining_robot":
+                    return "selected_mining_robot";
                 default:
                     return value;
+            }
+        }
+
+        private static string NormalizeResourceAlias(string value)
+        {
+            switch (value)
+            {
+                case "ore":
+                case "ores":
+                case "all_ores":
+                case "nearby_ores":
+                case "visible_ores":
+                case "resource":
+                case "resources":
+                case "any":
+                case "any_ore":
+                case "any_ores":
+                    return string.Empty;
+                default:
+                    return value.EndsWith("_ore", StringComparison.Ordinal)
+                        ? value.Substring(0, value.Length - "_ore".Length)
+                        : value;
             }
         }
     }

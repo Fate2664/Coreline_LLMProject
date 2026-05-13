@@ -11,6 +11,11 @@ namespace Coreline.Robots
         [SerializeField] private LayerMask pickupLayers = ~0;
         [SerializeField] private float deliveryDuration = 0.5f;
         [SerializeField] private bool clearInventoryWhenNoReceiver = true;
+        [SerializeField] private bool followSelectedMiningRobotWhenPickupHasNoTarget;
+        [SerializeField] private float followDistance = 3f;
+        [SerializeField] private float followCollectDuration = 120f;
+        [SerializeField] private float visiblePickupRetryInterval = 0.25f;
+        [SerializeField] private float noVisiblePickupStopDelay = 3f;
 
         private CollectingRobotController collectingRobot;
 
@@ -38,33 +43,153 @@ namespace Coreline.Robots
 
         private IEnumerator ExecutePickup(RobotCommand command)
         {
-            if (TryResolveTarget(command, out CommandTarget target))
+            if (TryGetExplicitTarget(command, out CommandTarget explicitTarget))
             {
-                bool reached = false;
-                yield return MoveToTarget(target, target.InteractionRadius, value => reached = value);
-
-                if (reached)
+                if (explicitTarget.TargetType == CommandTargetType.Robot)
                 {
-                    TryPickupTarget(target);
+                    yield return ExecuteFollowAndCollect(command, explicitTarget);
+                    yield break;
                 }
 
+                if (explicitTarget.TargetType == CommandTargetType.PickupItem)
+                {
+                    yield return MoveAndPickup(explicitTarget);
+                    yield break;
+                }
+
+                robot.RaiseError($"Target '{explicitTarget.TargetId}' is not a pickup item or robot.");
                 yield break;
             }
 
-            if (Registry != null && Registry.TryFindNearestPickup(command.resource, transform.position, out CommandTarget nearestPickup))
+            if (TryGetSelectedMiningRobotFollowTarget(command, out CommandTarget followTarget))
             {
-                bool reached = false;
-                yield return MoveToTarget(nearestPickup, nearestPickup.InteractionRadius, value => reached = value);
-
-                if (reached)
-                {
-                    TryPickupTarget(nearestPickup);
-                }
-
+                yield return ExecuteFollowAndCollect(command, followTarget);
                 yield break;
             }
 
-            PickupNearby(command.resource);
+            yield return ExecuteCollectVisible(command);
+        }
+
+        private IEnumerator ExecuteCollectVisible(RobotCommand command)
+        {
+            bool collectedAny = false;
+
+            while (collectingRobot.TryGetNearestVisiblePickup(command.resource, transform.position, out CommandTarget visiblePickup))
+            {
+                bool pickedUp = false;
+                yield return MoveAndPickup(visiblePickup, value => pickedUp = value);
+                collectedAny |= pickedUp;
+
+                if (!pickedUp)
+                {
+                    collectingRobot.ForgetVisiblePickup(visiblePickup);
+                }
+
+                yield return null;
+            }
+
+            if (!collectedAny)
+            {
+                PickupNearby(command.resource);
+            }
+        }
+
+        private IEnumerator ExecuteFollowAndCollect(RobotCommand command, CommandTarget followTarget)
+        {
+            if (followTarget == null)
+            {
+                yield break;
+            }
+
+            if (Agent == null || !Agent.enabled || !Agent.isOnNavMesh)
+            {
+                robot.RaiseError("Robot NavMeshAgent is not active on a NavMesh.");
+                yield break;
+            }
+
+            float previousStoppingDistance = Agent.stoppingDistance;
+            float elapsed = 0f;
+            float timeWithoutVisiblePickup = 0f;
+            float commandDuration = Mathf.Max(0.1f, followCollectDuration);
+
+            Agent.stoppingDistance = Mathf.Max(0.05f, followDistance);
+            Agent.isStopped = false;
+
+            while (elapsed < commandDuration)
+            {
+                if (followTarget == null || !followTarget.gameObject.activeInHierarchy)
+                {
+                    break;
+                }
+
+                if (collectingRobot.TryGetNearestVisiblePickup(command.resource, transform.position, out CommandTarget visiblePickup))
+                {
+                    timeWithoutVisiblePickup = 0f;
+
+                    bool pickedUp = false;
+                    yield return MoveAndPickup(visiblePickup, value => pickedUp = value);
+
+                    if (!pickedUp)
+                    {
+                        collectingRobot.ForgetVisiblePickup(visiblePickup);
+                    }
+
+                    Agent.stoppingDistance = Mathf.Max(0.05f, followDistance);
+                    Agent.isStopped = false;
+                    elapsed += Time.deltaTime;
+                    yield return null;
+                    continue;
+                }
+
+                robot.SetStatus(RobotWorkState.Walking);
+
+                if (!Agent.pathPending)
+                {
+                    Agent.SetDestination(followTarget.DestinationPosition);
+                }
+
+                if (!Agent.pathPending && Agent.remainingDistance <= Agent.stoppingDistance + 0.05f)
+                {
+                    timeWithoutVisiblePickup += visiblePickupRetryInterval;
+                    if (timeWithoutVisiblePickup >= noVisiblePickupStopDelay && collectingRobot.SelectedMiningRobot == null)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    timeWithoutVisiblePickup = 0f;
+                }
+
+                elapsed += visiblePickupRetryInterval;
+                yield return new WaitForSeconds(visiblePickupRetryInterval);
+            }
+
+            Agent.stoppingDistance = previousStoppingDistance;
+            StopAgent();
+            robot.SetStatus(RobotWorkState.Idle);
+        }
+
+        private IEnumerator MoveAndPickup(CommandTarget target)
+        {
+            yield return MoveAndPickup(target, null);
+        }
+
+        private IEnumerator MoveAndPickup(CommandTarget target, System.Action<bool> onComplete)
+        {
+            onComplete ??= _ => { };
+
+            if (target == null)
+            {
+                onComplete(false);
+                yield break;
+            }
+
+            bool reached = false;
+            yield return MoveToTarget(target, target.InteractionRadius, value => reached = value);
+
+            bool pickedUp = reached && TryPickupTarget(target);
+            onComplete(pickedUp);
         }
 
         private IEnumerator ExecuteDeliver(RobotCommand command)
@@ -127,6 +252,7 @@ namespace Coreline.Robots
                 return false;
             }
 
+            collectingRobot.ForgetVisiblePickup(target);
             robot.SetStatus(RobotWorkState.Idle);
 
             bool added = false;
@@ -155,6 +281,84 @@ namespace Coreline.Robots
             }
 
             return true;
+        }
+
+        private bool TryGetExplicitTarget(RobotCommand command, out CommandTarget target)
+        {
+            target = null;
+
+            if (string.IsNullOrWhiteSpace(command.target) || IsSelectedMiningRobotReference(command.target))
+            {
+                return false;
+            }
+
+            CommandTargetRegistry registry = Registry;
+            return registry != null && registry.TryGetTarget(command.target, transform.position, out target);
+        }
+
+        private bool TryGetSelectedMiningRobotFollowTarget(RobotCommand command, out CommandTarget target)
+        {
+            target = null;
+
+            MiningRobotController selectedMiningRobot = collectingRobot.SelectedMiningRobot;
+            bool requestedSelectedRobot = IsSelectedMiningRobotReference(command.target);
+            bool shouldUseSelectedByDefault = followSelectedMiningRobotWhenPickupHasNoTarget &&
+                                              string.IsNullOrWhiteSpace(command.target) &&
+                                              selectedMiningRobot != null;
+            bool actionRequestsFollow = IsFollowAndCollectAction(command.action) &&
+                                              string.IsNullOrWhiteSpace(command.target) &&
+                                              selectedMiningRobot != null;
+
+            if (!requestedSelectedRobot && !shouldUseSelectedByDefault && !actionRequestsFollow)
+            {
+                return false;
+            }
+
+            if (selectedMiningRobot == null)
+            {
+                robot.RaiseError("No mining robot is selected for this collecting robot.");
+                return false;
+            }
+
+            target = selectedMiningRobot.CommandTarget;
+            return target != null;
+        }
+
+        private static bool IsSelectedMiningRobotReference(string target)
+        {
+            switch (RobotCommand.NormalizeToken(target))
+            {
+                case "this_robot":
+                case "this robot":
+                case "selected_robot":
+                case "selected robot":
+                case "assigned_robot":
+                case "assigned robot":
+                case "selected_mining_robot":
+                case "selected mining robot":
+                case "assigned_mining_robot":
+                case "assigned mining robot":
+                case "miner":
+                case "mining_robot":
+                case "mining robot":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsFollowAndCollectAction(string action)
+        {
+            switch (RobotCommand.NormalizeToken(action))
+            {
+                case "follow_and_collect":
+                case "follow_collect":
+                case "follow_and_pickup":
+                case "follow_pickup":
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 using Neocortex;
 using Nova;
 using NovaSamples.UIControls;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -10,12 +11,13 @@ namespace Coreline.Robots
     {
         private const string DefaultChatRootName = "LLMChatRoot";
         private const string PlayerTargetId = "player";
-        private const string RobotTypeTextName = "RobotTypeText";
+        private const string MiningRobotDropdownName = "DropDownSetting";
+        private const string NoMiningRobotSelection = "None";
         private const string RobotNameTextName = "RobotNameText";
 
         [SerializeField] private NeocortexTextChatInput chatInput;
         [SerializeField] private NeocortexChatPanel chatPanel;
-        [SerializeField] private TextBlock robotTypeText;
+        [SerializeField] private ItemView miningRobotDropdownView;
         [SerializeField] private TextBlock robotNameText;
         [SerializeField] private TextField robotNameField;
         [SerializeField] private OllamaRobotCommandClient commandClient;
@@ -23,15 +25,23 @@ namespace Coreline.Robots
         [SerializeField] private bool unlockCursorWhileOpen = true;
         [SerializeField] private bool closeAfterSubmit;
         [SerializeField] private bool clearMessagesOnOpen;
+        [SerializeField] private bool hideMiningRobotDropdownWhenInactive = true;
         [SerializeField] private float playerReturnStoppingDistance = 2f;
 
         private bool isSubscribed;
         private bool isCommandClientSubscribed;
-        private bool isRobotNameInputSubscribed;
+        private bool isMiningRobotDropdownSubscribed;
         private bool isOpen;
         private CommandTarget playerTarget;
         private CommandTarget activeRobotTarget;
         private string lastAppliedRobotName = string.Empty;
+        private DropDownVisuals miningRobotDropdownVisuals;
+        private readonly MultiOptionSetting miningRobotDropdownSetting = new()
+        {
+            Key = "collecting_robot_selected_mining_robot",
+            Name = "Mining Robot"
+        };
+        private readonly List<MiningRobotController> miningRobotDropdownRobots = new();
 
         public static bool IsAnyOpen { get; private set; }
         public BaseRobotController ActiveRobot { get; private set; }
@@ -53,14 +63,14 @@ namespace Coreline.Robots
         {
             SubscribeToInput();
             SubscribeToCommandClient();
-            SubscribeToRobotNameInput();
+            SubscribeToMiningRobotDropdown();
         }
 
         private void OnDisable()
         {
             UnsubscribeFromInput();
             UnsubscribeFromCommandClient();
-            UnsubscribeFromRobotNameInput();
+            UnsubscribeFromMiningRobotDropdown();
 
             if (isOpen)
             {
@@ -106,13 +116,13 @@ namespace Coreline.Robots
             EnsureReferences();
             SubscribeToInput();
             SubscribeToCommandClient();
-            SubscribeToRobotNameInput();
             EnsurePlayerTarget(player);
 
             ActiveRobot = robot;
             activeRobotTarget = EnsureRobotTarget(robot);
+            RefreshRobotNameText(activeRobotTarget);
             commandClient.SetTargetRobot(robot);
-            RefreshRobotHeader(robot, activeRobotTarget);
+            RefreshMiningRobotDropdown(robot);
             isOpen = true;
             IsAnyOpen = true;
 
@@ -135,18 +145,11 @@ namespace Coreline.Robots
             lastAppliedRobotName = string.Empty;
             isOpen = false;
             IsAnyOpen = false;
+            miningRobotDropdownVisuals?.Collapse();
 
             if (gameObject.activeSelf)
             {
                 gameObject.SetActive(false);
-            }
-        }
-
-        public void SetActiveRobotName(string robotName)
-        {
-            if (ApplyActiveRobotName(robotName))
-            {
-                SetRobotNameField(lastAppliedRobotName);
             }
         }
 
@@ -165,7 +168,6 @@ namespace Coreline.Robots
 
             EnsureReferences();
             chatPanel?.AddMessage(prompt, isUser: true);
-
             commandClient.SetTargetRobot(ActiveRobot);
             commandClient.SubmitPrompt(prompt);
 
@@ -179,9 +181,14 @@ namespace Coreline.Robots
         {
             chatInput ??= GetComponentInChildren<NeocortexTextChatInput>(true);
             chatPanel ??= GetComponentInChildren<NeocortexChatPanel>(true);
-            robotTypeText ??= FindChildComponentByName<TextBlock>(RobotTypeTextName);
+            miningRobotDropdownView ??= FindChildItemViewWithVisuals<DropDownVisuals>(MiningRobotDropdownName);
             robotNameField ??= FindChildComponentByName<TextField>(RobotNameTextName);
             robotNameText ??= FindChildComponentByName<TextBlock>(RobotNameTextName);
+
+            if (miningRobotDropdownView != null)
+            {
+                miningRobotDropdownView.TryGetVisuals(out miningRobotDropdownVisuals);
+            }
 
             if (robotNameField == null && robotNameText != null)
             {
@@ -232,74 +239,13 @@ namespace Coreline.Robots
 
         private CommandTarget EnsureRobotTarget(BaseRobotController robot)
         {
-            CommandTarget target = robot.GetComponent<CommandTarget>();
-            if (target == null)
-            {
-                target = robot.gameObject.AddComponent<CommandTarget>();
-            }
-
-            if (target.TargetType != CommandTargetType.Robot)
-            {
-                target.Configure(
-                    string.Empty,
-                    CommandTargetType.Robot,
-                    destination: robot.transform);
-            }
-            else
-            {
-                target.Configure(
-                    target.TargetId,
-                    CommandTargetType.Robot,
-                    destination: robot.transform);
-            }
-
-            return target;
+            return robot != null ? robot.EnsureRobotCommandTarget() : null;
         }
 
-        private void RefreshRobotHeader(BaseRobotController robot, CommandTarget robotTarget)
+        private void RefreshRobotNameText(CommandTarget robotTarget)
         {
-            SetText(robotTypeText, GetRobotTypeLabel(robot));
-
             lastAppliedRobotName = robotTarget != null ? robotTarget.TargetId : string.Empty;
             SetRobotNameField(lastAppliedRobotName);
-        }
-
-        private bool ApplyActiveRobotName(string robotName)
-        {
-            if (ActiveRobot == null || activeRobotTarget == null)
-            {
-                return false;
-            }
-
-            string targetId = SanitizeRobotTargetId(robotName);
-            if (string.IsNullOrWhiteSpace(targetId))
-            {
-                SetRobotNameField(lastAppliedRobotName);
-                return false;
-            }
-
-            if (string.Equals(targetId, lastAppliedRobotName, System.StringComparison.Ordinal))
-            {
-                return true;
-            }
-
-            CommandTargetRegistry registry = CommandTargetRegistry.Instance;
-            if (registry != null &&
-                registry.TryGetTarget(targetId, out CommandTarget existingTarget) &&
-                existingTarget != activeRobotTarget)
-            {
-                AddRobotMessage("That robot name is already in use.");
-                SetRobotNameField(lastAppliedRobotName);
-                return false;
-            }
-
-            activeRobotTarget.Configure(
-                targetId,
-                CommandTargetType.Robot,
-                destination: ActiveRobot.transform);
-
-            lastAppliedRobotName = activeRobotTarget.TargetId;
-            return true;
         }
 
         private void SyncRobotNameFromEditableField()
@@ -319,6 +265,38 @@ namespace Coreline.Robots
             ApplyActiveRobotName(currentName);
         }
 
+        private bool ApplyActiveRobotName(string robotName)
+        {
+            if (ActiveRobot == null || activeRobotTarget == null)
+            {
+                return false;
+            }
+
+            string targetId = SanitizeRobotTargetId(robotName);
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                SetRobotNameField(lastAppliedRobotName);
+                return false;
+            }
+
+            if (CommandTargetRegistry.Instance != null &&
+                CommandTargetRegistry.Instance.TryGetTarget(targetId, out CommandTarget existingTarget) &&
+                existingTarget != activeRobotTarget)
+            {
+                SetRobotNameField(lastAppliedRobotName);
+                return false;
+            }
+
+            activeRobotTarget.Configure(
+                targetId,
+                CommandTargetType.Robot,
+                destination: ActiveRobot.transform);
+
+            lastAppliedRobotName = activeRobotTarget.TargetId;
+            SetRobotNameField(lastAppliedRobotName);
+            return true;
+        }
+
         private void SetRobotNameField(string value)
         {
             if (robotNameField != null)
@@ -328,7 +306,7 @@ namespace Coreline.Robots
 
             if (robotNameText != null && (robotNameField == null || robotNameField.TextBlock != robotNameText))
             {
-                SetText(robotNameText, value);
+                robotNameText.Text = value;
             }
         }
 
@@ -339,12 +317,7 @@ namespace Coreline.Robots
                 return robotNameField.Text;
             }
 
-            if (robotNameText != null)
-            {
-                return robotNameText.Text;
-            }
-
-            return string.Empty;
+            return robotNameText != null ? robotNameText.Text : string.Empty;
         }
 
         private static string SanitizeRobotTargetId(string value)
@@ -354,15 +327,80 @@ namespace Coreline.Robots
                 : value.Trim().Replace("\"", string.Empty).Replace("\\", string.Empty);
         }
 
-        private static string GetRobotTypeLabel(BaseRobotController robot)
+        private void RefreshMiningRobotDropdown(BaseRobotController robot)
         {
-            return robot switch
+            EnsureReferences();
+
+            if (miningRobotDropdownView == null || miningRobotDropdownVisuals == null)
             {
-                MiningRobotController => "Mining Robot:",
-                CollectingRobotController => "Collecting Robot:",
-                ScanningRobotController => "Scanning Robot:",
-                _ => "Robot:"
-            };
+                return;
+            }
+
+            if (robot is not CollectingRobotController collectingRobot)
+            {
+                miningRobotDropdownVisuals.Collapse();
+
+                if (hideMiningRobotDropdownWhenInactive)
+                {
+                    miningRobotDropdownView.gameObject.SetActive(false);
+                }
+
+                return;
+            }
+
+            if (hideMiningRobotDropdownWhenInactive && !miningRobotDropdownView.gameObject.activeSelf)
+            {
+                miningRobotDropdownView.gameObject.SetActive(true);
+            }
+
+            RefreshMiningRobotDropdownOptions(collectingRobot);
+        }
+
+        private void RefreshMiningRobotDropdownOptions(CollectingRobotController collectingRobot)
+        {
+            miningRobotDropdownRobots.Clear();
+            miningRobotDropdownRobots.Add(null);
+
+            MiningRobotController[] miningRobots =
+                FindObjectsByType<MiningRobotController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+
+            List<MiningRobotController> sortedRobots = new(miningRobots);
+            sortedRobots.RemoveAll(robot => robot == null || !robot.isActiveAndEnabled);
+            sortedRobots.Sort((left, right) =>
+                string.Compare(GetMiningRobotDropdownLabel(left), GetMiningRobotDropdownLabel(right), System.StringComparison.OrdinalIgnoreCase));
+
+            int selectedIndex = 0;
+            if (collectingRobot.SelectedMiningRobot != null)
+            {
+                int existingIndex = sortedRobots.IndexOf(collectingRobot.SelectedMiningRobot);
+                selectedIndex = existingIndex >= 0 ? existingIndex + 1 : 0;
+            }
+
+            string[] options = new string[sortedRobots.Count + 1];
+            options[0] = NoMiningRobotSelection;
+
+            for (int i = 0; i < sortedRobots.Count; i++)
+            {
+                MiningRobotController miningRobot = sortedRobots[i];
+                miningRobotDropdownRobots.Add(miningRobot);
+                options[i + 1] = GetMiningRobotDropdownLabel(miningRobot);
+            }
+
+            miningRobotDropdownSetting.SetOptions(options, selectedIndex);
+            collectingRobot.SetSelectedMiningRobot(miningRobotDropdownRobots[miningRobotDropdownSetting.SelectedIndex]);
+            miningRobotDropdownVisuals.Refresh(miningRobotDropdownSetting);
+        }
+
+        private static string GetMiningRobotDropdownLabel(MiningRobotController miningRobot)
+        {
+            if (miningRobot == null)
+            {
+                return string.Empty;
+            }
+
+            return !string.IsNullOrWhiteSpace(miningRobot.RobotTargetId)
+                ? miningRobot.RobotTargetId
+                : miningRobot.name;
         }
 
         private void SubscribeToInput()
@@ -393,43 +431,6 @@ namespace Coreline.Robots
 
             chatInput.OnSendButtonClicked.RemoveListener(SubmitPrompt);
             isSubscribed = false;
-        }
-
-        private void SubscribeToRobotNameInput()
-        {
-            if (isRobotNameInputSubscribed)
-            {
-                return;
-            }
-
-            EnsureReferences();
-
-            if (robotNameField != null)
-            {
-                robotNameField.OnTextChanged += HandleRobotNameTextChanged;
-            }
-
-            isRobotNameInputSubscribed = robotNameField != null;
-        }
-
-        private void UnsubscribeFromRobotNameInput()
-        {
-            if (!isRobotNameInputSubscribed)
-            {
-                return;
-            }
-
-            if (robotNameField != null)
-            {
-                robotNameField.OnTextChanged -= HandleRobotNameTextChanged;
-            }
-
-            isRobotNameInputSubscribed = false;
-        }
-
-        private void HandleRobotNameTextChanged()
-        {
-            SyncRobotNameFromEditableField();
         }
 
         private void SubscribeToCommandClient()
@@ -492,11 +493,6 @@ namespace Coreline.Robots
                 return $"I can't see any {resource} nodes in the area.";
             }
 
-            if (IsInstructionUnderstandingError(reason))
-            {
-                return "I didn't understand your instruction. Please try again.";
-            }
-
             return "I didn't understand your instruction. Please try again.";
         }
 
@@ -513,18 +509,134 @@ namespace Coreline.Robots
             return end > start ? reason.Substring(start, end - start) : string.Empty;
         }
 
-        private static bool IsInstructionUnderstandingError(string reason)
+        private void SubscribeToMiningRobotDropdown()
         {
-            if (string.IsNullOrWhiteSpace(reason))
+            if (isMiningRobotDropdownSubscribed)
             {
-                return true;
+                return;
             }
 
-            return reason.Contains("parse", System.StringComparison.OrdinalIgnoreCase) ||
-                   reason.Contains("JSON", System.StringComparison.OrdinalIgnoreCase) ||
-                   reason.Contains("Unsupported robot action", System.StringComparison.OrdinalIgnoreCase) ||
-                   reason.Contains("Unknown command target", System.StringComparison.OrdinalIgnoreCase) ||
-                   reason.Contains("cannot execute action", System.StringComparison.OrdinalIgnoreCase);
+            EnsureReferences();
+
+            if (miningRobotDropdownView == null || miningRobotDropdownVisuals == null)
+            {
+                return;
+            }
+
+            miningRobotDropdownView.UIBlock.AddGestureHandler<Gesture.OnHover, DropDownVisuals>(DropDownVisuals.HandleHover);
+            miningRobotDropdownView.UIBlock.AddGestureHandler<Gesture.OnUnhover, DropDownVisuals>(DropDownVisuals.HandleUnhover);
+            miningRobotDropdownView.UIBlock.AddGestureHandler<Gesture.OnPress, DropDownVisuals>(DropDownVisuals.HandlePress);
+            miningRobotDropdownView.UIBlock.AddGestureHandler<Gesture.OnRelease, DropDownVisuals>(DropDownVisuals.HandleRelease);
+            miningRobotDropdownView.UIBlock.AddGestureHandler<Gesture.OnClick, DropDownVisuals>(HandleMiningRobotDropdownClicked);
+
+            miningRobotDropdownVisuals.OnSelectionChanged += HandleMiningRobotDropdownSelectionChanged;
+            InputManager.OnPostClick += HandleMiningRobotDropdownPostClick;
+            isMiningRobotDropdownSubscribed = true;
+        }
+
+        private void UnsubscribeFromMiningRobotDropdown()
+        {
+            if (!isMiningRobotDropdownSubscribed || miningRobotDropdownView == null)
+            {
+                return;
+            }
+
+            miningRobotDropdownView.UIBlock.RemoveGestureHandler<Gesture.OnHover, DropDownVisuals>(DropDownVisuals.HandleHover);
+            miningRobotDropdownView.UIBlock.RemoveGestureHandler<Gesture.OnUnhover, DropDownVisuals>(DropDownVisuals.HandleUnhover);
+            miningRobotDropdownView.UIBlock.RemoveGestureHandler<Gesture.OnPress, DropDownVisuals>(DropDownVisuals.HandlePress);
+            miningRobotDropdownView.UIBlock.RemoveGestureHandler<Gesture.OnRelease, DropDownVisuals>(DropDownVisuals.HandleRelease);
+            miningRobotDropdownView.UIBlock.RemoveGestureHandler<Gesture.OnClick, DropDownVisuals>(HandleMiningRobotDropdownClicked);
+
+            if (miningRobotDropdownVisuals != null)
+            {
+                miningRobotDropdownVisuals.OnSelectionChanged -= HandleMiningRobotDropdownSelectionChanged;
+            }
+
+            InputManager.OnPostClick -= HandleMiningRobotDropdownPostClick;
+            isMiningRobotDropdownSubscribed = false;
+        }
+
+        private void HandleMiningRobotDropdownClicked(Gesture.OnClick evt, DropDownVisuals target)
+        {
+            if (target.ExpandedRoot != null &&
+                evt.Receiver != null &&
+                evt.Receiver.transform.IsChildOf(target.ExpandedRoot.transform))
+            {
+                return;
+            }
+
+            if (ActiveRobot is not CollectingRobotController collectingRobot)
+            {
+                return;
+            }
+
+            RefreshMiningRobotDropdownOptions(collectingRobot);
+
+            if (target.isExpanded)
+            {
+                target.Collapse();
+            }
+            else
+            {
+                target.Expand(miningRobotDropdownSetting);
+            }
+
+            evt.Consume();
+        }
+
+        private void HandleMiningRobotDropdownSelectionChanged(int selectedIndex, string selectedLabel)
+        {
+            if (ActiveRobot is not CollectingRobotController collectingRobot)
+            {
+                return;
+            }
+
+            MiningRobotController selectedRobot =
+                selectedIndex >= 0 && selectedIndex < miningRobotDropdownRobots.Count
+                    ? miningRobotDropdownRobots[selectedIndex]
+                    : null;
+
+            collectingRobot.SetSelectedMiningRobot(selectedRobot);
+        }
+
+        private void HandleMiningRobotDropdownPostClick(UIBlock clickedUIBlock)
+        {
+            if (miningRobotDropdownVisuals == null || !miningRobotDropdownVisuals.isExpanded)
+            {
+                return;
+            }
+
+            if (clickedUIBlock == null ||
+                miningRobotDropdownView == null ||
+                !clickedUIBlock.transform.IsChildOf(miningRobotDropdownView.transform))
+            {
+                miningRobotDropdownVisuals.Collapse();
+            }
+        }
+
+        private ItemView FindChildItemViewWithVisuals<TVisuals>(string preferredObjectName)
+            where TVisuals : ItemVisuals
+        {
+            ItemView fallback = null;
+            ItemView[] itemViews = GetComponentsInChildren<ItemView>(true);
+
+            for (int i = 0; i < itemViews.Length; i++)
+            {
+                ItemView itemView = itemViews[i];
+                if (itemView == null || !itemView.TryGetVisuals(out TVisuals _))
+                {
+                    continue;
+                }
+
+                if (itemView.name == preferredObjectName)
+                {
+                    return itemView;
+                }
+
+                fallback ??= itemView;
+            }
+
+            return fallback;
         }
 
         private T FindChildComponentByName<T>(string objectName) where T : Component
@@ -539,14 +651,6 @@ namespace Coreline.Robots
             }
 
             return null;
-        }
-
-        private static void SetText(TextBlock textBlock, string value)
-        {
-            if (textBlock != null)
-            {
-                textBlock.Text = value;
-            }
         }
 
         public static RobotChatUIController FindOrCreateInScene()

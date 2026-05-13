@@ -30,6 +30,8 @@ namespace Coreline.Robots
         [SerializeField] private bool destroyOnPickup = true;
 
         public string TargetId => GetOrCreateTargetId();
+        public string ConfiguredTargetId => targetId;
+        public bool HasConfiguredTargetId => !string.IsNullOrWhiteSpace(targetId);
         public CommandTargetType TargetType => targetType;
         public bool HasOreType => hasOreType;
         public OreType OreType => oreType;

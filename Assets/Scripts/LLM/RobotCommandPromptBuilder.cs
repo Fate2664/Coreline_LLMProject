@@ -15,6 +15,7 @@ namespace Coreline.Robots
             "Do not issue scan commands; scanning robots reveal nearby resources passively. " +
             "If the player asks for a resource by name, set the resource field and omit target unless a specific target id is requested. " +
             "Resource-only mining means mine every visible matching resource node. If the player states a specific number of nodes, set node_count to that node count. Omit node_count and amount otherwise. " +
+            "For collecting robots, pickup with no target means collect every visible ore or pickup item. If a selected mining robot is provided and the player says this robot, selected robot, or assigned robot, target that selected mining robot id. " +
             "If the player asks the robot to return, come back, or return to me, add a move command with target player after the requested work. " +
             "For a single action return {\"action\":\"mine_resource\",\"target\":\"iron_node_12\",\"priority\":\"high\"}. " +
             "For multiple actions return an object with a sequence property, not a raw array: {\"sequence\":[{\"action\":\"move\",\"target\":\"storage_1\"},{\"action\":\"pickup\",\"resource\":\"iron\"},{\"action\":\"deliver\",\"target\":\"refinery\"}]}.";
@@ -42,6 +43,8 @@ namespace Coreline.Robots
             builder.AppendLine("Do not include amount for vague requests like mine coal or mine some coal; that means mine all visible matching nodes.");
             builder.AppendLine("If the player gives a specific node count, set node_count to that count, for example mine two coal nodes -> {\"action\":\"mine_resource\",\"resource\":\"coal\",\"node_count\":2,\"priority\":\"normal\"}.");
             builder.AppendLine("For requests like mine coal then return to me, return {\"sequence\":[{\"action\":\"mine_resource\",\"resource\":\"coal\",\"priority\":\"normal\"},{\"action\":\"move\",\"target\":\"player\"}]}.");
+            builder.AppendLine("For collection requests like collect all ores you can see, return {\"action\":\"pickup\",\"priority\":\"normal\"} with no target.");
+            builder.AppendLine("For collection requests like follow this robot and collect nearby ores, return {\"action\":\"pickup\",\"target\":\"selected_mining_robot_id\",\"priority\":\"normal\"} using the selected mining robot id from the user prompt context.");
             builder.AppendLine();
             builder.AppendLine("If multiple actions are needed, wrap them in an object with a sequence array. Do not return a top-level JSON array.");
 
@@ -69,9 +72,29 @@ namespace Coreline.Robots
             builder.AppendLine("Available command targets:");
             AppendTargets(builder, registry, viewerRobot);
             builder.AppendLine();
+            AppendRobotContext(builder, viewerRobot);
+            builder.AppendLine();
             builder.AppendLine("Player instruction:");
             builder.AppendLine(playerPrompt);
             return builder.ToString();
+        }
+
+        private static void AppendRobotContext(StringBuilder builder, BaseRobotController viewerRobot)
+        {
+            if (viewerRobot is not CollectingRobotController collectingRobot)
+            {
+                return;
+            }
+
+            string selectedMiningRobotId = collectingRobot.SelectedMiningRobot != null
+                ? collectingRobot.SelectedMiningRobot.RobotTargetId
+                : "None";
+
+            builder.AppendLine("Collecting robot context:");
+            builder.AppendLine($"- selected_mining_robot=\"{selectedMiningRobotId}\"");
+            builder.AppendLine("- If selected_mining_robot is None, collect visible ores with {\"action\":\"pickup\",\"priority\":\"normal\"} and no target.");
+            builder.AppendLine("- If the player says this robot, selected robot, assigned robot, or follow this robot, use selected_mining_robot as the pickup target.");
+            builder.AppendLine("- A pickup command targeting a robot means follow that robot and collect visible nearby pickup items.");
         }
 
         private void AppendTargets(StringBuilder builder, CommandTargetRegistry registry, BaseRobotController viewerRobot)

@@ -21,6 +21,7 @@ namespace Coreline.Robots
 
         public float ScanRadius => GetWorldScanRadius();
         public IReadOnlyList<CommandTarget> LastScannedTargets => lastScannedTargets;
+        protected override string RobotTargetIdPrefix => "ScanningRobot";
 
         protected override void Awake()
         {

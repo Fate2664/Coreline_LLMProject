@@ -90,7 +90,7 @@ namespace Coreline.Robots
                 case RobotCommandAction.Scan:
                     return string.IsNullOrWhiteSpace(command.target) || RequireTarget(command, registry, robotPosition, out error);
                 case RobotCommandAction.Pickup:
-                    return ValidatePickupCommand(command, registry, robotPosition, out error);
+                    return ValidatePickupCommand(command, registry, robot, robotPosition, out error);
                 case RobotCommandAction.Deliver:
                     return ValidateDeliverCommand(command, registry, robotPosition, out error);
                 case RobotCommandAction.Wait:
@@ -177,13 +177,32 @@ namespace Coreline.Robots
             return RequireTarget(command, registry, robotPosition, out error);
         }
 
-        private bool ValidatePickupCommand(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition, out string error)
+        private bool ValidatePickupCommand(RobotCommand command, CommandTargetRegistry registry, BaseRobotController robot, Vector3 robotPosition, out string error)
         {
             error = string.Empty;
 
             if (TryGetValidTarget(command, registry, robotPosition, out CommandTarget target))
             {
-                return ValidatePickupTarget(command, target, out error);
+                return ValidatePickupTarget(command, target, robot, out error);
+            }
+
+            if (robot is CollectingRobotController collectingRobot)
+            {
+                if (IsSelectedMiningRobotReference(command.target))
+                {
+                    if (collectingRobot.SelectedMiningRobot != null)
+                    {
+                        return true;
+                    }
+
+                    error = "No mining robot is selected for the collecting robot.";
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(command.target) || IsVisiblePickupSweepReference(command.target))
+                {
+                    return true;
+                }
             }
 
             if (registry.TryFindNearestPickup(command.resource, robotPosition, out CommandTarget pickupTarget))
@@ -213,17 +232,75 @@ namespace Coreline.Robots
             return true;
         }
 
-        private static bool ValidatePickupTarget(RobotCommand command, CommandTarget target, out string error)
+        private static bool ValidatePickupTarget(RobotCommand command, CommandTarget target, BaseRobotController robot, out string error)
         {
             error = string.Empty;
 
+            if (target.TargetType == CommandTargetType.PickupItem)
+            {
+                return true;
+            }
+
+            if (robot is CollectingRobotController && target.TargetType == CommandTargetType.Robot)
+            {
+                return true;
+            }
+
             if (target.TargetType != CommandTargetType.PickupItem)
             {
-                error = $"Target '{command.target}' is not a pickup item.";
+                error = $"Target '{command.target}' is not a pickup item or robot.";
                 return false;
             }
 
             return true;
+        }
+
+        private static bool IsSelectedMiningRobotReference(string target)
+        {
+            switch (RobotCommand.NormalizeToken(target))
+            {
+                case "this_robot":
+                case "this robot":
+                case "selected_robot":
+                case "selected robot":
+                case "assigned_robot":
+                case "assigned robot":
+                case "selected_mining_robot":
+                case "selected mining robot":
+                case "assigned_mining_robot":
+                case "assigned mining robot":
+                case "miner":
+                case "mining_robot":
+                case "mining robot":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsVisiblePickupSweepReference(string target)
+        {
+            switch (RobotCommand.NormalizeToken(target))
+            {
+                case "ore":
+                case "ores":
+                case "all_ores":
+                case "all ores":
+                case "nearby":
+                case "nearby_ores":
+                case "nearby ores":
+                case "visible":
+                case "visible_ores":
+                case "visible ores":
+                case "items":
+                case "pickup_items":
+                case "pickup items":
+                case "ground_items":
+                case "ground items":
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private static bool TryGetValidTarget(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition, out CommandTarget target)

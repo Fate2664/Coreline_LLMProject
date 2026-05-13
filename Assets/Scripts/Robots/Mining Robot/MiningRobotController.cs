@@ -19,6 +19,7 @@ namespace Coreline.Robots
 
         public Transform ToolTransform => toolTransform != null ? toolTransform : transform;
         public bool IsMiningAnimationReady => stateMachine != null && stateMachine.IsInState<RobotMineState>();
+        protected override string RobotTargetIdPrefix => "MiningRobot";
 
         protected override void Awake()
         {

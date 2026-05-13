@@ -10,6 +10,7 @@ namespace Coreline.Robots
         [SerializeField] private RobotCommandValidator commandValidator;
         [SerializeField] private RobotCommandQueue commandQueue;
         [SerializeField] private BaseRobotCommandExecutor commandExecutor;
+        [SerializeField] private CommandTarget commandTarget;
 
         private NavMeshAgent agent;
         private RobotWorkState currentState = RobotWorkState.Idle;
@@ -21,7 +22,10 @@ namespace Coreline.Robots
         public RobotCommandQueue CommandQueue => commandQueue;
         public BaseRobotCommandExecutor CommandExecutor => commandExecutor;
         public RobotCommandValidator CommandValidator => commandValidator;
+        public CommandTarget CommandTarget => commandTarget;
+        public string RobotTargetId => EnsureRobotCommandTarget().TargetId;
         public RobotWorkState CurrentState => currentState;
+        protected virtual string RobotTargetIdPrefix => "Robot";
 
         protected virtual void Awake()
         {
@@ -34,6 +38,30 @@ namespace Coreline.Robots
             {
                 commandExecutor = gameObject.AddComponent<BaseRobotCommandExecutor>();
             }
+
+            EnsureRobotCommandTarget();
+        }
+
+        public CommandTarget EnsureRobotCommandTarget()
+        {
+            commandTarget = commandTarget != null ? commandTarget : GetComponent<CommandTarget>();
+            if (commandTarget == null)
+            {
+                commandTarget = gameObject.AddComponent<CommandTarget>();
+            }
+
+            string id = commandTarget.ConfiguredTargetId;
+            if (ShouldGenerateRobotTargetId(commandTarget, id))
+            {
+                id = GenerateUniqueRobotTargetId(commandTarget);
+            }
+
+            commandTarget.Configure(
+                id,
+                CommandTargetType.Robot,
+                destination: transform);
+
+            return commandTarget;
         }
 
         public virtual bool CanExecuteAction(RobotCommandAction action)
@@ -140,6 +168,64 @@ namespace Coreline.Robots
                 return found;
 
             return gameObject.AddComponent<T>();
+        }
+
+        private bool ShouldGenerateRobotTargetId(CommandTarget target, string id)
+        {
+            return string.IsNullOrWhiteSpace(id) ||
+                   IsGenericRobotTargetId(id) ||
+                   IsTargetIdInUse(id, target);
+        }
+
+        private string GenerateUniqueRobotTargetId(CommandTarget self)
+        {
+            string prefix = RobotTargetIdPrefix;
+
+            for (int i = 1; i < 1000; i++)
+            {
+                string candidate = $"{prefix}_{i}";
+                if (!IsTargetIdInUse(candidate, self))
+                {
+                    return candidate;
+                }
+            }
+
+            return $"{prefix}_{Mathf.Abs(GetInstanceID())}";
+        }
+
+        private static bool IsGenericRobotTargetId(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return true;
+            }
+
+            return id.StartsWith("robot_", StringComparison.OrdinalIgnoreCase) ||
+                   id.StartsWith("target_", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsTargetIdInUse(string id, CommandTarget self)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return false;
+            }
+
+            CommandTarget[] targets = FindObjectsByType<CommandTarget>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            foreach (CommandTarget target in targets)
+            {
+                if (target == null || target == self || !target.HasConfiguredTargetId)
+                {
+                    continue;
+                }
+
+                if (string.Equals(target.ConfiguredTargetId, id, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
