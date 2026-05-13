@@ -208,7 +208,7 @@ namespace Coreline
                 {
                     ""name"": """",
                     ""id"": ""23673c87-4faa-4a47-b220-bc4ae41c4f40"",
-                    ""path"": ""<Keyboard>/f"",
+                    ""path"": ""<Keyboard>/e"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",

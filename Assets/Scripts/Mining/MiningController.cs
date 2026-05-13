@@ -17,10 +17,6 @@ public class MiningController : MonoBehaviour
     [SerializeField] private float hitDelay = 0.05f;
     [SerializeField] private float damagePerHit = 1f;
 
-    [Header("VFX")] [SerializeField] private ParticleSystem sparkParticles;
-    [SerializeField] private ParticleSystem rockParticles;
-    [SerializeField] private ParticleSystem rockBreakParticles;
-
     private bool isPrimaryAttackHeld;
     private Coroutine miningRoutine;
     private readonly Collider[] miningHits = new Collider[MaxMiningHits];
@@ -108,21 +104,6 @@ public class MiningController : MonoBehaviour
         else
             hitNormal.Normalize();
 
-        Vector3 spawnPosition = hitPoint + hitNormal * 0.2f;
-        Quaternion rotation = Quaternion.LookRotation(hitNormal);
-        ParticleSystem sparkVFX = Instantiate(sparkParticles, spawnPosition, rotation);
-        ParticleSystem rockVFX = Instantiate(rockParticles, spawnPosition, rotation);
-        sparkVFX.Play();
-        rockVFX.Play();
-        Destroy(rockVFX.gameObject, rockVFX.main.duration + rockVFX.main.startLifetime.constantMax);
-        Destroy(sparkVFX.gameObject, sparkVFX.main.duration + sparkVFX.main.startLifetime.constantMax);
-
-        bool wasDepleted = mineable.Mine(new MiningHit(pickaxeHitbox, hitPoint, hitNormal, damagePerHit));
-        if (!wasDepleted)
-            return;
-
-        ParticleSystem rockBreakVFX = Instantiate(rockBreakParticles, spawnPosition, rotation);
-        rockBreakVFX.Play();
-        Destroy(rockBreakVFX.gameObject, rockBreakVFX.main.duration + rockBreakVFX.main.startLifetime.constantMax);
+        mineable.Mine(new MiningHit(pickaxeHitbox, hitPoint, hitNormal, damagePerHit));
     }
 }
