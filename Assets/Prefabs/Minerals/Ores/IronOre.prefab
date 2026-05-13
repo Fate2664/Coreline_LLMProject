@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 6322623440842491773}
   - component: {fileID: 133731971256737779}
   - component: {fileID: 6125154006605057199}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: IronOre
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -137,6 +137,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 9011781245426759478}
     m_Modifications:
+    - target: {fileID: 72632397051545476, guid: e629a4b851eb021418de224a1bb8032b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2113859066941054101, guid: e629a4b851eb021418de224a1bb8032b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 8585446358253515808, guid: e629a4b851eb021418de224a1bb8032b, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.6
@@ -197,6 +205,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: VFX_Iron
       objectReference: {fileID: 0}
+    - target: {fileID: 8670776144184230458, guid: e629a4b851eb021418de224a1bb8032b, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -218,6 +230,10 @@ PrefabInstance:
     - target: {fileID: 84792197583342292, guid: 962e89c028b67054280e8a3eba79c292, type: 3}
       propertyPath: m_Name
       value: Jem_04
+      objectReference: {fileID: 0}
+    - target: {fileID: 84792197583342292, guid: 962e89c028b67054280e8a3eba79c292, type: 3}
+      propertyPath: m_Layer
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 749548765041283182, guid: 962e89c028b67054280e8a3eba79c292, type: 3}
       propertyPath: m_LocalScale.x

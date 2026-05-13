@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5982454873222833542}
   - component: {fileID: 5296801566578060333}
   - component: {fileID: 7543357833051166087}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: GoldOre
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -153,6 +153,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Jem_12
       objectReference: {fileID: 0}
+    - target: {fileID: 5912529117714214147, guid: c5bdfddb22c2e9f46a56c6f0ef2bfb47, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 6432922870492575673, guid: c5bdfddb22c2e9f46a56c6f0ef2bfb47, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.43936732
@@ -223,6 +227,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7958805314693273468}
     m_Modifications:
+    - target: {fileID: 72632397051545476, guid: 747639d5a2552e840b68ed60f614d709, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2113859066941054101, guid: 747639d5a2552e840b68ed60f614d709, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 8585446358253515808, guid: 747639d5a2552e840b68ed60f614d709, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.6
@@ -282,6 +294,10 @@ PrefabInstance:
     - target: {fileID: 8670776144184230458, guid: 747639d5a2552e840b68ed60f614d709, type: 3}
       propertyPath: m_Name
       value: VFX_Gold
+      objectReference: {fileID: 0}
+    - target: {fileID: 8670776144184230458, guid: 747639d5a2552e840b68ed60f614d709, type: 3}
+      propertyPath: m_Layer
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

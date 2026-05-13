@@ -1,4 +1,6 @@
-﻿using Neocortex;
+using Neocortex;
+using Nova;
+using NovaSamples.UIControls;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -8,9 +10,14 @@ namespace Coreline.Robots
     {
         private const string DefaultChatRootName = "LLMChatRoot";
         private const string PlayerTargetId = "player";
+        private const string RobotTypeTextName = "RobotTypeText";
+        private const string RobotNameTextName = "RobotNameText";
 
         [SerializeField] private NeocortexTextChatInput chatInput;
         [SerializeField] private NeocortexChatPanel chatPanel;
+        [SerializeField] private TextBlock robotTypeText;
+        [SerializeField] private TextBlock robotNameText;
+        [SerializeField] private TextField robotNameField;
         [SerializeField] private OllamaRobotCommandClient commandClient;
         [SerializeField] private bool hideOnStart = true;
         [SerializeField] private bool unlockCursorWhileOpen = true;
@@ -20,8 +27,11 @@ namespace Coreline.Robots
 
         private bool isSubscribed;
         private bool isCommandClientSubscribed;
+        private bool isRobotNameInputSubscribed;
         private bool isOpen;
         private CommandTarget playerTarget;
+        private CommandTarget activeRobotTarget;
+        private string lastAppliedRobotName = string.Empty;
 
         public static bool IsAnyOpen { get; private set; }
         public BaseRobotController ActiveRobot { get; private set; }
@@ -43,12 +53,14 @@ namespace Coreline.Robots
         {
             SubscribeToInput();
             SubscribeToCommandClient();
+            SubscribeToRobotNameInput();
         }
 
         private void OnDisable()
         {
             UnsubscribeFromInput();
             UnsubscribeFromCommandClient();
+            UnsubscribeFromRobotNameInput();
 
             if (isOpen)
             {
@@ -59,13 +71,18 @@ namespace Coreline.Robots
 
         private void LateUpdate()
         {
-            if (!isOpen || !unlockCursorWhileOpen)
+            if (!isOpen)
             {
                 return;
             }
 
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            if (unlockCursorWhileOpen)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+
+            SyncRobotNameFromEditableField();
         }
 
         public void OpenForRobot(BaseRobotController robot)
@@ -89,10 +106,13 @@ namespace Coreline.Robots
             EnsureReferences();
             SubscribeToInput();
             SubscribeToCommandClient();
+            SubscribeToRobotNameInput();
             EnsurePlayerTarget(player);
 
             ActiveRobot = robot;
+            activeRobotTarget = EnsureRobotTarget(robot);
             commandClient.SetTargetRobot(robot);
+            RefreshRobotHeader(robot, activeRobotTarget);
             isOpen = true;
             IsAnyOpen = true;
 
@@ -111,12 +131,22 @@ namespace Coreline.Robots
         public void Close()
         {
             ActiveRobot = null;
+            activeRobotTarget = null;
+            lastAppliedRobotName = string.Empty;
             isOpen = false;
             IsAnyOpen = false;
 
             if (gameObject.activeSelf)
             {
                 gameObject.SetActive(false);
+            }
+        }
+
+        public void SetActiveRobotName(string robotName)
+        {
+            if (ApplyActiveRobotName(robotName))
+            {
+                SetRobotNameField(lastAppliedRobotName);
             }
         }
 
@@ -149,6 +179,19 @@ namespace Coreline.Robots
         {
             chatInput ??= GetComponentInChildren<NeocortexTextChatInput>(true);
             chatPanel ??= GetComponentInChildren<NeocortexChatPanel>(true);
+            robotTypeText ??= FindChildComponentByName<TextBlock>(RobotTypeTextName);
+            robotNameField ??= FindChildComponentByName<TextField>(RobotNameTextName);
+            robotNameText ??= FindChildComponentByName<TextBlock>(RobotNameTextName);
+
+            if (robotNameField == null && robotNameText != null)
+            {
+                robotNameField = robotNameText.GetComponent<TextField>();
+            }
+
+            if (robotNameText == null && robotNameField != null)
+            {
+                robotNameText = robotNameField.TextBlock;
+            }
 
             if (GetComponent<RobotCommandPromptBuilder>() == null)
             {
@@ -187,6 +230,141 @@ namespace Coreline.Robots
                 radius: playerReturnStoppingDistance);
         }
 
+        private CommandTarget EnsureRobotTarget(BaseRobotController robot)
+        {
+            CommandTarget target = robot.GetComponent<CommandTarget>();
+            if (target == null)
+            {
+                target = robot.gameObject.AddComponent<CommandTarget>();
+            }
+
+            if (target.TargetType != CommandTargetType.Robot)
+            {
+                target.Configure(
+                    string.Empty,
+                    CommandTargetType.Robot,
+                    destination: robot.transform);
+            }
+            else
+            {
+                target.Configure(
+                    target.TargetId,
+                    CommandTargetType.Robot,
+                    destination: robot.transform);
+            }
+
+            return target;
+        }
+
+        private void RefreshRobotHeader(BaseRobotController robot, CommandTarget robotTarget)
+        {
+            SetText(robotTypeText, GetRobotTypeLabel(robot));
+
+            lastAppliedRobotName = robotTarget != null ? robotTarget.TargetId : string.Empty;
+            SetRobotNameField(lastAppliedRobotName);
+        }
+
+        private bool ApplyActiveRobotName(string robotName)
+        {
+            if (ActiveRobot == null || activeRobotTarget == null)
+            {
+                return false;
+            }
+
+            string targetId = SanitizeRobotTargetId(robotName);
+            if (string.IsNullOrWhiteSpace(targetId))
+            {
+                SetRobotNameField(lastAppliedRobotName);
+                return false;
+            }
+
+            if (string.Equals(targetId, lastAppliedRobotName, System.StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            CommandTargetRegistry registry = CommandTargetRegistry.Instance;
+            if (registry != null &&
+                registry.TryGetTarget(targetId, out CommandTarget existingTarget) &&
+                existingTarget != activeRobotTarget)
+            {
+                AddRobotMessage("That robot name is already in use.");
+                SetRobotNameField(lastAppliedRobotName);
+                return false;
+            }
+
+            activeRobotTarget.Configure(
+                targetId,
+                CommandTargetType.Robot,
+                destination: ActiveRobot.transform);
+
+            lastAppliedRobotName = activeRobotTarget.TargetId;
+            return true;
+        }
+
+        private void SyncRobotNameFromEditableField()
+        {
+            if (!isOpen || ActiveRobot == null || activeRobotTarget == null)
+            {
+                return;
+            }
+
+            string currentName = GetRobotNameFieldValue();
+            if (string.IsNullOrWhiteSpace(currentName) ||
+                string.Equals(SanitizeRobotTargetId(currentName), lastAppliedRobotName, System.StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            ApplyActiveRobotName(currentName);
+        }
+
+        private void SetRobotNameField(string value)
+        {
+            if (robotNameField != null)
+            {
+                robotNameField.Text = value;
+            }
+
+            if (robotNameText != null && (robotNameField == null || robotNameField.TextBlock != robotNameText))
+            {
+                SetText(robotNameText, value);
+            }
+        }
+
+        private string GetRobotNameFieldValue()
+        {
+            if (robotNameField != null)
+            {
+                return robotNameField.Text;
+            }
+
+            if (robotNameText != null)
+            {
+                return robotNameText.Text;
+            }
+
+            return string.Empty;
+        }
+
+        private static string SanitizeRobotTargetId(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? string.Empty
+                : value.Trim().Replace("\"", string.Empty).Replace("\\", string.Empty);
+        }
+
+        private static string GetRobotTypeLabel(BaseRobotController robot)
+        {
+            return robot switch
+            {
+                MiningRobotController => "Mining Robot:",
+                CollectingRobotController => "Collecting Robot:",
+                ScanningRobotController => "Scanning Robot:",
+                _ => "Robot:"
+            };
+        }
+
         private void SubscribeToInput()
         {
             if (isSubscribed)
@@ -215,6 +393,43 @@ namespace Coreline.Robots
 
             chatInput.OnSendButtonClicked.RemoveListener(SubmitPrompt);
             isSubscribed = false;
+        }
+
+        private void SubscribeToRobotNameInput()
+        {
+            if (isRobotNameInputSubscribed)
+            {
+                return;
+            }
+
+            EnsureReferences();
+
+            if (robotNameField != null)
+            {
+                robotNameField.OnTextChanged += HandleRobotNameTextChanged;
+            }
+
+            isRobotNameInputSubscribed = robotNameField != null;
+        }
+
+        private void UnsubscribeFromRobotNameInput()
+        {
+            if (!isRobotNameInputSubscribed)
+            {
+                return;
+            }
+
+            if (robotNameField != null)
+            {
+                robotNameField.OnTextChanged -= HandleRobotNameTextChanged;
+            }
+
+            isRobotNameInputSubscribed = false;
+        }
+
+        private void HandleRobotNameTextChanged()
+        {
+            SyncRobotNameFromEditableField();
         }
 
         private void SubscribeToCommandClient()
@@ -310,6 +525,28 @@ namespace Coreline.Robots
                    reason.Contains("Unsupported robot action", System.StringComparison.OrdinalIgnoreCase) ||
                    reason.Contains("Unknown command target", System.StringComparison.OrdinalIgnoreCase) ||
                    reason.Contains("cannot execute action", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private T FindChildComponentByName<T>(string objectName) where T : Component
+        {
+            T[] components = GetComponentsInChildren<T>(true);
+            for (int i = 0; i < components.Length; i++)
+            {
+                if (components[i].name == objectName)
+                {
+                    return components[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static void SetText(TextBlock textBlock, string value)
+        {
+            if (textBlock != null)
+            {
+                textBlock.Text = value;
+            }
         }
 
         public static RobotChatUIController FindOrCreateInScene()

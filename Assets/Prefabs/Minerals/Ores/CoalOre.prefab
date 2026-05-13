@@ -13,7 +13,8 @@ GameObject:
   - component: {fileID: 8180658066302331020}
   - component: {fileID: 9034131359400333963}
   - component: {fileID: 1028233697203501653}
-  m_Layer: 0
+  - component: {fileID: 6295820134060675355}
+  m_Layer: 10
   m_Name: CoalOre
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -112,6 +113,27 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.43, y: 0.26, z: 0.43}
   m_Center: {x: 0, y: 0.06, z: 0}
+--- !u!114 &6295820134060675355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6197598707761456954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db8e988b538b8644e97b22f396848acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CommandTarget
+  targetId: coal_ore
+  targetType: 2
+  oreType: 0
+  hasOreType: 1
+  destinationOverride: {fileID: 0}
+  interactionRadius: 1.5
+  inventoryItemData: {fileID: 11400000, guid: af51f0f7cbb7bb74484bcc154ed84959, type: 2}
+  pickupAmount: 1
+  destroyOnPickup: 1
 --- !u!1001 &2079971940548957592
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -184,6 +206,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Jem_31
       objectReference: {fileID: 0}
+    - target: {fileID: 1030036261870892961, guid: aa935c9e95919084eb955ab28b67287c, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 1534479483753092724, guid: aa935c9e95919084eb955ab28b67287c, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
@@ -206,6 +232,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4390860266911850959}
     m_Modifications:
+    - target: {fileID: 72632397051545476, guid: a71cfde04b6dbb1438c83a0cc4e5139c, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 1948165813909948200, guid: a71cfde04b6dbb1438c83a0cc4e5139c, type: 3}
       propertyPath: m_Parameters.colorGradient.key0.b
       value: 0
@@ -241,6 +271,10 @@ PrefabInstance:
     - target: {fileID: 1948165813909948200, guid: a71cfde04b6dbb1438c83a0cc4e5139c, type: 3}
       propertyPath: m_Parameters.colorGradient.key2.r
       value: 0.16078432
+      objectReference: {fileID: 0}
+    - target: {fileID: 2113859066941054101, guid: a71cfde04b6dbb1438c83a0cc4e5139c, type: 3}
+      propertyPath: m_Layer
+      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 8585446358253515808, guid: a71cfde04b6dbb1438c83a0cc4e5139c, type: 3}
       propertyPath: m_LocalScale.x
@@ -301,6 +335,10 @@ PrefabInstance:
     - target: {fileID: 8670776144184230458, guid: a71cfde04b6dbb1438c83a0cc4e5139c, type: 3}
       propertyPath: m_Name
       value: VFX_Coal
+      objectReference: {fileID: 0}
+    - target: {fileID: 8670776144184230458, guid: a71cfde04b6dbb1438c83a0cc4e5139c, type: 3}
+      propertyPath: m_Layer
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

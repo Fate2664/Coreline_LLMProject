@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2175292244235476544}
   - component: {fileID: 6846275178541536695}
   - component: {fileID: 8306206786131056546}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: EmeraldOre
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -145,6 +145,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Jem_03
       objectReference: {fileID: 0}
+    - target: {fileID: 1177827331961424518, guid: c9c039832c2b01e4c9fca9fdc323c948, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 1951091197292236860, guid: c9c039832c2b01e4c9fca9fdc323c948, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.64029694
@@ -223,6 +227,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7977611346319286502}
     m_Modifications:
+    - target: {fileID: 72632397051545476, guid: 7cccaa5a59eb53141abe77721dd1e080, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2113859066941054101, guid: 7cccaa5a59eb53141abe77721dd1e080, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 8585446358253515808, guid: 7cccaa5a59eb53141abe77721dd1e080, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.6
@@ -282,6 +294,10 @@ PrefabInstance:
     - target: {fileID: 8670776144184230458, guid: 7cccaa5a59eb53141abe77721dd1e080, type: 3}
       propertyPath: m_Name
       value: VFX_Emerald
+      objectReference: {fileID: 0}
+    - target: {fileID: 8670776144184230458, guid: 7cccaa5a59eb53141abe77721dd1e080, type: 3}
+      propertyPath: m_Layer
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

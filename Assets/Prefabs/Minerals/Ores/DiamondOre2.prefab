@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: -1906458186893143089}
   - component: {fileID: 8844310415986642937}
   - component: {fileID: 9055813847687031549}
-  m_Layer: 0
+  m_Layer: 10
   m_Name: DiamondOre2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -145,6 +145,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Jem_32
       objectReference: {fileID: 0}
+    - target: {fileID: 1479966983909891114, guid: 1e9e9d5d8a38f1e498011e3221969437, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 2288451543800809104, guid: 1e9e9d5d8a38f1e498011e3221969437, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.4236186
@@ -223,6 +227,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6400247670066630141}
     m_Modifications:
+    - target: {fileID: 72632397051545476, guid: 1de937b3bbde40f4cbee950b0462d7b1, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2113859066941054101, guid: 1de937b3bbde40f4cbee950b0462d7b1, type: 3}
+      propertyPath: m_Layer
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 8585446358253515808, guid: 1de937b3bbde40f4cbee950b0462d7b1, type: 3}
       propertyPath: m_LocalScale.x
       value: 1
@@ -282,6 +294,10 @@ PrefabInstance:
     - target: {fileID: 8670776144184230458, guid: 1de937b3bbde40f4cbee950b0462d7b1, type: 3}
       propertyPath: m_Name
       value: VFX_Diamond
+      objectReference: {fileID: 0}
+    - target: {fileID: 8670776144184230458, guid: 1de937b3bbde40f4cbee950b0462d7b1, type: 3}
+      propertyPath: m_Layer
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
