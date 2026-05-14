@@ -6,9 +6,7 @@ namespace Coreline.Robots
     {
         Idle,
         Walking,
-        Mining,
-        Scanning,
-        Collecting
+        Mining
     }
     
     public abstract class RobotBaseState : IState
