@@ -147,6 +147,15 @@ namespace Coreline
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""AltInteract"",
+                    ""type"": ""Button"",
+                    ""id"": ""e5c75c7a-899f-4940-9c77-4ed1de8c53a2"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -257,6 +266,17 @@ namespace Coreline
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""ToggleInventory"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3626ca96-91b8-4019-b013-6a319cf24738"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""AltInteract"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -467,6 +487,7 @@ namespace Coreline
             m_Player_Look = m_Player.FindAction("Look", throwIfNotFound: true);
             m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
             m_Player_ToggleInventory = m_Player.FindAction("ToggleInventory", throwIfNotFound: true);
+            m_Player_AltInteract = m_Player.FindAction("AltInteract", throwIfNotFound: true);
             // UI
             m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
             m_UI_Exit = m_UI.FindAction("Exit", throwIfNotFound: true);
@@ -562,6 +583,7 @@ namespace Coreline
         private readonly InputAction m_Player_Look;
         private readonly InputAction m_Player_Jump;
         private readonly InputAction m_Player_ToggleInventory;
+        private readonly InputAction m_Player_AltInteract;
         /// <summary>
         /// Provides access to input actions defined in input action map "Player".
         /// </summary>
@@ -597,6 +619,10 @@ namespace Coreline
             /// Provides access to the underlying input action "Player/ToggleInventory".
             /// </summary>
             public InputAction @ToggleInventory => m_Wrapper.m_Player_ToggleInventory;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/AltInteract".
+            /// </summary>
+            public InputAction @AltInteract => m_Wrapper.m_Player_AltInteract;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -641,6 +667,9 @@ namespace Coreline
                 @ToggleInventory.started += instance.OnToggleInventory;
                 @ToggleInventory.performed += instance.OnToggleInventory;
                 @ToggleInventory.canceled += instance.OnToggleInventory;
+                @AltInteract.started += instance.OnAltInteract;
+                @AltInteract.performed += instance.OnAltInteract;
+                @AltInteract.canceled += instance.OnAltInteract;
             }
 
             /// <summary>
@@ -670,6 +699,9 @@ namespace Coreline
                 @ToggleInventory.started -= instance.OnToggleInventory;
                 @ToggleInventory.performed -= instance.OnToggleInventory;
                 @ToggleInventory.canceled -= instance.OnToggleInventory;
+                @AltInteract.started -= instance.OnAltInteract;
+                @AltInteract.performed -= instance.OnAltInteract;
+                @AltInteract.canceled -= instance.OnAltInteract;
             }
 
             /// <summary>
@@ -903,6 +935,13 @@ namespace Coreline
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnToggleInventory(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "AltInteract" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnAltInteract(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

@@ -40,7 +40,7 @@ public class UIManager : MonoBehaviour, ITimeTracker
 
     private void Start()
     {
-        Items = ItemDatabase.GetEmptyItems(Count);
+        EnsureInventoryItems();
         InitGrid(Grid, Items);
         RegisterStandaloneGestureHandlers();
         RefreshEquippedItem();
@@ -49,25 +49,50 @@ public class UIManager : MonoBehaviour, ITimeTracker
 
     public void AddItemToInventory(InventoryItemData item, int count = 1)
     {
-        //look for existing item in inventory
-        var existing = Items.Find(x => !x.isEmpty && x.item == item);
-        //If there is existing item there -> increment count
-        if (existing != null && existing.count + count != InventoryItem.maxCount)
+        TryAddItemToInventory(item, count);
+    }
+
+    public bool TryAddItemToInventory(InventoryItemData item, int count = 1)
+    {
+        if (!CanAcceptItem(item, count))
         {
-            existing.IncreaseCount(count);
+            return false;
         }
-        //Else add the item in a new item slot
-        else
+
+        int remaining = count;
+
+        foreach (InventoryItem existing in Items)
+        {
+            if (remaining <= 0)
+            {
+                break;
+            }
+
+            if (existing.isEmpty || existing.item != item || existing.count >= InventoryItem.maxCount)
+            {
+                continue;
+            }
+
+            int added = Mathf.Min(InventoryItem.maxCount - existing.count, remaining);
+            existing.IncreaseCount(added);
+            remaining -= added;
+        }
+
+        while (remaining > 0)
         {
             int emptyIndex = Items.FindIndex(x => x.isEmpty);
-            if (emptyIndex != -1)
+            if (emptyIndex < 0)
             {
-                Items[emptyIndex] = new InventoryItem
-                {
-                    item = item,
-                    count = count
-                };
-            } 
+                break;
+            }
+
+            int added = Mathf.Min(InventoryItem.maxCount, remaining);
+            Items[emptyIndex] = new InventoryItem
+            {
+                item = item,
+                count = added
+            };
+            remaining -= added;
         }
 
         inventoryNeedsRefresh = true;
@@ -77,12 +102,156 @@ public class UIManager : MonoBehaviour, ITimeTracker
         {
             RefreshEquippedItem();
         }
+
+        return remaining <= 0;
+    }
+
+    public bool CanAcceptItem(InventoryItemData item, int count = 1)
+    {
+        if (item == null || count <= 0)
+        {
+            return false;
+        }
+
+        EnsureInventoryItems();
+
+        int availableSpace = 0;
+        foreach (InventoryItem inventoryItem in Items)
+        {
+            if (inventoryItem.isEmpty)
+            {
+                availableSpace += InventoryItem.maxCount;
+            }
+            else if (inventoryItem.item == item)
+            {
+                availableSpace += Mathf.Max(0, InventoryItem.maxCount - inventoryItem.count);
+            }
+        }
+
+        return availableSpace >= count;
+    }
+
+    public int GetItemCount(InventoryItemData item)
+    {
+        if (item == null)
+        {
+            return 0;
+        }
+
+        EnsureInventoryItems();
+
+        int total = 0;
+        foreach (InventoryItem inventoryItem in Items)
+        {
+            if (inventoryItem != null && !inventoryItem.isEmpty && inventoryItem.item == item)
+            {
+                total += inventoryItem.count;
+            }
+        }
+
+        return total;
+    }
+
+    public int GetOreCount(OreType oreType)
+    {
+        EnsureInventoryItems();
+
+        int total = 0;
+        foreach (InventoryItem inventoryItem in Items)
+        {
+            if (inventoryItem == null || inventoryItem.isEmpty)
+            {
+                continue;
+            }
+
+            OreItemSO oreItem = inventoryItem.item as OreItemSO;
+            if (oreItem != null && oreItem.oreType == oreType)
+            {
+                total += inventoryItem.count;
+            }
+        }
+
+        return total;
+    }
+
+    public bool HasOre(OreType oreType, int count)
+    {
+        return count > 0 && GetOreCount(oreType) >= count;
+    }
+
+    public bool TryRemoveOre(OreType oreType, int count)
+    {
+        if (count <= 0 || GetOreCount(oreType) < count)
+        {
+            return false;
+        }
+
+        EnsureInventoryItems();
+
+        int remaining = count;
+        for (int i = 0; i < Items.Count && remaining > 0; i++)
+        {
+            InventoryItem inventoryItem = Items[i];
+            if (inventoryItem == null || inventoryItem.isEmpty)
+            {
+                continue;
+            }
+
+            OreItemSO oreItem = inventoryItem.item as OreItemSO;
+            if (oreItem == null || oreItem.oreType != oreType)
+            {
+                continue;
+            }
+
+            int removed = Mathf.Min(inventoryItem.count, remaining);
+            inventoryItem.DecreaseCount(removed);
+            remaining -= removed;
+
+            if (inventoryItem.count <= 0)
+            {
+                if (equippedItem == inventoryItem)
+                {
+                    equippedItem = null;
+                }
+
+                Items[i] = new InventoryItem();
+            }
+        }
+
+        inventoryNeedsRefresh = true;
+        RefreshInventory();
+        RefreshEquippedItem();
+        return remaining <= 0;
+    }
+
+    private void EnsureInventoryItems()
+    {
+        if (Items != null)
+        {
+            return;
+        }
+
+        if (ItemDatabase != null)
+        {
+            Items = ItemDatabase.GetEmptyItems(Count);
+            return;
+        }
+
+        Items = new List<InventoryItem>(Count);
+        for (int i = 0; i < Count; i++)
+        {
+            Items.Add(new InventoryItem());
+        }
     }
 
     #region Register Methods
 
     private void InitGrid(GridView grid, List<InventoryItem> datasource)
     {
+        if (grid == null)
+        {
+            return;
+        }
 
         grid.AddDataBinder<InventoryItem, InventoryItemVisuals>(BindItem);
 
@@ -137,7 +306,7 @@ public class UIManager : MonoBehaviour, ITimeTracker
 
     public void RefreshInventory()
     {
-        if (!Grid.gameObject.activeInHierarchy)
+        if (Grid == null || !Grid.gameObject.activeInHierarchy)
         {
             return;
         }

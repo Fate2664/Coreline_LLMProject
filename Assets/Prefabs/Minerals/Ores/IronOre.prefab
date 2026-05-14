@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6322623440842491773}
   - component: {fileID: 133731971256737779}
   - component: {fileID: 6125154006605057199}
+  - component: {fileID: -5821599186415408239}
   m_Layer: 10
   m_Name: IronOre
   m_TagString: Untagged
@@ -129,6 +130,27 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.43, y: 0.26, z: 0.43}
   m_Center: {x: 0, y: 0.03, z: 0}
+--- !u!114 &-5821599186415408239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8074086322867707095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db8e988b538b8644e97b22f396848acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CommandTarget
+  targetId: iron_ore
+  targetType: 2
+  oreType: 1
+  hasOreType: 1
+  destinationOverride: {fileID: 0}
+  interactionRadius: 1.5
+  inventoryItemData: {fileID: 11400000, guid: 374f20701770bac4aa5c50bb8f1ac181, type: 2}
+  pickupAmount: 1
+  destroyOnPickup: 1
 --- !u!1001 &1827172851491187088
 PrefabInstance:
   m_ObjectHideFlags: 0

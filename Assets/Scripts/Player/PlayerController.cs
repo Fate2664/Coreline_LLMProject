@@ -37,8 +37,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private UIManager uiManager;
     [SerializeField] private BuildPlacer buildPlacer;
 
-    [HideInInspector] public bool IsInventoryOpen => InventoryRoot.gameObject.activeSelf;
-    private bool IsUiInputBlocked => IsInventoryOpen || RobotChatUIController.IsAnyOpen;
+    [HideInInspector] public bool IsInventoryOpen => InventoryRoot != null && InventoryRoot.gameObject.activeSelf;
+    public UIBlock2D InventoryRootBlock => InventoryRoot;
+    public UIManager InventoryUIManager => uiManager;
+    private bool IsUiInputBlocked => IsInventoryOpen ||
+                                     RobotChatUIController.IsAnyOpen ||
+                                     CollectingRobotInventoryUIController.IsAnyOpen ||
+                                     RobotWorkbenchUIController.IsAnyOpen;
 
     #endregion
 
@@ -124,8 +129,12 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (toggleInventoryPressed)
+        if (toggleInventoryPressed &&
+            !CollectingRobotInventoryUIController.IsAnyOpen &&
+            !RobotWorkbenchUIController.IsAnyOpen)
+        {
             ToggleInventory();
+        }
         
         if (IsUiInputBlocked)
         {
@@ -196,20 +205,49 @@ public class PlayerController : MonoBehaviour
             return;
         toggleInventoryTimer.Start();
 
-        if (InventoryRoot.gameObject.activeSelf)
-        {
-            InventoryRoot.gameObject.SetActive(false);
-        }
-        else
-        {
-            InventoryRoot.gameObject.SetActive(true);
-            uiManager?.RefreshInventory();
+        SetInventoryVisible(!IsInventoryOpen);
+    }
 
-            if (buildPlacer.enabled)
+    public void OpenInventory()
+    {
+        SetInventoryVisible(true);
+    }
+
+    public void CloseInventory()
+    {
+        SetInventoryVisible(false);
+    }
+
+    private void SetInventoryVisible(bool visible)
+    {
+        if (InventoryRoot == null)
+        {
+            return;
+        }
+
+        if (InventoryRoot.gameObject.activeSelf == visible)
+        {
+            if (visible)
             {
-                buildPlacer.enabled = false;
-                uiManager?.UnEquipItem();
+                uiManager?.RefreshInventory();
             }
+
+            return;
+        }
+
+        InventoryRoot.gameObject.SetActive(visible);
+
+        if (!visible)
+        {
+            return;
+        }
+
+        uiManager?.RefreshInventory();
+
+        if (buildPlacer != null && buildPlacer.enabled)
+        {
+            buildPlacer.enabled = false;
+            uiManager?.UnEquipItem();
         }
     }
 

@@ -25,10 +25,12 @@ namespace Coreline.Robots
 
     public class CollectingRobotInventory : MonoBehaviour
     {
-        [SerializeField] private int maxItemStacks = 12;
+        [SerializeField] private int maxItemStacks = 24;
         [SerializeField] private int maxAmountPerStack = 99;
         [SerializeField] private List<RobotInventoryItemStack> itemStacks = new();
         [SerializeField] private List<RobotResourceStack> resourceStacks = new();
+
+        public event Action InventoryChanged;
 
         public IReadOnlyList<RobotInventoryItemStack> ItemStacks => itemStacks;
         public IReadOnlyList<RobotResourceStack> ResourceStacks => resourceStacks;
@@ -44,11 +46,13 @@ namespace Coreline.Robots
             RobotInventoryItemStack existing = itemStacks.Find(stack => stack.item == item);
             if (existing != null)
             {
+                int previousAmount = existing.amount;
                 existing.amount = Mathf.Min(existing.amount + amount, maxAmountPerStack);
+                NotifyChangedIfAmountChanged(previousAmount, existing.amount);
                 return true;
             }
 
-            if (itemStacks.Count >= maxItemStacks)
+            if (!HasFreeStackSlot)
             {
                 return false;
             }
@@ -59,6 +63,7 @@ namespace Coreline.Robots
                 amount = Mathf.Min(amount, maxAmountPerStack)
             });
 
+            InventoryChanged?.Invoke();
             return true;
         }
 
@@ -72,11 +77,13 @@ namespace Coreline.Robots
             RobotResourceStack existing = resourceStacks.Find(stack => stack.oreType == oreType);
             if (existing != null)
             {
+                int previousAmount = existing.amount;
                 existing.amount = Mathf.Min(existing.amount + amount, maxAmountPerStack);
+                NotifyChangedIfAmountChanged(previousAmount, existing.amount);
                 return true;
             }
 
-            if (resourceStacks.Count >= maxItemStacks)
+            if (!HasFreeStackSlot)
             {
                 return false;
             }
@@ -87,6 +94,7 @@ namespace Coreline.Robots
                 amount = Mathf.Min(amount, maxAmountPerStack)
             });
 
+            InventoryChanged?.Invoke();
             return true;
         }
 
@@ -154,18 +162,79 @@ namespace Coreline.Robots
                 }
             }
 
+            InventoryChanged?.Invoke();
+            return true;
+        }
+
+        public bool TryRemoveItem(InventoryItemData item, int amount)
+        {
+            if (item == null || amount <= 0)
+            {
+                return false;
+            }
+
+            int availableAmount = 0;
+            foreach (RobotInventoryItemStack itemStack in itemStacks)
+            {
+                if (itemStack.item == item)
+                {
+                    availableAmount += itemStack.amount;
+                }
+            }
+
+            if (availableAmount < amount)
+            {
+                return false;
+            }
+
+            for (int i = itemStacks.Count - 1; i >= 0 && amount > 0; i--)
+            {
+                RobotInventoryItemStack itemStack = itemStacks[i];
+                if (itemStack.item != item)
+                {
+                    continue;
+                }
+
+                int removed = Mathf.Min(itemStack.amount, amount);
+                itemStack.amount -= removed;
+                amount -= removed;
+
+                if (itemStack.amount <= 0)
+                {
+                    itemStacks.RemoveAt(i);
+                }
+            }
+
+            InventoryChanged?.Invoke();
             return true;
         }
 
         public void ClearAll()
         {
+            bool hadItems = HasAnyItems;
             itemStacks.Clear();
             resourceStacks.Clear();
+
+            if (hadItems)
+            {
+                InventoryChanged?.Invoke();
+            }
         }
 
         public bool TryTransferTo(IRobotInventoryReceiver receiver)
         {
             return receiver != null && receiver.TryReceiveFromRobot(this);
+        }
+
+        private int UsedStackCount => itemStacks.Count + resourceStacks.Count;
+        private bool HasFreeStackSlot => UsedStackCount < Mathf.Max(1, maxItemStacks);
+
+        private void NotifyChangedIfAmountChanged(int previousAmount, int currentAmount)
+        {
+            if (previousAmount != currentAmount)
+            {
+                InventoryChanged?.Invoke();
+            }
         }
     }
 }

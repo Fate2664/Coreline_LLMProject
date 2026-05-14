@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: -1906458186893143089}
   - component: {fileID: 8844310415986642937}
   - component: {fileID: 9055813847687031549}
+  - component: {fileID: -7194147905948970839}
   m_Layer: 10
   m_Name: DiamondOre2
   m_TagString: Untagged
@@ -129,6 +130,27 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.43, y: 0.11, z: 0.43}
   m_Center: {x: 0, y: 0.03, z: 0}
+--- !u!114 &-7194147905948970839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2890990452878714526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db8e988b538b8644e97b22f396848acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CommandTarget
+  targetId: diamond_ore
+  targetType: 2
+  oreType: 3
+  hasOreType: 1
+  destinationOverride: {fileID: 0}
+  interactionRadius: 1.5
+  inventoryItemData: {fileID: 11400000, guid: cf23b6ce0c63f85418a5bc296dc4e060, type: 2}
+  pickupAmount: 1
+  destroyOnPickup: 1
 --- !u!1001 &415242715192500685
 PrefabInstance:
   m_ObjectHideFlags: 0

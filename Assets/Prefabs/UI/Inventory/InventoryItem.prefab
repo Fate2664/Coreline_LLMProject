@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1505950083708227376}
   - component: {fileID: 6201741124154434771}
   - component: {fileID: 4946447795557491960}
+  - component: {fileID: 7559016912971073893}
   m_Layer: 5
   m_Name: InventoryItem
   m_TagString: Untagged
@@ -227,9 +228,9 @@ MonoBehaviour:
     ReceiveShadows: 1
   PreviewSize: {x: 142.31, y: 142.31, z: 0}
   visuals:
-    Color: {r: 0.8862745, g: 0.65882355, b: 0.48235294, a: 1}
+    Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
     CornerRadius:
-      Raw: 1.02
+      Raw: 0.34
       Type: 0
     RadialFill:
       Center:
@@ -261,14 +262,14 @@ MonoBehaviour:
       Rotation: 0.002319336
       Enabled: 0
     Border:
-      Color: {r: 0.14150941, g: 0.09320541, b: 0.055402268, a: 1}
+      Color: {r: 0.1, g: 0.1, b: 0.1, a: 1}
       Width:
-        Raw: 4.3
+        Raw: 2.77
         Type: 0
-      Enabled: 1
+      Enabled: 0
       Direction: 0
     Shadow:
-      Color: {r: 0.3773585, g: 0.28749695, b: 0.18333928, a: 1}
+      Color: {r: 0.101960786, g: 0.101960786, b: 0.101960786, a: 1}
       Width:
         Raw: 2.87
         Type: 0
@@ -283,7 +284,7 @@ MonoBehaviour:
           Raw: 0
           Type: 0
       Enabled: 1
-      Direction: 1
+      Direction: 0
     Image:
       Adjustment:
         CenterUV: {x: 0, y: 0}
@@ -322,9 +323,9 @@ MonoBehaviour:
         ToolTipRoot: {fileID: 8312627450790845144}
         ToolTipText: {fileID: 7265361516701213323}
         ToolTipDelay: 0.5
-        DefaultColor: {r: 0.8862745, g: 0.65882355, b: 0.48235294, a: 1}
-        HoverColor: {r: 0.6132076, g: 0.43892816, b: 0.3037113, a: 1}
-        PressedColor: {r: 0.7264151, g: 0.5469737, b: 0.40775186, a: 1}
+        DefaultColor: {r: 0.5019608, g: 0.5019608, b: 0.5019608, a: 1}
+        HoverColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+        PressedColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
 --- !u!114 &4946447795557491960
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -374,6 +375,22 @@ MonoBehaviour:
     Y: 0
     Z: 0
   GestureSpace: 0
+--- !u!114 &7559016912971073893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2603194366852984387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b2a531bfddefda4e85a827979d250a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Nova::Nova.SortGroup
+  info:
+    SortingOrder: 10
+    RenderQueue: 3000
+    RenderOverOpaqueGeometry: 0
 --- !u!1 &4017176061247584428
 GameObject:
   m_ObjectHideFlags: 0
@@ -1265,7 +1282,7 @@ MonoBehaviour:
     ReceiveShadows: 1
   PreviewSize: {x: 1, y: 1, z: 0}
   visuals:
-    Color: {r: 0.8862745, g: 0.65882355, b: 0.48235294, a: 1}
+    Color: {r: 0.6, g: 0.6, b: 0.6, a: 1}
     CornerRadius:
       Raw: 1
       Type: 0
@@ -1303,12 +1320,12 @@ MonoBehaviour:
       Width:
         Raw: 1.8
         Type: 0
-      Enabled: 1
+      Enabled: 0
       Direction: 0
     Shadow:
-      Color: {r: 0.2264151, g: 0.16876513, b: 0.10359559, a: 1}
+      Color: {r: 0.1, g: 0.1, b: 0.1, a: 1}
       Width:
-        Raw: 1.89
+        Raw: 2.91
         Type: 0
       Blur:
         Raw: 1.89
@@ -1318,7 +1335,7 @@ MonoBehaviour:
           Raw: 0
           Type: 0
         Y:
-          Raw: -1
+          Raw: 0
           Type: 0
       Enabled: 1
       Direction: 0
@@ -1945,7 +1962,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Nova::Nova.SortGroup
   info:
     SortingOrder: 1
-    RenderQueue: 4000
+    RenderQueue: 3000
     RenderOverOpaqueGeometry: 0
 --- !u!1 &8332457870995884078
 GameObject:

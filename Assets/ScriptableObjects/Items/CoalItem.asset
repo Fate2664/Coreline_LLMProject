@@ -1,19 +1,3 @@
-%YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4065dbd79bf028d4dacd7254166336f3, type: 3}
-  m_Name: CoalItem
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.OreItemSO
-  itemDesc:
-    Name: Coal
-    ToolTip: This is a coal ore
-    Icon: {fileID: 21300000, guid: 96d5c90ab2bd7ec45a9968a067d90e9c, type: 3}
-  oreType: 0
+version https://git-lfs.github.com/spec/v1
+oid sha256:8b3e4bae05ab635c80055fe28e5be8e0b43ae8d23369900f04ce53c9536e08f3
+size 585

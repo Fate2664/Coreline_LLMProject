@@ -3,18 +3,19 @@ using UnityEngine;
 
 namespace Coreline
 {
-    public class RobotInteraction : MonoBehaviour, IInteractable
+    public class RobotInteraction : MonoBehaviour, IInteractable, IAltInteractable
     {
         [SerializeField] private PlayerInteractionDetector playerInteractionDetector;
         [SerializeField] private RobotChatUIController chatUI;
+        [SerializeField] private CollectingRobotInventoryUIController collectingRobotInventoryUI;
         [SerializeField] private BaseRobotController robotController;
         [SerializeField] private bool closeChatWhenPlayerLeaves = true;
-
-        private IndicatorManager indicatorManager;
+        [SerializeField] private bool closeInventoryWhenPlayerLeaves = true;
+        [SerializeField] IndicatorManager indicatorManager;
+        [SerializeField] IndicatorManager altIndicatorManager;
         
         private void Awake()
         {
-            indicatorManager = GetComponentInChildren<IndicatorManager>();
             robotController ??= GetComponentInParent<BaseRobotController>();
             robotController ??= GetComponentInChildren<BaseRobotController>();
         }
@@ -23,6 +24,7 @@ namespace Coreline
         {
             playerInteractionDetector ??= FindFirstObjectByType<PlayerInteractionDetector>();
             chatUI ??= RobotChatUIController.FindOrCreateInScene();
+            collectingRobotInventoryUI ??= CollectingRobotInventoryUIController.FindOrCreateInScene();
         }
 
         private void FixedUpdate()
@@ -33,10 +35,18 @@ namespace Coreline
             if (isCurrentTarget)
             {
                 indicatorManager.ShowIndictor();
+                if (altIndicatorManager != null)
+                {
+                    altIndicatorManager.ShowIndictor();
+                }
             }
             else
             {
                 indicatorManager.HideIndictor();
+                if (altIndicatorManager != null)
+                {
+                    altIndicatorManager.HideIndictor();
+                }
             }
 
             if (closeChatWhenPlayerLeaves &&
@@ -45,6 +55,14 @@ namespace Coreline
                 ReferenceEquals(chatUI.ActiveRobot, robotController))
             {
                 chatUI.Close();
+            }
+
+            if (closeInventoryWhenPlayerLeaves &&
+                !isCurrentTarget &&
+                collectingRobotInventoryUI != null &&
+                ReferenceEquals(collectingRobotInventoryUI.ActiveRobot, robotController))
+            {
+                collectingRobotInventoryUI.Close();
             }
         }
 
@@ -63,7 +81,26 @@ namespace Coreline
                 return;
             }
 
+            collectingRobotInventoryUI?.Close();
             chatUI.OpenForRobot(robotController, player);
+        }
+
+        public void AltInteract(PlayerController player)
+        {
+            if (robotController is not CollectingRobotController collectingRobot)
+            {
+                return;
+            }
+
+            collectingRobotInventoryUI ??= CollectingRobotInventoryUIController.FindOrCreateInScene();
+            if (collectingRobotInventoryUI == null)
+            {
+                Debug.LogWarning("Cannot open collection robot inventory because CollectionRobotInventoryRoot was not found.", this);
+                return;
+            }
+
+            chatUI?.Close();
+            collectingRobotInventoryUI.ToggleForRobot(collectingRobot, player);
         }
     }
 }

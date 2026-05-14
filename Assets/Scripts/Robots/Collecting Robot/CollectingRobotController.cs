@@ -28,7 +28,10 @@ namespace Coreline.Robots
             inventory = EnsureComponent(inventory);
             animator = GetComponentInChildren<Animator>();
 
-            visionTrigger.isTrigger = true;
+            if (visionTrigger != null)
+            {
+                visionTrigger.isTrigger = true;
+            }
             
             stateMachine = new StateMachine();
 

@@ -428,3 +428,117 @@ Result:
 - With dropdown set to `None`, prompts like `Collect all ores that you can see` should collect pickup items inside the collection robot's sphere trigger vision.
 - With a mining robot selected, prompts like `Follow this robot and pickup all ores nearby` should target that mining robot, follow it, and collect visible ores along the route.
 - Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Added Collection Robot Inventory UI
+
+Implemented alt-interaction support for opening the collection robot inventory panel.
+
+Changed:
+
+- Added `IAltInteractable` so interactable objects can respond to the alternate interaction key separately from normal interaction.
+- Updated `PlayerInteractionDetector` to detect alt-interact press edges and call `IAltInteractable.AltInteract`.
+- Updated `RobotInteraction` so alt-interacting with a collecting robot opens `CollectionRobotInventoryRoot`, while normal interaction still opens the robot chat.
+- Added `CollectingRobotInventoryUIController` to bind a collecting robot's inventory into the Nova inventory grid.
+- The collection inventory UI auto-finds `CollectionRobotInventoryRoot`, its `Grid`, `CloseButton`, and `RobotNameText` by scene/prefab object names.
+- Added `InventoryChanged` events to `CollectingRobotInventory` so the UI refreshes when the robot collects, removes, or clears items.
+- Updated `PlayerController` so movement/look input is blocked while the collection robot inventory UI is open.
+- Added a null guard around the collecting robot vision trigger setup.
+
+Result:
+
+- Pressing the alt interaction key near a collecting robot toggles the collection robot inventory UI.
+- The UI displays item stacks collected through pickup item data.
+- Resource-only stacks can also display if matching `OreItemSO` definitions are assigned on the inventory UI controller.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Added Collection-To-Player Inventory Transfer
+
+Updated the collection robot inventory UI so it can be used beside the player inventory.
+
+Changed:
+
+- Opening `CollectionRobotInventoryRoot` now also opens the player's inventory UI.
+- Added a serialized `playerInventoryCloseButton` field on `CollectingRobotInventoryUIController`; when assigned, it is hidden while the robot inventory is open and restored afterward.
+- Added drag/release handling to collection robot inventory slots.
+- Dropping a dragged robot inventory stack over the player inventory grid transfers that stack to the player inventory.
+- Added capacity checks to `UIManager` so robot stacks are only removed if the player inventory has room.
+- Added item-stack removal support to `CollectingRobotInventory`.
+- Added explicit `OpenInventory` and `CloseInventory` methods to `PlayerController`.
+- Blocked the normal inventory toggle key while the collection robot transfer UI is open.
+
+Result:
+
+- The player inventory appears alongside the collection robot inventory.
+- The player inventory close button can be disabled while transfer mode is active.
+- Dragging a stack from the collection robot inventory onto the player inventory moves that stack from the robot to the player.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Fixed Collection Inventory Transfer Detection
+
+Fixed the first pass of collection-to-player transfer not triggering.
+
+Changed:
+
+- Removed the requirement for Nova `Gesture.OnDrag` to fire before an item can transfer.
+- The inventory prefabs have draggable axes disabled, so `OnDrag` may not be emitted for grid slots.
+- Transfer now requires only that the press started on a valid collection robot inventory slot and the release happened over the player inventory grid.
+- Consumed the robot slot press/release events when they are used for transfer.
+
+Result:
+
+- Dragging or press-moving a collection robot inventory stack onto the player inventory should now transfer the stack.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Added Collection Inventory Drag Preview
+
+Added a visual preview while dragging items from the collection robot inventory.
+
+Changed:
+
+- `CollectingRobotInventoryUIController` now creates a small Nova `UIBlock2D` preview when the player presses a valid robot inventory item.
+- The preview uses the dragged item's `InventoryItemData.itemDesc.Icon`.
+- The preview follows the mouse until release or cancel.
+- Added a high render-order `SortGroup` so the preview renders above the inventory panels.
+- Added optional serialized settings for preview camera, icon size, offset, and z-index.
+
+Result:
+
+- Dragging an item from the collection robot inventory now shows the item icon under the mouse until the player releases it.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Fixed Collection Robot Inventory Capacity
+
+Fixed the collection robot only accepting one pickup item type.
+
+Changed:
+
+- Updated `CollectingRobotInventory` default stack capacity from 12 to 24.
+- Changed inventory capacity checks to use one shared total stack count across item stacks and resource stacks.
+- Updated `TestScene` collection robot inventory from `maxItemStacks: 1` to `maxItemStacks: 24`.
+
+Reason:
+
+- The scene instance had `maxItemStacks` serialized as `1`, so the first unique pickup item consumed the only available stack slot and later item types were rejected.
+
+Result:
+
+- The collection robot can now pick up multiple different item/resource types into separate inventory stacks.
+- Build verification passed with `dotnet build .\Assembly-CSharp.csproj -v:minimal`; remaining warnings are unrelated existing project warnings.
+
+### Added Robot Workbench Crafting Architecture
+
+Added the first pass of robot crafting support for the new workbench UI.
+
+Changed:
+
+- Added `RobotCraftingRecipe` assets for configuring craftable robot type, display text, icon, prefab, and ore requirements.
+- Added `RobotWorkbenchUIController` to bind `WorkbenchRoot` option slots, requirement slots, info text, craft button, and close button.
+- Added `RobotWorkbenchInteraction` so a world workbench can open/toggle the workbench UI through the existing interaction detector.
+- Added ore counting and ore spending helpers to `UIManager`.
+- Updated player input blocking so movement, camera look, inventory toggling, and alternate interaction respect the workbench UI.
+- Added the new crafting scripts to `Assembly-CSharp.csproj` so command-line build verification includes them.
+
+Result:
+
+- The workbench can select a robot recipe, show the owned/required ore costs, spend the required ores, and instantiate the configured robot prefab near a spawn point or the player.
+- Build verification passed with `dotnet build .\Coreline_LLMProject.sln --no-restore`; remaining warnings are unrelated existing project warnings.

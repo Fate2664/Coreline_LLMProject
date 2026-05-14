@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 5982454873222833542}
   - component: {fileID: 5296801566578060333}
   - component: {fileID: 7543357833051166087}
+  - component: {fileID: -131453153757413795}
   m_Layer: 10
   m_Name: GoldOre
   m_TagString: Untagged
@@ -129,6 +130,27 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.43, y: 0.11, z: 0.43}
   m_Center: {x: 0, y: 0.03, z: 0}
+--- !u!114 &-131453153757413795
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1115064809116736739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db8e988b538b8644e97b22f396848acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CommandTarget
+  targetId: gold_ore
+  targetType: 2
+  oreType: 2
+  hasOreType: 1
+  destinationOverride: {fileID: 0}
+  interactionRadius: 1.5
+  inventoryItemData: {fileID: 11400000, guid: 257f579fa25662c40aebec4bd3cc89b5, type: 2}
+  pickupAmount: 1
+  destroyOnPickup: 1
 --- !u!1001 &4130736403092077063
 PrefabInstance:
   m_ObjectHideFlags: 0

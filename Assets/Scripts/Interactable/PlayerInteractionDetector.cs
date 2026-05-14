@@ -1,3 +1,4 @@
+using Coreline.Robots;
 using UnityEngine;
 
 public class PlayerInteractionDetector : MonoBehaviour
@@ -7,6 +8,7 @@ public class PlayerInteractionDetector : MonoBehaviour
     private IInteractable currentTarget;
     private Collider currentIteractableObject;
     private bool wasInteractPressed;
+    private bool wasAltInteractPressed;
 
     public IInteractable CurrentTarget => currentTarget;
     public Collider CurrentIteractableObject => currentIteractableObject;
@@ -25,13 +27,24 @@ public class PlayerInteractionDetector : MonoBehaviour
         }
 
         bool isInteractPressed = input.IsInteractPressed;
+        bool isAltInteractPressed = input.IsAltInteractPressed;
 
         if (isInteractPressed && !wasInteractPressed && currentTarget != null)
         {
             currentTarget.Interact(player);
         }
 
+        if (!RobotChatUIController.IsAnyOpen &&
+            !RobotWorkbenchUIController.IsAnyOpen &&
+            isAltInteractPressed &&
+            !wasAltInteractPressed &&
+            currentTarget is IAltInteractable altInteractable)
+        {
+            altInteractable.AltInteract(player);
+        }
+
         wasInteractPressed = isInteractPressed;
+        wasAltInteractPressed = isAltInteractPressed;
     }
 
     private void OnTriggerEnter(Collider other)

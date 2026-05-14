@@ -13,6 +13,7 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public event UnityAction<Vector2> Look =  delegate { };
     public event UnityAction<bool> PrimaryAttack  =  delegate { };
     public event UnityAction<bool> Interact  =  delegate { };
+    public event UnityAction<bool> AltInteract =  delegate { };
     public event UnityAction<bool> Jump = delegate { }; 
     public event UnityAction<bool> ToggleInventory = delegate { };
     
@@ -31,6 +32,7 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public Vector2 Direction => inputActions.Player.Move.ReadValue<Vector2>();
     public bool IsPrimaryAttackPressed => inputActions.Player.PrimaryAttack.IsPressed();
     public bool IsInteractPressed => inputActions.Player.Interact.IsPressed();
+    public bool IsAltInteractPressed => inputActions.Player.AltInteract.IsPressed();
     
     
     
@@ -77,6 +79,11 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public void OnToggleInventory(InputAction.CallbackContext context)
     {
         ToggleInventory.Invoke(context.ReadValueAsButton());
+    }
+
+    public void OnAltInteract(InputAction.CallbackContext context)
+    {
+        AltInteract.Invoke(context.ReadValueAsButton());
     }
 
     #endregion
