@@ -37,7 +37,7 @@ public class PlayerInteractionDetector : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         IInteractable interactable = other.GetComponentInParent<IInteractable>();
-        if (interactable != null)
+        if (interactable != null && other.CompareTag("Interaction Trigger"))
         {
             currentTarget = interactable;
             currentIteractableObject = other;
@@ -47,7 +47,7 @@ public class PlayerInteractionDetector : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         IInteractable interactable = other.GetComponentInParent<IInteractable>();
-        if (interactable != null && interactable == currentTarget)
+        if (interactable != null && interactable == currentTarget && other.CompareTag("Interaction Trigger"))
         {
             currentTarget = null;
             currentIteractableObject = null;

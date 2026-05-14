@@ -14,6 +14,8 @@ namespace Coreline.Robots
         [SerializeField] private bool refreshVisionWithOverlap = true;
 
         private readonly HashSet<CommandTarget> visiblePickupTargets = new();
+        private Animator animator;
+        private StateMachine stateMachine;
         
         public CollectingRobotInventory Inventory => inventory;
         public MiningRobotController SelectedMiningRobot => selectedMiningRobot;
@@ -24,11 +26,15 @@ namespace Coreline.Robots
             base.Awake();
             inventory = EnsureComponent(inventory);
             visionTrigger ??= FindVisionTrigger();
+            animator = GetComponentInChildren<Animator>();
 
             if (visionTrigger != null)
             {
                 visionTrigger.isTrigger = true;
             }
+            
+            stateMachine = new StateMachine();
+
         }
 
         public void SetSelectedMiningRobot(MiningRobotController miningRobot)
