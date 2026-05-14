@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -25,16 +26,33 @@ namespace Coreline.Robots
         {
             base.Awake();
             inventory = EnsureComponent(inventory);
-            visionTrigger ??= FindVisionTrigger();
             animator = GetComponentInChildren<Animator>();
 
-            if (visionTrigger != null)
-            {
-                visionTrigger.isTrigger = true;
-            }
+            visionTrigger.isTrigger = true;
             
             stateMachine = new StateMachine();
 
+            var idleState = new CollectionRobotIdleState(this, animator);
+            var walkState = new CollectionRobotWalkState(this, animator);
+            
+            Any(walkState, new FuncPredicate(ShouldEnterWalkState));
+            At(walkState, idleState, new FuncPredicate(ShouldEnterIdleState));
+            
+            stateMachine.SetState(idleState);
+        }
+        
+        private void At(IState from, IState to, IPredicate condition) =>
+            stateMachine.AddTransition(from, to, condition);
+        private void Any(IState to, IPredicate condition) => stateMachine.AddAnyTransition(to, condition);
+
+        private void Update()
+        {
+            stateMachine?.Update();
+        }
+
+        private void FixedUpdate()
+        {
+            stateMachine?.FixedUpdate();
         }
 
         public void SetSelectedMiningRobot(MiningRobotController miningRobot)
@@ -156,20 +174,6 @@ namespace Coreline.Robots
             }
         }
 
-        private SphereCollider FindVisionTrigger()
-        {
-            SphereCollider[] colliders = GetComponentsInChildren<SphereCollider>(true);
-            foreach (SphereCollider sphereCollider in colliders)
-            {
-                if (sphereCollider.isTrigger)
-                {
-                    return sphereCollider;
-                }
-            }
-
-            return colliders.Length > 0 ? colliders[0] : null;
-        }
-
         private static bool TryGetPickupTarget(Collider collider, out CommandTarget target)
         {
             target = collider != null ? collider.GetComponentInParent<CommandTarget>() : null;
@@ -194,5 +198,20 @@ namespace Coreline.Robots
             float largestAxis = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.y), Mathf.Abs(scale.z));
             return Mathf.Max(0.1f, sphereCollider.radius * largestAxis);
         }
+
+        #region State Checks
+
+        private bool ShouldEnterWalkState()
+        {
+            return CurrentState == RobotWorkState.Walking && !stateMachine.IsInState<CollectionRobotWalkState>();
+        }
+
+        private bool ShouldEnterIdleState()
+        {
+            return CurrentState == RobotWorkState.Idle && !stateMachine.IsInState<CollectionRobotIdleState>();
+        }
+
+        #endregion
+        
     }
 }
