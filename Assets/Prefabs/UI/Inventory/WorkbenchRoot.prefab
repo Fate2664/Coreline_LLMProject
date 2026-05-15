@@ -1423,7 +1423,7 @@ GameObject:
   - component: {fileID: 8753940114543669267}
   - component: {fileID: 646136391940477676}
   m_Layer: 5
-  m_Name: RobotTypeText
+  m_Name: HeaderText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2167,11 +2167,7 @@ GameObject:
   - component: {fileID: 5356183846781827312}
   - component: {fileID: 7450272526170283424}
   - component: {fileID: 5180448470162496603}
-  - component: {fileID: 8871497149733107513}
-  - component: {fileID: 7606139965215818769}
-  - component: {fileID: 5081051312763773033}
-  - component: {fileID: 881109980519153281}
-  - component: {fileID: 4509780390811551884}
+  - component: {fileID: 2251786629011126894}
   m_Layer: 5
   m_Name: WorkbenchRoot
   m_TagString: Untagged
@@ -2386,7 +2382,7 @@ MonoBehaviour:
     LightingModel: 0
     ShadowCastingMode: 2
     ReceiveShadows: 1
-  PreviewSize: {x: 1300, y: 410.0791, z: 0}
+  PreviewSize: {x: 1611.93, y: 653.37, z: 0}
   visuals:
     Color: {r: 0.2509804, g: 0.2509804, b: 0.2509804, a: 1}
     CornerRadius:
@@ -2472,20 +2468,7 @@ MonoBehaviour:
     SortingOrder: 6
     RenderQueue: 2507
     RenderOverOpaqueGeometry: 1
---- !u!210 &8871497149733107513
-SortingGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5470150821171254563}
-  m_Enabled: 1
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_SortAtRoot: 0
-  m_Sort3DAs2D: 0
---- !u!114 &7606139965215818769
+--- !u!114 &2251786629011126894
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2494,89 +2477,42 @@ MonoBehaviour:
   m_GameObject: {fileID: 5470150821171254563}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: afbc6c316b1443cc860fd528b5af4a61, type: 3}
+  m_Script: {fileID: 11500000, guid: 0bc44c3c9e5edff46a47be050ed5a41d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotChatUIController
-  chatInput: {fileID: 0}
-  chatPanel: {fileID: 0}
-  miningRobotDropdownView: {fileID: 0}
-  robotNameText: {fileID: 0}
-  robotNameField: {fileID: 0}
-  commandClient: {fileID: 5081051312763773033}
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotWorkbenchUIController
+  recipes:
+  - {fileID: 11400000, guid: 6e9e778353322f544bcb53d43eee43e4, type: 2}
+  oreItemDefinitions:
+  - {fileID: 11400000, guid: af51f0f7cbb7bb74484bcc154ed84959, type: 2}
+  - {fileID: 11400000, guid: cf23b6ce0c63f85418a5bc296dc4e060, type: 2}
+  - {fileID: 11400000, guid: 33e9143e7a95eba4385cbb078772a4ba, type: 2}
+  - {fileID: 11400000, guid: 257f579fa25662c40aebec4bd3cc89b5, type: 2}
+  - {fileID: 11400000, guid: 374f20701770bac4aa5c50bb8f1ac181, type: 2}
+  optionsRoot: {fileID: 477722242928637914}
+  requirementsRoot: {fileID: 6238205224324045447}
+  optionSlots:
+  - {fileID: 5367350302150776104}
+  - {fileID: 4852629306748519585}
+  - {fileID: 3703470689766293540}
+  requirementSlots: []
+  requirementSlotPrefab: {fileID: 2748903491163396903, guid: caae0de169cec0047af2091394b4b06a, type: 3}
+  robotTypeText: {fileID: 8753940114543669267}
+  craftInfoText: {fileID: 6048544063048155221}
+  craftButtonText: {fileID: 2970137490648056663}
+  statusText: {fileID: 0}
+  craftButtonRoot: {fileID: 4120260014859705242}
+  closeButtonRoot: {fileID: 2936438395458390889}
+  playerController: {fileID: 0}
+  playerInventory: {fileID: 0}
+  spawnPoint: {fileID: 0}
+  spawnForwardOffset: 2.5
+  navMeshSampleRadius: 2
   hideOnStart: 1
   unlockCursorWhileOpen: 1
-  closeAfterSubmit: 0
-  clearMessagesOnOpen: 1
-  hideMiningRobotDropdownWhenInactive: 1
-  playerReturnStoppingDistance: 2
---- !u!114 &5081051312763773033
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5470150821171254563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b772210e5e6c6d041bd16a97bc005b2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.OllamaRobotCommandClient
-  modelName: gemma4:e2b
-  targetRobot: {fileID: 0}
-  promptBuilder: {fileID: 881109980519153281}
-  commandValidator: {fileID: 4509780390811551884}
-  targetRegistry: {fileID: 0}
-  clearRobotQueueOnSubmit: 0
-  validateBeforeSubmit: 1
-  logRawResponses: 1
-  logAcceptedCommands: 1
-  OnPromptSubmitted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnRawResponseReceived:
-    m_PersistentCalls:
-      m_Calls: []
-  OnCommandAccepted:
-    m_PersistentCalls:
-      m_Calls: []
-  OnCommandRejected:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &881109980519153281
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5470150821171254563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 80f21bd97d347444a8e5c61fc33704cb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotCommandPromptBuilder
-  baseSystemPrompt: You translate player instructions into robot command JSON for
-    a Unity mining game. Return only valid JSON. Do not include markdown, explanations,
-    or extra text. Allowed actions are move, pickup, deliver, wait, and stop. Use
-    target ids exactly as provided. If the player asks for a resource and a matching
-    target id exists, use that target. For a single action return {"action":"mine_resource","target":"iron_node_12","priority":"high"}.
-    For multiple actions return {"sequence":[{"action":"move","target":"storage_1"},{"action":"pickup","resource":"iron"},{"action":"deliver","target":"refinery"}]}.
-  includeTargetsInUserPrompt: 1
-  maxTargetsInPrompt: 80
---- !u!114 &4509780390811551884
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5470150821171254563}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef8c9d3d0e8222f47a81e340b93d536d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotCommandValidator
-  targetRegistry: {fileID: 0}
-  resolveResourceTargets: 1
-  expandResourceMiningToAllVisibleNodes: 1
+  selectedOptionColor: {r: 0.9, g: 0.65, b: 0.2, a: 1}
+  unavailableOptionColor: {r: 0.2, g: 0.12, b: 0.12, a: 1}
+  requirementMetColor: {r: 0.2, g: 0.35, b: 0.2, a: 1}
+  requirementMissingColor: {r: 0.35, g: 0.15, b: 0.15, a: 1}
 --- !u!1 &5953528427960550372
 GameObject:
   m_ObjectHideFlags: 0
@@ -4329,6 +4265,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2101899674418940026, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
   m_PrefabInstance: {fileID: 2253837481925445253}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &3703470689766293540 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3180213997122602657, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
+  m_PrefabInstance: {fileID: 2253837481925445253}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0a75001f00536d40ad613f41ed2bdc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Nova::Nova.ItemView
 --- !u!1001 &7376556915016307593
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4434,6 +4381,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
+--- !u!114 &5367350302150776104 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3180213997122602657, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
+  m_PrefabInstance: {fileID: 7376556915016307593}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0a75001f00536d40ad613f41ed2bdc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Nova::Nova.ItemView
 --- !u!4 &8896221081258400755 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2101899674418940026, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
@@ -4540,6 +4498,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
+--- !u!114 &4852629306748519585 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3180213997122602657, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
+  m_PrefabInstance: {fileID: 8032842162478678528}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0a75001f00536d40ad613f41ed2bdc0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Nova::Nova.ItemView
 --- !u!4 &8237384972165614202 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2101899674418940026, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}

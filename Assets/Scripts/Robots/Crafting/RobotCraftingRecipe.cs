@@ -20,7 +20,7 @@ namespace Coreline.Robots
     }
 
     [CreateAssetMenu(menuName = "Robots/Crafting/Robot Crafting Recipe")]
-    public class RobotCraftingRecipe : ScriptableObject
+    public class RobotCraftingRecipe : InventoryItemData
     {
         [SerializeField] private CraftableRobotType robotType;
         [SerializeField] private string displayName;
@@ -35,5 +35,26 @@ namespace Coreline.Robots
         public Sprite Icon => icon;
         public GameObject RobotPrefab => robotPrefab;
         public IReadOnlyList<RobotCraftingRequirement> Requirements => requirements;
+        public InventoryItemData CraftedItem => this;
+
+        private void OnEnable()
+        {
+            SyncInventoryDescription();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            SyncInventoryDescription();
+        }
+#endif
+
+        private void SyncInventoryDescription()
+        {
+            itemDesc ??= new ItemDescription();
+            itemDesc.Name = DisplayName;
+            itemDesc.ToolTip = description;
+            itemDesc.Icon = icon;
+        }
     }
 }

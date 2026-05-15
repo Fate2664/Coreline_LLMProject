@@ -9,15 +9,17 @@ namespace Coreline.Robots
 {
     public class RobotChatUIController : MonoBehaviour
     {
-        private const string DefaultChatRootName = "LLMChatRoot";
+        protected const string DefaultChatRootName = "LLMChatRoot";
         private const string PlayerTargetId = "player";
         private const string MiningRobotDropdownName = "DropDownSetting";
         private const string NoMiningRobotSelection = "None";
         private const string RobotNameTextName = "RobotNameText";
+        private const string RobotTypeTextName = "RobotTypeText";
 
         [SerializeField] private NeocortexTextChatInput chatInput;
         [SerializeField] private NeocortexChatPanel chatPanel;
         [SerializeField] private ItemView miningRobotDropdownView;
+        [SerializeField] private TextBlock robotTypeText;
         [SerializeField] private TextBlock robotNameText;
         [SerializeField] private TextField robotNameField;
         [SerializeField] private OllamaRobotCommandClient commandClient;
@@ -45,6 +47,8 @@ namespace Coreline.Robots
 
         public static bool IsAnyOpen { get; private set; }
         public BaseRobotController ActiveRobot { get; private set; }
+        protected virtual string RobotTypeLabel => "Robot";
+        protected virtual bool ShowsMiningRobotDropdown => true;
 
         private void Awake()
         {
@@ -53,17 +57,21 @@ namespace Coreline.Robots
 
         private void Start()
         {
-            if (hideOnStart)
+            if (hideOnStart && !isOpen && !IsAnyOpen)
             {
-                Close();
+                isOpen = false;
+                IsAnyOpen = false;
+
+                if (gameObject.activeSelf)
+                {
+                    gameObject.SetActive(false);
+                }
             }
         }
 
         private void OnEnable()
         {
-            SubscribeToInput();
-            SubscribeToCommandClient();
-            SubscribeToMiningRobotDropdown();
+            EnsureReferences();
         }
 
         private void OnDisable()
@@ -104,7 +112,13 @@ namespace Coreline.Robots
         {
             if (robot == null)
             {
-                Debug.LogWarning($"{nameof(RobotChatUIController)} cannot open without a robot target.", this);
+                Debug.LogWarning($"{GetType().Name} cannot open without a robot target.", this);
+                return;
+            }
+
+            if (!CanOpenForRobot(robot))
+            {
+                Debug.LogWarning($"{GetType().Name} cannot open for {robot.GetType().Name}.", this);
                 return;
             }
 
@@ -120,6 +134,7 @@ namespace Coreline.Robots
 
             ActiveRobot = robot;
             activeRobotTarget = EnsureRobotTarget(robot);
+            RefreshRobotTypeText();
             RefreshRobotNameText(activeRobotTarget);
             commandClient.SetTargetRobot(robot);
             RefreshMiningRobotDropdown(robot);
@@ -140,6 +155,11 @@ namespace Coreline.Robots
 
         public void Close()
         {
+            if (!isOpen)
+            {
+                return;
+            }
+
             ActiveRobot = null;
             activeRobotTarget = null;
             lastAppliedRobotName = string.Empty;
@@ -182,6 +202,7 @@ namespace Coreline.Robots
             chatInput ??= GetComponentInChildren<NeocortexTextChatInput>(true);
             chatPanel ??= GetComponentInChildren<NeocortexChatPanel>(true);
             miningRobotDropdownView ??= FindChildItemViewWithVisuals<DropDownVisuals>(MiningRobotDropdownName);
+            robotTypeText ??= FindChildComponentByName<TextBlock>(RobotTypeTextName);
             robotNameField ??= FindChildComponentByName<TextField>(RobotNameTextName);
             robotNameText ??= FindChildComponentByName<TextBlock>(RobotNameTextName);
 
@@ -217,6 +238,11 @@ namespace Coreline.Robots
             }
         }
 
+        protected virtual bool CanOpenForRobot(BaseRobotController robot)
+        {
+            return robot != null;
+        }
+
         private void EnsurePlayerTarget(global::PlayerController player)
         {
             if (player == null)
@@ -246,6 +272,14 @@ namespace Coreline.Robots
         {
             lastAppliedRobotName = robotTarget != null ? robotTarget.TargetId : string.Empty;
             SetRobotNameField(lastAppliedRobotName);
+        }
+
+        private void RefreshRobotTypeText()
+        {
+            if (robotTypeText != null)
+            {
+                robotTypeText.Text = RobotTypeLabel;
+            }
         }
 
         private void SyncRobotNameFromEditableField()
@@ -336,7 +370,7 @@ namespace Coreline.Robots
                 return;
             }
 
-            if (robot is not CollectingRobotController collectingRobot)
+            if (!ShowsMiningRobotDropdown || robot is not CollectingRobotController collectingRobot)
             {
                 miningRobotDropdownVisuals.Collapse();
 
@@ -414,7 +448,7 @@ namespace Coreline.Robots
 
             if (chatInput == null)
             {
-                Debug.LogWarning($"{nameof(RobotChatUIController)} could not find a {nameof(NeocortexTextChatInput)}.", this);
+                Debug.LogWarning($"{GetType().Name} could not find a {nameof(NeocortexTextChatInput)}.", this);
                 return;
             }
 
@@ -478,7 +512,7 @@ namespace Coreline.Robots
         {
             if (chatPanel == null)
             {
-                Debug.Log($"[{nameof(RobotChatUIController)}] {message}", this);
+                Debug.Log($"[{GetType().Name}] {message}", this);
                 return;
             }
 
@@ -655,7 +689,12 @@ namespace Coreline.Robots
 
         public static RobotChatUIController FindOrCreateInScene()
         {
-            RobotChatUIController existing = FindFirstObjectByType<RobotChatUIController>(FindObjectsInactive.Include);
+            return FindOrCreateInScene<RobotChatUIController>();
+        }
+
+        protected static T FindOrCreateInScene<T>() where T : RobotChatUIController
+        {
+            T existing = FindFirstObjectByType<T>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 return existing;
@@ -668,7 +707,7 @@ namespace Coreline.Robots
                 return null;
             }
 
-            return root.AddComponent<RobotChatUIController>();
+            return root.AddComponent<T>();
         }
 
         private static GameObject FindSceneObject(string objectName)

@@ -1,14 +1,12 @@
 using System.Collections.Generic;
-using System.Text;
 using Coreline;
 using Nova;
 using UnityEngine;
-using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
 namespace Coreline.Robots
 {
-    public class RobotWorkbenchUIController : MonoBehaviour
+    public class WorkbenchUIController : MonoBehaviour
     {
         private const string DefaultRootName = "WorkbenchRoot";
         private const string OptionsRootName = "OptionsRoot";
@@ -16,7 +14,6 @@ namespace Coreline.Robots
         private const string RequirementsRootCorrectName = "RequirementsRoot";
         private const string CraftButtonName = "CraftButton";
         private const string CloseButtonName = "CloseButton";
-        private const string RobotTypeTextName = "RobotTypeText";
         private const string CraftInfoTextName = "CraftItemInfo";
         private const string CraftButtonTextName = "CraftText";
 
@@ -32,7 +29,6 @@ namespace Coreline.Robots
         [SerializeField] private ItemView requirementSlotPrefab;
 
         [Header("UI Text")]
-        [SerializeField] private TextBlock robotTypeText;
         [SerializeField] private TextBlock craftInfoText;
         [SerializeField] private TextBlock craftButtonText;
         [SerializeField] private TextBlock statusText;
@@ -44,9 +40,11 @@ namespace Coreline.Robots
         [Header("Crafting")]
         [SerializeField] private PlayerController playerController;
         [SerializeField] private UIManager playerInventory;
-        [SerializeField] private Transform spawnPoint;
-        [SerializeField] private float spawnForwardOffset = 2.5f;
-        [SerializeField] private float navMeshSampleRadius = 2f;
+
+        [Header("Player Inventory")]
+        [SerializeField] private GameObject playerInventoryCloseButton;
+        [SerializeField] private bool disablePlayerInventoryCloseButtonWhileOpen = true;
+        [SerializeField] private bool closePlayerInventoryWhenWorkbenchCloses = true;
 
         [Header("Behaviour")]
         [SerializeField] private bool hideOnStart = true;
@@ -58,12 +56,23 @@ namespace Coreline.Robots
         [SerializeField] private Color requirementMetColor = new(0.2f, 0.35f, 0.2f, 1f);
         [SerializeField] private Color requirementMissingColor = new(0.35f, 0.15f, 0.15f, 1f);
 
+        [Header("Craft Button Colours")]
+        [SerializeField] private Color craftButtonDefaultColor = new(0.2f, 0.2f, 0.2f, 1f);
+        [SerializeField] private Color craftButtonRequirementsMetColor = new(0.2f, 0.45f, 0.25f, 1f);
+        [SerializeField] private Color craftButtonRequirementsNotMetColor = new(0.45f, 0.15f, 0.15f, 1f);
+
         private readonly Dictionary<InventoryItemVisuals, int> optionVisualIndices = new();
+        private readonly Dictionary<InventoryButtonVisuals, UnityEngine.Events.UnityAction> buttonActions = new();
         private readonly HashSet<ItemView> registeredOptionSlots = new();
         private readonly List<RobotCraftingRequirement> spentRequirements = new();
         private int selectedRecipeIndex;
         private bool buttonsSubscribed;
         private bool isOpen;
+        private bool hasAppliedCraftButtonColor;
+        private Color appliedCraftButtonColor;
+        private bool playerInventoryWasOpenOnOpen;
+        private bool playerInventoryCloseButtonWasActive;
+        private bool hasCachedPlayerInventoryCloseButtonState;
 
         public static bool IsAnyOpen { get; private set; }
         public RobotCraftingRecipe SelectedRecipe => TryGetSelectedRecipe(out RobotCraftingRecipe recipe) ? recipe : null;
@@ -97,6 +106,7 @@ namespace Coreline.Robots
 
             if (isOpen)
             {
+                RestorePlayerInventoryState();
                 isOpen = false;
                 IsAnyOpen = false;
             }
@@ -104,13 +114,20 @@ namespace Coreline.Robots
 
         private void LateUpdate()
         {
-            if (!isOpen || !unlockCursorWhileOpen)
+            if (!isOpen)
             {
                 return;
             }
 
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            if (unlockCursorWhileOpen)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+
+            RefreshOptionSlots();
+            RefreshRequirementSlots();
+            RefreshCraftButton();
         }
 
         public void Toggle(PlayerController player)
@@ -137,7 +154,9 @@ namespace Coreline.Robots
 
             EnsureReferences();
             EnsurePlayerInventory(player);
+            OpenPlayerInventory();
             ClampSelectedRecipeIndex();
+            hasAppliedCraftButtonColor = false;
             RefreshAll();
 
             if (unlockCursorWhileOpen)
@@ -149,8 +168,15 @@ namespace Coreline.Robots
 
         public void Close()
         {
+            if (!isOpen)
+            {
+                return;
+            }
+
+            RestorePlayerInventoryState();
             isOpen = false;
             IsAnyOpen = false;
+            hasAppliedCraftButtonColor = false;
 
             if (gameObject.activeSelf)
             {
@@ -185,15 +211,16 @@ namespace Coreline.Robots
                 return;
             }
 
-            if (recipe.RobotPrefab == null)
-            {
-                SetStatus($"{recipe.DisplayName} has no robot prefab assigned.");
-                return;
-            }
-
             if (!CanAfford(recipe))
             {
                 SetStatus(BuildMissingRequirementsMessage(recipe));
+                RefreshAll();
+                return;
+            }
+
+            if (!CanStoreCraftedItem(recipe))
+            {
+                SetStatus($"No inventory space for {recipe.DisplayName}.");
                 RefreshAll();
                 return;
             }
@@ -205,13 +232,15 @@ namespace Coreline.Robots
                 return;
             }
 
-            GameObject craftedRobot = Instantiate(recipe.RobotPrefab, GetSpawnPosition(), GetSpawnRotation());
-            BaseRobotController robotController = craftedRobot.GetComponent<BaseRobotController>();
-            if (robotController != null)
+            if (!playerInventory.TryAddItemToInventory(recipe.CraftedItem))
             {
-                robotController.EnsureRobotCommandTarget();
+                RestoreSpentRequirements();
+                SetStatus($"No inventory space for {recipe.DisplayName}.");
+                RefreshAll();
+                return;
             }
 
+            spentRequirements.Clear();
             SetStatus($"Crafted {recipe.DisplayName}.");
             RefreshAll();
         }
@@ -288,6 +317,19 @@ namespace Coreline.Robots
             return true;
         }
 
+        private bool CanStoreCraftedItem(RobotCraftingRecipe recipe)
+        {
+            return playerInventory != null &&
+                   recipe != null &&
+                   recipe.CraftedItem != null &&
+                   playerInventory.CanAcceptItem(recipe.CraftedItem);
+        }
+
+        private bool CanCraft(RobotCraftingRecipe recipe)
+        {
+            return CanAfford(recipe) && CanStoreCraftedItem(recipe);
+        }
+
         private bool TrySpendRequirements(RobotCraftingRecipe recipe)
         {
             spentRequirements.Clear();
@@ -308,7 +350,6 @@ namespace Coreline.Robots
                 spentRequirements.Add(requirement);
             }
 
-            spentRequirements.Clear();
             return true;
         }
 
@@ -318,50 +359,11 @@ namespace Coreline.Robots
             {
                 if (TryFindOreItemDefinition(requirement.oreType, out OreItemSO itemData))
                 {
-                    playerInventory.TryAddItemToInventory(itemData, requirement.amount);
+                    playerInventory.TryAddItemToInventory(itemData, requirement.amount, countForProgression: false);
                 }
             }
 
             spentRequirements.Clear();
-        }
-
-        private Vector3 GetSpawnPosition()
-        {
-            Vector3 position;
-            if (spawnPoint != null)
-            {
-                position = spawnPoint.position;
-            }
-            else if (playerController != null)
-            {
-                position = playerController.transform.position + playerController.transform.forward * spawnForwardOffset;
-            }
-            else
-            {
-                position = transform.position + transform.forward * spawnForwardOffset;
-            }
-
-            if (NavMesh.SamplePosition(position, out NavMeshHit hit, navMeshSampleRadius, NavMesh.AllAreas))
-            {
-                return hit.position;
-            }
-
-            return position;
-        }
-
-        private Quaternion GetSpawnRotation()
-        {
-            if (spawnPoint != null)
-            {
-                return spawnPoint.rotation;
-            }
-
-            if (playerController != null)
-            {
-                return Quaternion.Euler(0f, playerController.transform.eulerAngles.y, 0f);
-            }
-
-            return Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
         }
 
         private void RefreshOptionSlots()
@@ -386,7 +388,7 @@ namespace Coreline.Robots
                 }
 
                 optionVisualIndices[visuals] = i;
-                BindOptionSlot(visuals, recipes[i], i == selectedRecipeIndex, CanAfford(recipes[i]));
+                BindOptionSlot(visuals, recipes[i], i == selectedRecipeIndex, CanCraft(recipes[i]));
             }
         }
 
@@ -541,77 +543,62 @@ namespace Coreline.Robots
         {
             if (!TryGetSelectedRecipe(out RobotCraftingRecipe recipe))
             {
-                if (robotTypeText != null)
-                {
-                    robotTypeText.Text = "No robot selected";
-                }
-
                 if (craftInfoText != null)
                 {
-                    craftInfoText.Text = "Create robot crafting recipes and assign them to this workbench.";
+                    craftInfoText.Text = string.Empty;
                 }
 
                 return;
             }
 
-            if (robotTypeText != null)
-            {
-                robotTypeText.Text = recipe.DisplayName;
-            }
-
             if (craftInfoText != null)
             {
-                craftInfoText.Text = BuildInfoText(recipe);
+                craftInfoText.Text = recipe.Description;
             }
         }
 
         private void RefreshCraftButton()
         {
-            if (craftButtonText == null)
-            {
-                return;
-            }
-
             if (!TryGetSelectedRecipe(out RobotCraftingRecipe recipe))
             {
-                craftButtonText.Text = "SELECT";
+                SetCraftButtonColor(craftButtonDefaultColor);
+                if (craftButtonText != null)
+                {
+                    craftButtonText.Text = "SELECT";
+                }
+
                 return;
             }
 
-            craftButtonText.Text = CanAfford(recipe) && recipe.RobotPrefab != null ? "CRAFT" : "MISSING";
+            bool canCraft = CanCraft(recipe);
+            SetCraftButtonColor(canCraft ? craftButtonRequirementsMetColor : craftButtonRequirementsNotMetColor);
+
+            if (craftButtonText != null)
+            {
+                craftButtonText.Text = "CRAFT";
+            }
         }
 
-        private string BuildInfoText(RobotCraftingRecipe recipe)
+        private void SetCraftButtonColor(Color color)
         {
-            StringBuilder builder = new();
-
-            if (!string.IsNullOrWhiteSpace(recipe.Description))
+            if (craftButtonRoot == null || !craftButtonRoot.TryGetVisuals(out InventoryButtonVisuals visuals))
             {
-                builder.AppendLine(recipe.Description);
-                builder.AppendLine();
+                return;
             }
 
-            builder.AppendLine("Requirements:");
-
-            bool hasRequirements = false;
-            foreach (RobotCraftingRequirement requirement in recipe.Requirements)
+            visuals.DefaultColor = color;
+            if (hasAppliedCraftButtonColor && appliedCraftButtonColor == color)
             {
-                if (!IsValidRequirement(requirement))
-                {
-                    continue;
-                }
-
-                hasRequirements = true;
-                int owned = playerInventory != null ? playerInventory.GetOreCount(requirement.oreType) : 0;
-                builder.AppendLine($"{requirement.oreType}: {owned}/{requirement.amount}");
+                return;
             }
 
-            if (!hasRequirements)
-            {
-                builder.AppendLine("No ore cost configured.");
-            }
+            hasAppliedCraftButtonColor = true;
+            appliedCraftButtonColor = color;
 
-            return builder.ToString().TrimEnd();
+            if (visuals.ButtonRoot != null)
+            {
+                visuals.ButtonRoot.Color = color;
+            }
         }
 
         private string BuildMissingRequirementsMessage(RobotCraftingRecipe recipe)
@@ -678,6 +665,95 @@ namespace Coreline.Robots
                 ? playerController.InventoryUIManager
                 : null;
             playerInventory ??= FindFirstObjectByType<UIManager>(FindObjectsInactive.Include);
+            EnsurePlayerInventoryCloseButton();
+        }
+
+        private void OpenPlayerInventory()
+        {
+            if (playerController == null)
+            {
+                playerController = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
+            }
+
+            playerInventoryWasOpenOnOpen = playerController != null && playerController.IsInventoryOpen;
+            playerController?.OpenInventory();
+            playerInventory?.RefreshInventory();
+            SetPlayerInventoryCloseButtonEnabled(false);
+        }
+
+        private void RestorePlayerInventoryState()
+        {
+            SetPlayerInventoryCloseButtonEnabled(true);
+
+            if (closePlayerInventoryWhenWorkbenchCloses &&
+                playerController != null &&
+                !playerInventoryWasOpenOnOpen)
+            {
+                playerController.CloseInventory();
+            }
+
+            playerInventoryWasOpenOnOpen = false;
+        }
+
+        private void SetPlayerInventoryCloseButtonEnabled(bool enabled)
+        {
+            if (!disablePlayerInventoryCloseButtonWhileOpen)
+            {
+                return;
+            }
+
+            EnsurePlayerInventoryCloseButton();
+            if (playerInventoryCloseButton == null)
+            {
+                return;
+            }
+
+            if (!enabled)
+            {
+                if (!hasCachedPlayerInventoryCloseButtonState)
+                {
+                    playerInventoryCloseButtonWasActive = playerInventoryCloseButton.activeSelf;
+                    hasCachedPlayerInventoryCloseButtonState = true;
+                }
+
+                playerInventoryCloseButton.SetActive(false);
+                return;
+            }
+
+            if (hasCachedPlayerInventoryCloseButtonState)
+            {
+                playerInventoryCloseButton.SetActive(playerInventoryCloseButtonWasActive);
+                hasCachedPlayerInventoryCloseButtonState = false;
+            }
+        }
+
+        private void EnsurePlayerInventoryCloseButton()
+        {
+            if (playerInventoryCloseButton != null)
+            {
+                return;
+            }
+
+            Transform inventoryRoot = null;
+            if (playerController != null && playerController.InventoryRootBlock != null)
+            {
+                inventoryRoot = playerController.InventoryRootBlock.transform;
+            }
+            else if (playerInventory != null)
+            {
+                inventoryRoot = playerInventory.transform;
+            }
+
+            if (inventoryRoot == null)
+            {
+                return;
+            }
+
+            Transform closeButton = FindChildRecursive(inventoryRoot, CloseButtonName);
+            if (closeButton != null)
+            {
+                playerInventoryCloseButton = closeButton.gameObject;
+            }
         }
 
         private void EnsureReferences()
@@ -686,7 +762,6 @@ namespace Coreline.Robots
             requirementsRoot ??= FindChildTransform(RequirementsRootName) ?? FindChildTransform(RequirementsRootCorrectName);
             craftButtonRoot ??= FindChildItemViewWithVisuals<InventoryButtonVisuals>(CraftButtonName);
             closeButtonRoot ??= FindChildItemViewWithVisuals<InventoryButtonVisuals>(CloseButtonName);
-            robotTypeText ??= FindChildComponentByName<TextBlock>(RobotTypeTextName);
             craftInfoText ??= FindChildComponentByName<TextBlock>(CraftInfoTextName);
             craftButtonText ??= FindChildComponentByName<TextBlock>(CraftButtonTextName);
         }
@@ -753,7 +828,7 @@ namespace Coreline.Robots
             buttonsSubscribed = false;
         }
 
-        private static void SubscribeButton(ItemView buttonRoot, UnityEngine.Events.UnityAction action)
+        private void SubscribeButton(ItemView buttonRoot, UnityEngine.Events.UnityAction action)
         {
             if (buttonRoot == null)
             {
@@ -763,15 +838,15 @@ namespace Coreline.Robots
             buttonRoot.UIBlock.AddGestureHandler<Gesture.OnHover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleHover);
             buttonRoot.UIBlock.AddGestureHandler<Gesture.OnUnhover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleUnhover);
             buttonRoot.UIBlock.AddGestureHandler<Gesture.OnPress, InventoryButtonVisuals>(InventoryButtonVisuals.HandlePress);
-            buttonRoot.UIBlock.AddGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(InventoryButtonVisuals.HandleRelease);
+            buttonRoot.UIBlock.AddGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(HandleButtonRelease);
 
             if (buttonRoot.TryGetVisuals(out InventoryButtonVisuals visuals))
             {
-                visuals.OnClicked.AddListener(action);
+                buttonActions[visuals] = action;
             }
         }
 
-        private static void UnsubscribeButton(ItemView buttonRoot, UnityEngine.Events.UnityAction action)
+        private void UnsubscribeButton(ItemView buttonRoot, UnityEngine.Events.UnityAction action)
         {
             if (buttonRoot == null)
             {
@@ -781,12 +856,27 @@ namespace Coreline.Robots
             buttonRoot.UIBlock.RemoveGestureHandler<Gesture.OnHover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleHover);
             buttonRoot.UIBlock.RemoveGestureHandler<Gesture.OnUnhover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleUnhover);
             buttonRoot.UIBlock.RemoveGestureHandler<Gesture.OnPress, InventoryButtonVisuals>(InventoryButtonVisuals.HandlePress);
-            buttonRoot.UIBlock.RemoveGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(InventoryButtonVisuals.HandleRelease);
+            buttonRoot.UIBlock.RemoveGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(HandleButtonRelease);
 
             if (buttonRoot.TryGetVisuals(out InventoryButtonVisuals visuals))
             {
-                visuals.OnClicked.RemoveListener(action);
+                buttonActions.Remove(visuals);
             }
+        }
+
+        private void HandleButtonRelease(Gesture.OnRelease evt, InventoryButtonVisuals target)
+        {
+            if (target.ButtonRoot != null)
+            {
+                target.ButtonRoot.Color = target.HoverColor;
+            }
+
+            if (buttonActions.TryGetValue(target, out UnityEngine.Events.UnityAction action))
+            {
+                action?.Invoke();
+            }
+
+            evt.Consume();
         }
 
         private void RegisterOptionSlotHandlers()
@@ -904,10 +994,10 @@ namespace Coreline.Robots
             return null;
         }
 
-        public static RobotWorkbenchUIController FindOrCreateInScene()
+        public static WorkbenchUIController FindOrCreateInScene()
         {
-            RobotWorkbenchUIController existing =
-                FindFirstObjectByType<RobotWorkbenchUIController>(FindObjectsInactive.Include);
+            WorkbenchUIController existing =
+                FindFirstObjectByType<WorkbenchUIController>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 return existing;
@@ -920,7 +1010,7 @@ namespace Coreline.Robots
                 return null;
             }
 
-            return root.AddComponent<RobotWorkbenchUIController>();
+            return root.AddComponent<WorkbenchUIController>();
         }
 
         private static GameObject FindSceneObject(string objectName)

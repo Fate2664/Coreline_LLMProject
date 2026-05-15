@@ -3,6 +3,7 @@ using Nova;
 using UnityEngine;
 using System.Collections.Generic;
 using Coreline;
+using Coreline.Robots;
 
 
 public class UIManager : MonoBehaviour, ITimeTracker
@@ -31,6 +32,8 @@ public class UIManager : MonoBehaviour, ITimeTracker
     [SerializeField] private TextBlock DayText = null;
 
     public InventoryItem EquippedItem => equippedItem;
+    public event Action<InventoryItemData, int> ItemAddedToInventory;
+
     private List<InventoryItem> Items;
     private readonly InventoryItem emptyEquippedItem = new ();
     private InventoryItem equippedItem;
@@ -47,12 +50,12 @@ public class UIManager : MonoBehaviour, ITimeTracker
         TimeManager.Instance.RegisterTracker(this);
     }
 
-    public void AddItemToInventory(InventoryItemData item, int count = 1)
+    public void AddItemToInventory(InventoryItemData item, int count = 1, bool countForProgression = true)
     {
-        TryAddItemToInventory(item, count);
+        TryAddItemToInventory(item, count, countForProgression);
     }
 
-    public bool TryAddItemToInventory(InventoryItemData item, int count = 1)
+    public bool TryAddItemToInventory(InventoryItemData item, int count = 1, bool countForProgression = true)
     {
         if (!CanAcceptItem(item, count))
         {
@@ -103,7 +106,13 @@ public class UIManager : MonoBehaviour, ITimeTracker
             RefreshEquippedItem();
         }
 
-        return remaining <= 0;
+        bool addedAllItems = remaining <= 0;
+        if (addedAllItems && countForProgression)
+        {
+            ItemAddedToInventory?.Invoke(item, count);
+        }
+
+        return addedAllItems;
     }
 
     public bool CanAcceptItem(InventoryItemData item, int count = 1)
@@ -322,6 +331,18 @@ public class UIManager : MonoBehaviour, ITimeTracker
     public void EquipItem(InventoryItem item)
     {
         equippedItem = item != null && !item.isEmpty ? item : null;
+        if (equippedItem == null)
+        {
+            RefreshEquippedItem();
+            return;
+        }
+
+        if (equippedItem.item is RobotCraftingRecipe robotRecipe)
+        {
+            BeginRobotPlacement(equippedItem, robotRecipe);
+            return;
+        }
+
         if (equippedItem.IsTool)
         {
             ToolItemSO tool = equippedItem.item as ToolItemSO;
@@ -337,9 +358,70 @@ public class UIManager : MonoBehaviour, ITimeTracker
         RefreshEquippedItem();
     }
 
+    private void BeginRobotPlacement(InventoryItem inventorySlot, RobotCraftingRecipe recipe)
+    {
+        if (buildPlacer == null)
+        {
+            Debug.LogWarning("Cannot place robot because no BuildPlacer is assigned.", this);
+            RefreshEquippedItem();
+            return;
+        }
+
+        if (recipe == null || recipe.RobotPrefab == null)
+        {
+            Debug.LogWarning("Cannot place robot because the selected robot item has no prefab assigned.", this);
+            RefreshEquippedItem();
+            return;
+        }
+
+        buildPlacer.BeginPrefabPlacement(recipe.RobotPrefab, placedObject =>
+        {
+            if (placedObject != null && placedObject.TryGetComponent(out BaseRobotController robotController))
+            {
+                robotController.EnsureRobotCommandTarget();
+            }
+
+            TryConsumeInventorySlot(inventorySlot, 1);
+        });
+
+        equippedItem = null;
+        RefreshEquippedItem();
+        playerController?.CloseInventory();
+    }
+
+    private bool TryConsumeInventorySlot(InventoryItem inventorySlot, int amount)
+    {
+        if (inventorySlot == null || inventorySlot.isEmpty || amount <= 0 || inventorySlot.count < amount)
+        {
+            return false;
+        }
+
+        EnsureInventoryItems();
+        inventorySlot.DecreaseCount(amount);
+
+        if (inventorySlot.count <= 0)
+        {
+            int index = Items.IndexOf(inventorySlot);
+            if (index >= 0)
+            {
+                Items[index] = new InventoryItem();
+            }
+
+            if (equippedItem == inventorySlot)
+            {
+                equippedItem = null;
+            }
+        }
+
+        inventoryNeedsRefresh = true;
+        RefreshInventory();
+        RefreshEquippedItem();
+        return true;
+    }
+
     public bool TryUseEquippedItem(int amount = 1)
     {
-        if (equippedItem.isEmpty || equippedItem.count < amount) return false;
+        if (equippedItem == null || equippedItem.isEmpty || equippedItem.count < amount) return false;
         
         equippedItem.DecreaseCount(amount);
 

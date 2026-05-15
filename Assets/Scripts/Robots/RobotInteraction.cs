@@ -7,6 +7,8 @@ namespace Coreline
     {
         [SerializeField] private PlayerInteractionDetector playerInteractionDetector;
         [SerializeField] private RobotChatUIController chatUI;
+        [SerializeField] private MiningRobotChatUIController miningRobotChatUI;
+        [SerializeField] private CollectingRobotChatUIController collectingRobotChatUI;
         [SerializeField] private CollectingRobotInventoryUIController collectingRobotInventoryUI;
         [SerializeField] private BaseRobotController robotController;
         [SerializeField] private bool closeChatWhenPlayerLeaves = true;
@@ -23,7 +25,7 @@ namespace Coreline
         private void Start()
         {
             playerInteractionDetector ??= FindFirstObjectByType<PlayerInteractionDetector>();
-            chatUI ??= RobotChatUIController.FindOrCreateInScene();
+            chatUI ??= ResolveChatUIForRobot();
             collectingRobotInventoryUI ??= CollectingRobotInventoryUIController.FindOrCreateInScene();
         }
 
@@ -74,7 +76,7 @@ namespace Coreline
                 return;
             }
 
-            chatUI ??= RobotChatUIController.FindOrCreateInScene();
+            chatUI = ResolveChatUIForRobot();
             if (chatUI == null)
             {
                 Debug.LogWarning("Cannot open LLM chat because LLMChatRoot was not found.", this);
@@ -82,6 +84,7 @@ namespace Coreline
             }
 
             collectingRobotInventoryUI?.Close();
+            CloseOtherChatControllers(chatUI);
             chatUI.OpenForRobot(robotController, player);
         }
 
@@ -101,6 +104,39 @@ namespace Coreline
 
             chatUI?.Close();
             collectingRobotInventoryUI.ToggleForRobot(collectingRobot, player);
+        }
+
+        private RobotChatUIController ResolveChatUIForRobot()
+        {
+            if (robotController is MiningRobotController)
+            {
+                miningRobotChatUI ??= chatUI as MiningRobotChatUIController;
+                miningRobotChatUI ??= MiningRobotChatUIController.FindOrCreateInScene();
+                return miningRobotChatUI;
+            }
+
+            if (robotController is CollectingRobotController)
+            {
+                collectingRobotChatUI ??= chatUI as CollectingRobotChatUIController;
+                collectingRobotChatUI ??= CollectingRobotChatUIController.FindOrCreateInScene();
+                return collectingRobotChatUI;
+            }
+
+            return chatUI != null ? chatUI : RobotChatUIController.FindOrCreateInScene();
+        }
+
+        private static void CloseOtherChatControllers(RobotChatUIController activeController)
+        {
+            RobotChatUIController[] controllers =
+                FindObjectsByType<RobotChatUIController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            foreach (RobotChatUIController controller in controllers)
+            {
+                if (controller != null && controller != activeController)
+                {
+                    controller.Close();
+                }
+            }
         }
     }
 }

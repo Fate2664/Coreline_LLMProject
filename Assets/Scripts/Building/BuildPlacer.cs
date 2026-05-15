@@ -47,17 +47,51 @@ namespace Coreline
         private readonly List<Material[]> hoveredMaterials = new ();
         private RaycastHit[] hitsBuffer;
         private readonly List<EdgeSocket> availableSockets = new(8);
-        private int placementPieceTypeFrame;
         private Camera mainCamera;
+        private GameObject placementPrefabOverride;
+        private Action<GameObject> placementCompleted;
+        private GameObject previewPrefabSource;
+        private bool waitForPlacementInputRelease;
 
         #endregion
 
-        private GameObject ActivePrefab => placementPieceType switch
+        private bool IsInventoryPrefabPlacement => placementPrefabOverride != null;
+
+        private GameObject ActivePrefab => placementPrefabOverride != null ? placementPrefabOverride : placementPieceType switch
         {
             BuildPieceType.Floor => floorTilePrefab,
             BuildPieceType.Wall => wallTilePrefab,
-            BuildPieceType.Door => doorTilePrefab
+            BuildPieceType.Door => doorTilePrefab,
+            _ => null
         };
+
+        public void BeginPrefabPlacement(GameObject prefab, Action<GameObject> onPlaced = null)
+        {
+            if (prefab == null)
+            {
+                return;
+            }
+
+            SetDestroyMode(false);
+            placementPrefabOverride = prefab;
+            placementCompleted = onPlaced;
+            previewPrefabSource = null;
+            waitForPlacementInputRelease = Mouse.current != null && Mouse.current.leftButton.isPressed;
+            ClearPreview();
+            enabled = true;
+        }
+
+        public void CancelPrefabPlacement()
+        {
+            if (!IsInventoryPrefabPlacement)
+            {
+                return;
+            }
+
+            ClearPrefabPlacementState();
+            ClearPreview();
+            enabled = false;
+        }
 
         public void SetDestroyMode(bool value)
         {
@@ -91,27 +125,42 @@ namespace Coreline
             if (mainCamera == null || Mouse.current == null) return;
             var mouse = Mouse.current;
 
+            if (IsInventoryPrefabPlacement &&
+                ((Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) ||
+                 mouse.rightButton.wasPressedThisFrame))
+            {
+                CancelPrefabPlacement();
+                return;
+            }
+
             if (destroyMode)
             {
                 HandleDestroyMode(mouse);
                 return;
             }
 
-            if ((int)placementPieceType != placementPieceTypeFrame)
+            GameObject activePrefab = ActivePrefab;
+            if (activePrefab != previewPrefabSource)
             {
-                if (previewInstance != null) Destroy(previewInstance);
-                previewInstance = null;
-                placementPieceTypeFrame = (int)placementPieceType;
+                ClearPreview();
+                previewPrefabSource = activePrefab;
             }
 
-            if (!TryGetPreviewPose(mouse.position.ReadValue(), out var pose, out var placementValid, out var socketSnap))
+            if (!TryGetActivePreviewPose(mouse.position.ReadValue(), out var pose, out var placementValid, out var socketSnap))
             {
                 if (previewInstance != null) previewInstance.SetActive(false);
                 return;
             }
             
             UpdatePreview(pose, placementValid);
-            if (mouse.leftButton.wasPressedThisFrame && placementValid) Place(ActivePrefab, pose, socketSnap);
+
+            if (waitForPlacementInputRelease)
+            {
+                waitForPlacementInputRelease = mouse.leftButton.isPressed;
+                return;
+            }
+
+            if (mouse.leftButton.wasPressedThisFrame && placementValid) Place(activePrefab, pose, socketSnap);
         }
 
         private void UpdatePreview(Pose pose, bool valid)
@@ -122,7 +171,7 @@ namespace Coreline
                 if (p == null) return;
                 previewInstance = Instantiate(p);
                 previewInstance.hideFlags = HideFlags.DontSave;
-                foreach (var c in previewInstance.GetComponentsInChildren<Collider>()) c.enabled = false;
+                PreparePreviewInstance(previewInstance);
             }
             
             var pos = pose.position;
@@ -133,14 +182,40 @@ namespace Coreline
             if (mat == null) return;
             foreach (var r in previewInstance.GetComponentsInChildren<Renderer>()) r.sharedMaterial = mat;
         }
+
+        private static void PreparePreviewInstance(GameObject instance)
+        {
+            foreach (var c in instance.GetComponentsInChildren<Collider>())
+            {
+                c.enabled = false;
+            }
+
+            foreach (var behaviour in instance.GetComponentsInChildren<Behaviour>())
+            {
+                behaviour.enabled = false;
+            }
+        }
         
         private void Place(GameObject prefab, Pose pose, EdgeSocket socketSnap)
         {
-            if (prefab == null || (placementPieceType == BuildPieceType.Floor && IsFloorOccupied(pose.position))) return;
+            if (prefab == null || (!IsInventoryPrefabPlacement && placementPieceType == BuildPieceType.Floor && IsFloorOccupied(pose.position))) return;
             var go = Instantiate(prefab, pose.position, pose.rotation);
-            if (socketSnap == null) return;
-            var part = go.GetComponent<BuildPart>();
-            if (part != null) socketSnap.SetOccupant(part);
+            if (socketSnap != null)
+            {
+                var part = go.GetComponent<BuildPart>();
+                if (part != null) socketSnap.SetOccupant(part);
+            }
+
+            if (!IsInventoryPrefabPlacement)
+            {
+                return;
+            }
+
+            Action<GameObject> onPlaced = placementCompleted;
+            ClearPrefabPlacementState();
+            ClearPreview();
+            enabled = false;
+            onPlaced?.Invoke(go);
         }
 
         private bool IsFloorOccupied(Vector3 position)
@@ -263,6 +338,39 @@ namespace Coreline
             return false;
         }
 
+        private bool TryGetActivePreviewPose(Vector2 screenPos, out Pose pose, out bool placementValid, out EdgeSocket socketFromSnap)
+        {
+            return IsInventoryPrefabPlacement
+                ? TryGetPrefabPlacementPose(screenPos, out pose, out placementValid, out socketFromSnap)
+                : TryGetPreviewPose(screenPos, out pose, out placementValid, out socketFromSnap);
+        }
+
+        private bool TryGetPrefabPlacementPose(Vector2 screenPos, out Pose pose, out bool placementValid, out EdgeSocket socketFromSnap)
+        {
+            pose = default;
+            placementValid = false;
+            socketFromSnap = null;
+
+            Ray ray = mainCamera.ScreenPointToRay(screenPos);
+            Quaternion rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
+
+            if (Physics.Raycast(ray, out var hit, groundRaycastDistance, placementMask, QueryTriggerInteraction.Ignore))
+            {
+                pose = new Pose(hit.point, rotation);
+                placementValid = true;
+                return true;
+            }
+
+            if (TryHorizontalPlane(ray, out var point))
+            {
+                pose = new Pose(point, rotation);
+                placementValid = true;
+                return true;
+            }
+
+            return false;
+        }
+
         private bool TrySnapSocket(Ray ray, out Pose bestPose, out EdgeSocket socket)
         {
             bestPose = default;
@@ -342,6 +450,14 @@ namespace Coreline
             previewInstance = null;
         }
 
+        private void ClearPrefabPlacementState()
+        {
+            placementPrefabOverride = null;
+            placementCompleted = null;
+            previewPrefabSource = null;
+            waitForPlacementInputRelease = false;
+        }
+
         private void ClearHoveredBuild()
         {
             for (var i = 0; i < hoveredRenderers.Count; i++)
@@ -361,6 +477,7 @@ namespace Coreline
         {
             ClearPreview();
             ClearHoveredBuild();
+            ClearPrefabPlacementState();
         }
 
         private void OnDestroy()

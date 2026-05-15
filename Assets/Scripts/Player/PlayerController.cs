@@ -43,7 +43,7 @@ public class PlayerController : MonoBehaviour
     private bool IsUiInputBlocked => IsInventoryOpen ||
                                      RobotChatUIController.IsAnyOpen ||
                                      CollectingRobotInventoryUIController.IsAnyOpen ||
-                                     RobotWorkbenchUIController.IsAnyOpen;
+                                     WorkbenchUIController.IsAnyOpen;
 
     #endregion
 
@@ -55,6 +55,7 @@ public class PlayerController : MonoBehaviour
     private MiningController miningController;
     private bool jumpPressed;
     private bool toggleInventoryPressed;
+    private bool wasToggleInventoryPressed;
     private bool primaryAttackPressed;
 
     private float toggleInventoryCooldown = 0.1f;
@@ -130,11 +131,14 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         if (toggleInventoryPressed &&
+            !wasToggleInventoryPressed &&
             !CollectingRobotInventoryUIController.IsAnyOpen &&
-            !RobotWorkbenchUIController.IsAnyOpen)
+            !WorkbenchUIController.IsAnyOpen)
         {
             ToggleInventory();
         }
+
+        wasToggleInventoryPressed = toggleInventoryPressed;
         
         if (IsUiInputBlocked)
         {
