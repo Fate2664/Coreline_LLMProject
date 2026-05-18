@@ -5,12 +5,13 @@ using UnityEngine.AI;
 namespace Coreline.Robots
 {
     [RequireComponent(typeof(NavMeshAgent))]
+    [RequireComponent(typeof(CommandTarget))]
+    [RequireComponent(typeof(RobotCommandValidator))]
     public class BaseRobotController : MonoBehaviour
     {
-        [SerializeField] private RobotCommandValidator commandValidator; 
-
         private NavMeshAgent agent;
         private RobotCommandQueue commandQueue;
+        private RobotCommandValidator commandValidator; 
         private BaseRobotCommandExecutor commandExecutor;
         private CommandTarget commandTarget;
         private RobotWorkState currentState = RobotWorkState.Idle;
@@ -32,12 +33,17 @@ namespace Coreline.Robots
             agent = GetComponent<NavMeshAgent>();
             commandQueue = GetComponent<RobotCommandQueue>();
             commandExecutor = GetComponent<BaseRobotCommandExecutor>();
+            commandValidator = GetComponent<RobotCommandValidator>();
             EnsureRobotCommandTarget();
         }
 
         public CommandTarget EnsureRobotCommandTarget()
         {
             commandTarget = commandTarget != null ? commandTarget : GetComponent<CommandTarget>();
+            if (commandTarget == null)
+            {
+                commandTarget = gameObject.AddComponent<CommandTarget>();
+            }
 
             string id = commandTarget.ConfiguredTargetId;
             if (ShouldGenerateRobotTargetId(commandTarget, id))

@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 1089754196660871451}
   - component: {fileID: 3891365693400218282}
   - component: {fileID: 7314838674758585366}
+  - component: {fileID: 1730126145630953704}
+  - component: {fileID: 6228920921988068809}
   - component: {fileID: 8049098658234373219}
   - component: {fileID: 1720380576607427858}
   m_Layer: 0
@@ -73,7 +75,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e4a693d31f26864c9460c603aa764e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.ScanningRobotCommandExecutor
-  targetRegistry: {fileID: 0}
   defaultStoppingDistance: 1.5
   maxTravelTime: 45
   dynamicTargetRepathDistance: 0.5
@@ -91,10 +92,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd58f88009325c84f8400fafae41df89, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.ScanningRobotController
-  commandValidator: {fileID: 0}
-  commandQueue: {fileID: 3891365693400218282}
-  commandExecutor: {fileID: 8595454338109103863}
-  commandTarget: {fileID: 0}
   scanTrigger: {fileID: 1720380576607427858}
   refreshInterval: 0.5
   showIndicatorsOnScannedTargets: 1
@@ -127,6 +124,41 @@ MonoBehaviour:
   pauseDurationRange: {x: 0.4, y: 1.2}
   rotationSpeedRange: {x: 45, y: 120}
   startFromCurrentYaw: 1
+--- !u!114 &1730126145630953704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4831276820572189237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db8e988b538b8644e97b22f396848acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CommandTarget
+  targetId: ScanningRobot_1
+  targetType: 5
+  oreType: 0
+  hasOreType: 0
+  destinationOverride: {fileID: 3282970834719660513}
+  interactionRadius: 1.5
+  inventoryItemData: {fileID: 0}
+  pickupAmount: 1
+  destroyOnPickup: 1
+--- !u!114 &6228920921988068809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4831276820572189237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef8c9d3d0e8222f47a81e340b93d536d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotCommandValidator
+  resolveResourceTargets: 1
+  expandResourceMiningToAllVisibleNodes: 1
 --- !u!135 &8049098658234373219
 SphereCollider:
   m_ObjectHideFlags: 0

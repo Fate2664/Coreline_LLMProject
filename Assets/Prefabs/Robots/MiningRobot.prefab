@@ -14,8 +14,9 @@ GameObject:
   - component: {fileID: 4767034335557687615}
   - component: {fileID: 4748725833305764576}
   - component: {fileID: 3490420609318373469}
-  - component: {fileID: 6983384821587486641}
   - component: {fileID: -6950230881026546860}
+  - component: {fileID: -1585244337402810226}
+  - component: {fileID: 6983384821587486641}
   m_Layer: 0
   m_Name: MiningRobot
   m_TagString: MiningRobot
@@ -76,10 +77,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f2603294b3c3d846b50c3b8f5755e50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.MiningRobotController
-  commandValidator: {fileID: 0}
-  commandQueue: {fileID: 4748725833305764576}
-  commandExecutor: {fileID: 4767034335557687615}
-  commandTarget: {fileID: 0}
   toolTransform: {fileID: 5793208067183433583}
   lookAimConstraint: {fileID: 8181041883818280373}
   rigBuilder: {fileID: 4126998587151986122}
@@ -141,9 +138,44 @@ MonoBehaviour:
   collectingRobotInventoryUI: {fileID: 0}
   robotController: {fileID: 6622030324545740117}
   closeChatWhenPlayerLeaves: 1
-  closeInventoryWhenPlayerLeaves: 1
+  closeInventoryWhenPlayerLeaves: 0
   indicatorManager: {fileID: 3932363290492414191}
   altIndicatorManager: {fileID: 0}
+--- !u!114 &-6950230881026546860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1773679889532012981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db8e988b538b8644e97b22f396848acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CommandTarget
+  targetId: MiningRobot_1
+  targetType: 5
+  oreType: 0
+  hasOreType: 0
+  destinationOverride: {fileID: 488810254817770938}
+  interactionRadius: 1.5
+  inventoryItemData: {fileID: 0}
+  pickupAmount: 1
+  destroyOnPickup: 1
+--- !u!114 &-1585244337402810226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1773679889532012981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef8c9d3d0e8222f47a81e340b93d536d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotCommandValidator
+  resolveResourceTargets: 1
+  expandResourceMiningToAllVisibleNodes: 1
 --- !u!136 &6983384821587486641
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -167,27 +199,6 @@ CapsuleCollider:
   m_Height: 1.62
   m_Direction: 1
   m_Center: {x: 0, y: 0.75, z: 0}
---- !u!114 &-6950230881026546860
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1773679889532012981}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: db8e988b538b8644e97b22f396848acf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CommandTarget
-  targetId: MiningRobot_1
-  targetType: 5
-  oreType: 0
-  hasOreType: 0
-  destinationOverride: {fileID: 488810254817770938}
-  interactionRadius: 1.5
-  inventoryItemData: {fileID: 0}
-  pickupAmount: 1
-  destroyOnPickup: 1
 --- !u!1 &1981485598797330877
 GameObject:
   m_ObjectHideFlags: 0

@@ -388,7 +388,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Nova::Nova.SortGroup
   info:
-    SortingOrder: 3
+    SortingOrder: 6
     RenderQueue: 2507
     RenderOverOpaqueGeometry: 0
 --- !u!1 &4017176061247584428
@@ -1961,7 +1961,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Nova::Nova.SortGroup
   info:
-    SortingOrder: 4
+    SortingOrder: 7
     RenderQueue: 2507
     RenderOverOpaqueGeometry: 0
 --- !u!1 &8332457870995884078

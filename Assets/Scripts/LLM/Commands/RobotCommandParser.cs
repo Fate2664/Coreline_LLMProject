@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -28,20 +29,23 @@ namespace Coreline.Robots
 
             try
             {
-                JToken root = JToken.Parse(json);
-                sequence = ParseRootToken(root, out error);
-
-                if (sequence == null || sequence.IsEmpty)
-                {
-                    error = "The JSON did not contain any commands.";
-                    return false;
-                }
-
-                sequence.Normalize();
-                return true;
+                return TryParseJson(json, out sequence, out error);
             }
             catch (Exception exception)
             {
+                if (TryWrapLooseObjectSequence(json, out string wrappedJson))
+                {
+                    try
+                    {
+                        return TryParseJson(wrappedJson, out sequence, out error);
+                    }
+                    catch (Exception wrappedException)
+                    {
+                        error = $"Failed to parse command JSON: {wrappedException.Message}";
+                        return false;
+                    }
+                }
+
                 error = $"Failed to parse command JSON: {exception.Message}";
                 return false;
             }
@@ -50,6 +54,21 @@ namespace Coreline.Robots
         public static string ToJson(RobotCommandSequence sequence)
         {
             return JsonConvert.SerializeObject(sequence, Formatting.Indented);
+        }
+
+        private static bool TryParseJson(string json, out RobotCommandSequence sequence, out string error)
+        {
+            JToken root = JToken.Parse(json);
+            sequence = ParseRootToken(root, out error);
+
+            if (sequence == null || sequence.IsEmpty)
+            {
+                error = "The JSON did not contain any commands.";
+                return false;
+            }
+
+            sequence.Normalize();
+            return true;
         }
 
         private static RobotCommandSequence ParseRootToken(JToken root, out string error)
@@ -146,6 +165,90 @@ namespace Coreline.Robots
             int start = useArray ? arrayStart : objectStart;
             int end = useArray ? arrayEnd : objectEnd;
             return trimmed.Substring(start, end - start + 1);
+        }
+
+        private static bool TryWrapLooseObjectSequence(string json, out string wrappedJson)
+        {
+            wrappedJson = string.Empty;
+            string trimmed = json.Trim();
+
+            if (!trimmed.StartsWith("{", StringComparison.Ordinal) ||
+                !trimmed.EndsWith("}", StringComparison.Ordinal) ||
+                !HasLooseObjectSeparator(trimmed))
+            {
+                return false;
+            }
+
+            wrappedJson = $"[{NormalizeLooseObjectSequence(trimmed)}]";
+            return true;
+        }
+
+        private static bool HasLooseObjectSeparator(string json)
+        {
+            for (int i = 0; i < json.Length - 1; i++)
+            {
+                if (json[i] != '}')
+                {
+                    continue;
+                }
+
+                int nextIndex = i + 1;
+                while (nextIndex < json.Length && char.IsWhiteSpace(json[nextIndex]))
+                {
+                    nextIndex++;
+                }
+
+                if (nextIndex < json.Length && (json[nextIndex] == ',' || json[nextIndex] == '{'))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string NormalizeLooseObjectSequence(string json)
+        {
+            StringBuilder builder = new();
+            int depth = 0;
+
+            for (int i = 0; i < json.Length; i++)
+            {
+                char current = json[i];
+                builder.Append(current);
+
+                if (current == '{')
+                {
+                    depth++;
+                }
+                else if (current == '}')
+                {
+                    depth = Mathf.Max(0, depth - 1);
+                    if (depth != 0)
+                    {
+                        continue;
+                    }
+
+                    int nextIndex = i + 1;
+                    while (nextIndex < json.Length && char.IsWhiteSpace(json[nextIndex]))
+                    {
+                        nextIndex++;
+                    }
+
+                    if (nextIndex < json.Length && json[nextIndex] == ',')
+                    {
+                        builder.Append(',');
+                        i = nextIndex;
+                    }
+                    else if (nextIndex < json.Length && json[nextIndex] == '{')
+                    {
+                        builder.Append(',');
+                        i = nextIndex - 1;
+                    }
+                }
+            }
+
+            return builder.ToString();
         }
     }
 }

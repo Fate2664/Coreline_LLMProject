@@ -49,8 +49,11 @@ namespace Coreline.Robots
             builder.AppendLine();
             builder.AppendLine("The target value must match an id from the available target list exactly. The target value must not be a target type label.");
             builder.AppendLine("Resource nodes are available only when the target robot and the resource node are both inside a scanning robot radius.");
+            builder.AppendLine("Scanning robots reveal resources passively. Do not move or follow a scanning robot before or after mining unless the player explicitly asks to move to or follow that scanner.");
             builder.AppendLine("Do not create scan commands. If no matching resource is visible, do not invent a target id.");
             builder.AppendLine("For resource requests like mine coal, prefer {\"action\":\"mine_resource\",\"resource\":\"coal\",\"priority\":\"normal\"} unless the player names a specific target id.");
+            builder.AppendLine("For requests naming multiple resources, return one mine_resource command per resource in a sequence, for example mine iron and coal -> {\"sequence\":[{\"action\":\"mine_resource\",\"resource\":\"iron\",\"priority\":\"normal\"},{\"action\":\"mine_resource\",\"resource\":\"coal\",\"priority\":\"normal\"}]}.");
+            builder.AppendLine("If the player says to prioritize a resource, set that resource command to priority high and keep the other resource commands normal, for example prioritize iron -> iron high, coal normal.");
             builder.AppendLine("Do not include amount for vague requests like mine coal or mine some coal; that means mine all visible matching nodes.");
             builder.AppendLine("If the player gives a specific node count, set node_count to that count, for example mine two coal nodes -> {\"action\":\"mine_resource\",\"resource\":\"coal\",\"node_count\":2,\"priority\":\"normal\"}.");
             builder.AppendLine("For requests like continuously mine coal that you can see, return {\"action\":\"mine_resource\",\"resource\":\"coal\",\"repeat\":true,\"priority\":\"normal\"}.");
@@ -130,6 +133,12 @@ namespace Coreline.Robots
                     : registry.IsTargetVisible(target);
 
                 if (target == null || !visible)
+                {
+                    continue;
+                }
+
+                if (viewerRobot is MiningRobotController &&
+                    target.GetComponentInParent<ScanningRobotController>() != null)
                 {
                     continue;
                 }

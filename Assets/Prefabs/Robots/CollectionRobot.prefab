@@ -68,6 +68,8 @@ GameObject:
   - component: {fileID: 1453614264020792156}
   - component: {fileID: 8376045740742776179}
   - component: {fileID: 7029008929903639967}
+  - component: {fileID: 6046964784671726268}
+  - component: {fileID: 5169564672200163356}
   - component: {fileID: 8960400059630645396}
   m_Layer: 0
   m_Name: CollectionRobot
@@ -92,7 +94,6 @@ Transform:
   - {fileID: 4100424000594537716}
   - {fileID: 1438955226093258514}
   - {fileID: 2216821983265655911}
-  - {fileID: 1918507723546646074}
   - {fileID: 5405639901700179678}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -130,17 +131,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ad7a5c32bd3464c93178733bfa8f376, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CollectingRobotController
-  commandValidator: {fileID: 0}
-  commandQueue: {fileID: 1453614264020792156}
-  commandExecutor: {fileID: 1457728416235249996}
-  commandTarget: {fileID: 0}
   inventory: {fileID: 8376045740742776179}
-  selectedMiningRobot: {fileID: 0}
-  visionTrigger: {fileID: 8459064429766533375}
+  visionTrigger: {fileID: 0}
   visionLayers:
     serializedVersion: 2
     m_Bits: 1024
-  fallbackVisionRadius: 8
   refreshVisionWithOverlap: 1
   orePickupsRequireScan: 1
 --- !u!114 &1457728416235249996
@@ -155,7 +150,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbc8092d95b84c489850ad74230f456d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CollectingRobotCommandExecutor
-  targetRegistry: {fileID: 0}
   defaultStoppingDistance: 1.5
   maxTravelTime: 400
   dynamicTargetRepathDistance: 0.5
@@ -224,6 +218,41 @@ MonoBehaviour:
   closeInventoryWhenPlayerLeaves: 1
   indicatorManager: {fileID: 1692271066441835741}
   altIndicatorManager: {fileID: 5936273140731845236}
+--- !u!114 &6046964784671726268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2621652997579401415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db8e988b538b8644e97b22f396848acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CommandTarget
+  targetId: CollectionRobot_1
+  targetType: 5
+  oreType: 0
+  hasOreType: 0
+  destinationOverride: {fileID: 1741097535463817190}
+  interactionRadius: 1.5
+  inventoryItemData: {fileID: 0}
+  pickupAmount: 1
+  destroyOnPickup: 1
+--- !u!114 &5169564672200163356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2621652997579401415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef8c9d3d0e8222f47a81e340b93d536d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotCommandValidator
+  resolveResourceTargets: 1
+  expandResourceMiningToAllVisibleNodes: 1
 --- !u!65 &8960400059630645396
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -245,59 +274,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.5, y: 0.5, z: 0.78}
   m_Center: {x: 0, y: 0.33, z: 0.06}
---- !u!1 &8725054063015571789
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1918507723546646074}
-  - component: {fileID: 8459064429766533375}
-  m_Layer: 0
-  m_Name: LookRadius
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1918507723546646074
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8725054063015571789}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1741097535463817190}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &8459064429766533375
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8725054063015571789}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 7.34
-  m_Center: {x: 0, y: 0.2, z: 0.03}
 --- !u!1001 &4570336247382346527
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -218,6 +219,53 @@ namespace Coreline.Robots
             return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToLowerInvariant();
         }
 
+        public static bool TryNormalizeResourceName(string value, out string resource)
+        {
+            resource = string.Empty;
+
+            List<string> resources = ExtractResourceNames(value);
+            if (resources.Count != 1)
+            {
+                return false;
+            }
+
+            resource = resources[0];
+            return true;
+        }
+
+        public static List<string> ExtractResourceNames(string value)
+        {
+            List<ResourceMatch> matches = new();
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return new List<string>();
+            }
+
+            string searchable = $" {NormalizeResourcePhrase(value)} ";
+            foreach (string oreName in Enum.GetNames(typeof(OreType)))
+            {
+                string normalizedOreName = oreName.ToLowerInvariant();
+                int index = IndexOfResourceAlias(searchable, normalizedOreName);
+                if (index >= 0)
+                {
+                    matches.Add(new ResourceMatch(normalizedOreName, index));
+                }
+            }
+
+            matches.Sort((left, right) => left.Index.CompareTo(right.Index));
+
+            List<string> resources = new();
+            foreach (ResourceMatch match in matches)
+            {
+                if (!resources.Contains(match.Resource))
+                {
+                    resources.Add(match.Resource);
+                }
+            }
+
+            return resources;
+        }
+
         private static string NormalizeTargetAlias(string value)
         {
             switch (value)
@@ -258,9 +306,71 @@ namespace Coreline.Robots
                 case "any_ores":
                     return string.Empty;
                 default:
+                    if (TryNormalizeResourceName(value, out string resource))
+                    {
+                        return resource;
+                    }
+
                     return value.EndsWith("_ore", StringComparison.Ordinal)
                         ? value.Substring(0, value.Length - "_ore".Length)
                         : value;
+            }
+        }
+
+        private static string NormalizeResourcePhrase(string value)
+        {
+            string normalized = NormalizeToken(value);
+            char[] chars = normalized.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (!char.IsLetterOrDigit(chars[i]))
+                {
+                    chars[i] = ' ';
+                }
+            }
+
+            return new string(chars);
+        }
+
+        private static int IndexOfResourceAlias(string searchable, string normalizedResource)
+        {
+            int bestIndex = -1;
+
+            foreach (string alias in ResourceAliases(normalizedResource))
+            {
+                int index = searchable.IndexOf($" {alias} ", StringComparison.Ordinal);
+                if (index < 0)
+                {
+                    continue;
+                }
+
+                bestIndex = bestIndex < 0 ? index : Mathf.Min(bestIndex, index);
+            }
+
+            return bestIndex;
+        }
+
+        private static IEnumerable<string> ResourceAliases(string normalizedResource)
+        {
+            yield return normalizedResource;
+            yield return $"{normalizedResource}s";
+
+            if (normalizedResource == "emerald")
+            {
+                yield return "emerad";
+                yield return "emerads";
+            }
+        }
+
+        private readonly struct ResourceMatch
+        {
+            public readonly string Resource;
+            public readonly int Index;
+
+            public ResourceMatch(string resource, int index)
+            {
+                Resource = resource;
+                Index = index;
             }
         }
     }

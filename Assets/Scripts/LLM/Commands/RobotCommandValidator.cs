@@ -5,10 +5,10 @@ namespace Coreline.Robots
 {
     public class RobotCommandValidator : MonoBehaviour
     {
-        [SerializeField] private CommandTargetRegistry targetRegistry;
         [SerializeField] private bool resolveResourceTargets = true;
         [SerializeField] private bool expandResourceMiningToAllVisibleNodes = true;
 
+        private CommandTargetRegistry targetRegistry;
         private CommandTargetRegistry Registry => targetRegistry != null ? targetRegistry : CommandTargetRegistry.Instance;
 
         private void Awake()

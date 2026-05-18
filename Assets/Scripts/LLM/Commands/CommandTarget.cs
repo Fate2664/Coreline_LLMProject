@@ -95,6 +95,19 @@ namespace Coreline.Robots
                 return false;
             }
 
+            if (RobotCommand.TryNormalizeResourceName(resource, out string normalizedResource))
+            {
+                return string.Equals(oreType.ToString(), normalizedResource, StringComparison.OrdinalIgnoreCase);
+            }
+
+            foreach (string resourceName in RobotCommand.ExtractResourceNames(resource))
+            {
+                if (string.Equals(oreType.ToString(), resourceName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
             return string.Equals(oreType.ToString(), resource, StringComparison.OrdinalIgnoreCase);
         }
 

@@ -19,18 +19,23 @@ namespace Coreline.Robots
         protected Coroutine activeRoutine;
         protected RobotCommand activeCommand;
 
-        protected CommandTargetRegistry Registry => targetRegistry;
+        protected CommandTargetRegistry Registry => targetRegistry != null ? targetRegistry : CommandTargetRegistry.Instance;
         protected NavMeshAgent Agent => robot.Agent;
 
 
         protected virtual void Awake()
         {
             robot = GetComponent<BaseRobotController>();
-            targetRegistry = CommandTargetRegistry.Instance;
+            targetRegistry ??= CommandTargetRegistry.Instance;
         }
 
         protected virtual void Update()
         {
+            if (activeRoutine != null)
+            {
+                return;
+            }
+
             if (robot.CommandQueue.TryDequeue(out RobotCommand command))
             {
                 activeRoutine = StartCoroutine(ExecuteCommand(command));
@@ -205,20 +210,26 @@ namespace Coreline.Robots
         protected virtual bool TryResolveTarget(RobotCommand command, out CommandTarget target)
         {
             target = null;
+            CommandTargetRegistry registry = Registry;
+            if (registry == null)
+            {
+                robot.RaiseError($"No {nameof(CommandTargetRegistry)} exists in the scene.");
+                return false;
+            }
 
-            if (!string.IsNullOrWhiteSpace(command.target) && Registry.TryGetTarget(command.target, transform.position, out target))
+            if (!string.IsNullOrWhiteSpace(command.target) && registry.TryGetTarget(command.target, transform.position, out target))
             {
                 return true;
             }
 
             if (command.ActionType == RobotCommandAction.MineResource)
             {
-                return Registry.TryFindNearestResource(command.resource, transform.position, out target);
+                return registry.TryFindNearestResource(command.resource, transform.position, out target);
             }
 
             if (command.ActionType == RobotCommandAction.Pickup)
             {
-                return Registry.TryFindNearestPickup(command.resource, transform.position, out target);
+                return registry.TryFindNearestPickup(command.resource, transform.position, out target);
             }
 
             return false;

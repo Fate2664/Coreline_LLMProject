@@ -8,17 +8,16 @@ namespace Coreline.Robots
     public class CollectingRobotController : BaseRobotController
     {
         [SerializeField] private CollectingRobotInventory inventory;
-        [SerializeField] private MiningRobotController selectedMiningRobot;
-        [SerializeField] private SphereCollider visionTrigger;
         [SerializeField] private LayerMask visionLayers = ~0;
-        [SerializeField] private float fallbackVisionRadius = 8f;
         [SerializeField] private bool refreshVisionWithOverlap = true;
         [SerializeField] private bool orePickupsRequireScan = true;
 
+        private MiningRobotController selectedMiningRobot;
         private readonly HashSet<CommandTarget> visiblePickupTargets = new();
+        private readonly HashSet<CommandTarget> ignoredPickupTargets = new();
         private Animator animator;
         private StateMachine stateMachine;
-        
+
         public CollectingRobotInventory Inventory => inventory;
         public MiningRobotController SelectedMiningRobot => selectedMiningRobot;
         protected override string RobotTargetIdPrefix => "CollectionRobot";
@@ -28,24 +27,20 @@ namespace Coreline.Robots
             base.Awake();
             animator = GetComponentInChildren<Animator>();
 
-            if (visionTrigger != null)
-            {
-                visionTrigger.isTrigger = true;
-            }
-            
             stateMachine = new StateMachine();
 
             var idleState = new CollectionRobotIdleState(this, animator);
             var walkState = new CollectionRobotWalkState(this, animator);
-            
+
             Any(walkState, new FuncPredicate(ShouldEnterWalkState));
             At(walkState, idleState, new FuncPredicate(ShouldEnterIdleState));
-            
+
             stateMachine.SetState(idleState);
         }
-        
+
         private void At(IState from, IState to, IPredicate condition) =>
             stateMachine.AddTransition(from, to, condition);
+
         private void Any(IState to, IPredicate condition) => stateMachine.AddAnyTransition(to, condition);
 
         private void Update()
@@ -68,15 +63,8 @@ namespace Coreline.Robots
             target = null;
             float bestDistanceSqr = float.MaxValue;
 
-            RefreshVisiblePickupTargets();
-
-            foreach (CommandTarget candidate in visiblePickupTargets)
+            foreach (CommandTarget candidate in GetVisiblePickupTargets(resource, origin))
             {
-                if (!IsVisiblePickupTarget(candidate) || !candidate.MatchesResource(resource))
-                {
-                    continue;
-                }
-
                 float distanceSqr = (candidate.DestinationPosition - origin).sqrMagnitude;
                 if (distanceSqr >= bestDistanceSqr)
                 {
@@ -92,12 +80,22 @@ namespace Coreline.Robots
 
         public List<CommandTarget> GetVisiblePickupTargets(string resource, Vector3 origin)
         {
-            RefreshVisiblePickupTargets();
+            ignoredPickupTargets.RemoveWhere(target => target == null || !target.gameObject.activeInHierarchy);
+
+            CommandTargetRegistry registry = CommandTargetRegistry.Instance;
+            if (registry != null)
+            {
+                List<CommandTarget> registryTargets = registry.FindTargets(CommandTargetType.PickupItem, resource, origin);
+                registryTargets.RemoveAll(target => !IsVisiblePickupTarget(target) || ignoredPickupTargets.Contains(target));
+                return registryTargets;
+            }
 
             List<CommandTarget> results = new();
             foreach (CommandTarget target in visiblePickupTargets)
             {
-                if (IsVisiblePickupTarget(target) && target.MatchesResource(resource))
+                if (IsVisiblePickupTarget(target) &&
+                    target.MatchesResource(resource) &&
+                    !ignoredPickupTargets.Contains(target))
                 {
                     results.Add(target);
                 }
@@ -118,6 +116,7 @@ namespace Coreline.Robots
             if (target != null)
             {
                 visiblePickupTargets.Remove(target);
+                ignoredPickupTargets.Add(target);
             }
         }
 
@@ -125,7 +124,7 @@ namespace Coreline.Robots
         {
             return IsVisiblePickupTarget(target);
         }
-        
+
         public override bool CanExecuteAction(RobotCommandAction action)
         {
             return base.CanExecuteAction(action) ||
@@ -146,39 +145,6 @@ namespace Coreline.Robots
             if (TryGetPickupTarget(other, out CommandTarget target))
             {
                 visiblePickupTargets.Remove(target);
-            }
-        }
-
-        private void RefreshVisiblePickupTargets()
-        {
-            visiblePickupTargets.RemoveWhere(target => !IsVisiblePickupTarget(target));
-
-            if (!refreshVisionWithOverlap)
-            {
-                return;
-            }
-
-            Vector3 center;
-            float radius;
-
-            if (visionTrigger != null)
-            {
-                center = visionTrigger.transform.TransformPoint(visionTrigger.center);
-                radius = GetWorldSphereRadius(visionTrigger);
-            }
-            else
-            {
-                center = transform.position;
-                radius = Mathf.Max(0.1f, fallbackVisionRadius);
-            }
-
-            Collider[] hits = Physics.OverlapSphere(center, radius, visionLayers, QueryTriggerInteraction.Collide);
-            foreach (Collider hit in hits)
-            {
-                if (TryGetPickupTarget(hit, out CommandTarget target) && IsVisiblePickupTarget(target))
-                {
-                    visiblePickupTargets.Add(target);
-                }
             }
         }
 
@@ -242,6 +208,5 @@ namespace Coreline.Robots
         }
 
         #endregion
-        
     }
 }
