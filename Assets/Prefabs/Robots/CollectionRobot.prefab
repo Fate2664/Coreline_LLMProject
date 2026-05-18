@@ -142,6 +142,7 @@ MonoBehaviour:
     m_Bits: 1024
   fallbackVisionRadius: 8
   refreshVisionWithOverlap: 1
+  orePickupsRequireScan: 1
 --- !u!114 &1457728416235249996
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,8 +157,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CollectingRobotCommandExecutor
   targetRegistry: {fileID: 0}
   defaultStoppingDistance: 1.5
-  maxTravelTime: 45
+  maxTravelTime: 400
   dynamicTargetRepathDistance: 0.5
+  followStoppingDistance: 2
+  followRepathInterval: 0.2
   pickupRadius: 2
   pickupLayers:
     serializedVersion: 2
@@ -169,6 +172,7 @@ MonoBehaviour:
   followCollectDuration: 120
   visiblePickupRetryInterval: 0.25
   noVisiblePickupStopDelay: 3
+  repeatCollectRetryInterval: 1
 --- !u!114 &1453614264020792156
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -212,6 +216,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.RobotInteraction
   playerInteractionDetector: {fileID: 0}
   chatUI: {fileID: 0}
+  miningRobotChatUI: {fileID: 0}
+  collectingRobotChatUI: {fileID: 0}
   collectingRobotInventoryUI: {fileID: 0}
   robotController: {fileID: 963391460434917103}
   closeChatWhenPlayerLeaves: 1

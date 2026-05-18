@@ -7,12 +7,12 @@ namespace Coreline.Robots
     [RequireComponent(typeof(NavMeshAgent))]
     public class BaseRobotController : MonoBehaviour
     {
-        [SerializeField] private RobotCommandValidator commandValidator;
-        [SerializeField] private RobotCommandQueue commandQueue;
-        [SerializeField] private BaseRobotCommandExecutor commandExecutor;
-        [SerializeField] private CommandTarget commandTarget;
+        [SerializeField] private RobotCommandValidator commandValidator; 
 
         private NavMeshAgent agent;
+        private RobotCommandQueue commandQueue;
+        private BaseRobotCommandExecutor commandExecutor;
+        private CommandTarget commandTarget;
         private RobotWorkState currentState = RobotWorkState.Idle;
 
         public event Action<RobotWorkState> StatusChanged;
@@ -30,25 +30,14 @@ namespace Coreline.Robots
         protected virtual void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
-            commandQueue = EnsureComponent(commandQueue);
-            commandValidator = EnsureComponent(commandValidator);
-            commandExecutor = commandExecutor != null ? commandExecutor : GetComponent<BaseRobotCommandExecutor>();
-
-            if (commandExecutor == null)
-            {
-                commandExecutor = gameObject.AddComponent<BaseRobotCommandExecutor>();
-            }
-
+            commandQueue = GetComponent<RobotCommandQueue>();
+            commandExecutor = GetComponent<BaseRobotCommandExecutor>();
             EnsureRobotCommandTarget();
         }
 
         public CommandTarget EnsureRobotCommandTarget()
         {
             commandTarget = commandTarget != null ? commandTarget : GetComponent<CommandTarget>();
-            if (commandTarget == null)
-            {
-                commandTarget = gameObject.AddComponent<CommandTarget>();
-            }
 
             string id = commandTarget.ConfiguredTargetId;
             if (ShouldGenerateRobotTargetId(commandTarget, id))
@@ -67,18 +56,13 @@ namespace Coreline.Robots
         public virtual bool CanExecuteAction(RobotCommandAction action)
         {
             return action == RobotCommandAction.Move ||
+                   action == RobotCommandAction.Follow ||
                    action == RobotCommandAction.Wait ||
                    action == RobotCommandAction.Stop;
         }
 
         public bool SubmitCommands(RobotCommandSequence sequence, bool clearExisting = false, bool validate = true)
         {
-            if (sequence == null || sequence.IsEmpty)
-            {
-                RaiseError("Cannot submit an empty robot command sequence.");
-                return false;
-            }
-
             RobotCommandSequence commandsToQueue = sequence;
 
             if (validate && commandValidator != null)
@@ -138,9 +122,6 @@ namespace Coreline.Robots
 
         public virtual void HandleMovement()
         {
-            if (agent == null || !agent.enabled || !agent.isOnNavMesh)
-                return;
-
             if (currentState == RobotWorkState.Walking)
             {
                 agent.isStopped = false;
@@ -157,17 +138,6 @@ namespace Coreline.Robots
 
         public virtual void HandleMining()
         {
-        }
-
-        protected T EnsureComponent<T>(T existing) where T : Component
-        {
-            if (existing != null)
-                return existing;
-
-            if (TryGetComponent(out T found))
-                return found;
-
-            return gameObject.AddComponent<T>();
         }
 
         private bool ShouldGenerateRobotTargetId(CommandTarget target, string id)
@@ -206,11 +176,6 @@ namespace Coreline.Robots
 
         private static bool IsTargetIdInUse(string id, CommandTarget self)
         {
-            if (string.IsNullOrWhiteSpace(id))
-            {
-                return false;
-            }
-
             CommandTarget[] targets = FindObjectsByType<CommandTarget>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
             foreach (CommandTarget target in targets)
             {

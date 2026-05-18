@@ -79,7 +79,10 @@ namespace Coreline
             chatUI = ResolveChatUIForRobot();
             if (chatUI == null)
             {
-                Debug.LogWarning("Cannot open LLM chat because LLMChatRoot was not found.", this);
+                Debug.LogWarning(
+                    $"Cannot open {robotController.GetType().Name} chat because the expected UI root " +
+                    $"{GetExpectedChatRootName()} was not found in the scene.",
+                    this);
                 return;
             }
 
@@ -123,6 +126,21 @@ namespace Coreline
             }
 
             return chatUI != null ? chatUI : RobotChatUIController.FindOrCreateInScene();
+        }
+
+        private string GetExpectedChatRootName()
+        {
+            if (robotController is MiningRobotController)
+            {
+                return RobotChatUIController.GetExpectedRootNameForController<MiningRobotChatUIController>();
+            }
+
+            if (robotController is CollectingRobotController)
+            {
+                return RobotChatUIController.GetExpectedRootNameForController<CollectingRobotChatUIController>();
+            }
+
+            return RobotChatUIController.GetExpectedRootNameForController<RobotChatUIController>();
         }
 
         private static void CloseOtherChatControllers(RobotChatUIController activeController)

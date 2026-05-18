@@ -12,6 +12,7 @@ namespace Coreline.Robots
         Scan,
         Pickup,
         Deliver,
+        Follow,
         Wait,
         Stop
     }
@@ -32,10 +33,14 @@ namespace Coreline.Robots
         [JsonProperty("priority")] public string priority;
         [JsonProperty("amount")] public int amount = 1;
         [JsonProperty("node_count", DefaultValueHandling = DefaultValueHandling.Ignore)] public int nodeCount;
+        [JsonProperty("repeat", DefaultValueHandling = DefaultValueHandling.Ignore)] public bool repeat;
+        [JsonProperty("continuous", DefaultValueHandling = DefaultValueHandling.Ignore)] public bool continuous;
+        [JsonProperty("repeating", DefaultValueHandling = DefaultValueHandling.Ignore)] public bool repeating;
 
         [JsonIgnore] public RobotCommandAction ActionType => ParseAction(action);
         [JsonIgnore] public RobotCommandPriority PriorityType => ParsePriority(priority);
         [JsonIgnore] public bool HasExplicitAmount { get; set; }
+        [JsonIgnore] public bool IsRepeating => repeat || continuous || repeating;
         [JsonIgnore] public int RequestedNodeCount => nodeCount > 0 ? nodeCount : HasExplicitAmount && amount > 1 ? amount : 0;
 
         public RobotCommand Clone()
@@ -48,8 +53,18 @@ namespace Coreline.Robots
                 priority = priority,
                 amount = amount,
                 nodeCount = nodeCount,
+                repeat = repeat,
+                continuous = continuous,
+                repeating = repeating,
                 HasExplicitAmount = HasExplicitAmount
             };
+        }
+
+        public void SetRepeating(bool value)
+        {
+            repeat = value;
+            continuous = false;
+            repeating = false;
         }
 
         public void Normalize()
@@ -72,6 +87,11 @@ namespace Coreline.Robots
             if (string.IsNullOrWhiteSpace(priority))
             {
                 priority = "normal";
+            }
+
+            if (ActionType == RobotCommandAction.Follow && string.IsNullOrWhiteSpace(target))
+            {
+                target = "player";
             }
         }
 
@@ -97,6 +117,16 @@ namespace Coreline.Robots
                 case "mine":
                 case "mine_resource":
                 case "mine_node":
+                case "repeat_mine":
+                case "repeat_mining":
+                case "repeatedly_mine":
+                case "continous_mine":
+                case "continously_mine":
+                case "continuous_mine":
+                case "continuously_mine":
+                case "mine_continously":
+                case "mine_continuously":
+                case "keep_mining":
                     return RobotCommandAction.MineResource;
                 case "scan":
                 case "scan_area":
@@ -120,12 +150,45 @@ namespace Coreline.Robots
                 case "follow_collect":
                 case "follow_and_pickup":
                 case "follow_pickup":
+                case "repeat_pickup":
+                case "repeat_collect":
+                case "repeatedly_collect":
+                case "continous_pickup":
+                case "continous_collect":
+                case "continously_collect":
+                case "continuous_pickup":
+                case "continuous_collect":
+                case "continuously_collect":
+                case "collect_continously":
+                case "collect_continuously":
+                case "continue_collecting":
+                case "keep_collecting":
                     return RobotCommandAction.Pickup;
                 case "deliver":
                 case "dropoff":
                 case "drop_off":
                 case "deposit":
                     return RobotCommandAction.Deliver;
+                case "follow":
+                case "follow me":
+                case "follow_me":
+                case "follow player":
+                case "follow_player":
+                case "follow the player":
+                case "follow_the_player":
+                case "follow user":
+                case "follow_user":
+                case "follow target":
+                case "follow_target":
+                case "stay with me":
+                case "stay_with_me":
+                case "stay near me":
+                case "stay_near_me":
+                case "stay by me":
+                case "stay_by_me":
+                case "come with me":
+                case "come_with_me":
+                    return RobotCommandAction.Follow;
                 case "wait":
                     return RobotCommandAction.Wait;
                 case "stop":

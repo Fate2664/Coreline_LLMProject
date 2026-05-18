@@ -1,17 +1,3 @@
-%YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fcdbed2463ed1374ebd8a44b1b748747, type: 3}
-  m_Name: ItemDatabase
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.ItemDatabase
-  items:
-  - item: {fileID: 11400000, guid: 73362df6ca806324a9ddcf4dfa27290e, type: 2}
-    count: 0
+version https://git-lfs.github.com/spec/v1
+oid sha256:3fbff53da3186538a2c988c8ded8c1672ecc40c4431d6bea91ac3682987bc2aa
+size 539

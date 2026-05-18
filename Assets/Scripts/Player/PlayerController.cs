@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour
     [Header("Movement Settings")] [Space(10)] [Range(1f, 10f)] [SerializeField]
     private float moveSpeed = 5f;
 
+    [SerializeField, Range(1f, 20f)] private float sprintSpeed = 8f;
+
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.25f;
@@ -36,6 +38,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private UIBlock2D InventoryRoot;
     [SerializeField] private UIManager uiManager;
     [SerializeField] private BuildPlacer buildPlacer;
+    [SerializeField] private bool startWithInventoryOpen;
 
     [HideInInspector] public bool IsInventoryOpen => InventoryRoot != null && InventoryRoot.gameObject.activeSelf;
     public UIBlock2D InventoryRootBlock => InventoryRoot;
@@ -57,6 +60,7 @@ public class PlayerController : MonoBehaviour
     private bool toggleInventoryPressed;
     private bool wasToggleInventoryPressed;
     private bool primaryAttackPressed;
+    private bool sprintPressed;
 
     private float toggleInventoryCooldown = 0.1f;
     private float lookSensMultiplier = 0.01f;
@@ -68,6 +72,7 @@ public class PlayerController : MonoBehaviour
     private void OnMove(Vector2 dir) => moveInput = dir;
     private void OnLook(Vector2 dir) => lookInput = dir;
     private void OnJump(bool pressed) => jumpPressed = pressed;
+    private void OnSprint(bool pressed) => sprintPressed = pressed;
     private void OnPrimaryAttack(bool pressed)
     {
         if (IsUiInputBlocked) return;
@@ -94,7 +99,7 @@ public class PlayerController : MonoBehaviour
 
         jumpCooldownTimer = new CountDownTimer(jumpCooldown);
         toggleInventoryTimer = new CountDownTimer(toggleInventoryCooldown);
-        ToggleInventory();
+        SetInventoryVisible(startWithInventoryOpen, false);
     }
 
     private void Start()
@@ -102,6 +107,7 @@ public class PlayerController : MonoBehaviour
         gameInput.Move += OnMove;
         gameInput.Look += OnLook;
         gameInput.Jump += OnJump;
+        gameInput.Sprint += OnSprint;
         gameInput.PrimaryAttack += OnPrimaryAttack;
         gameInput.ToggleInventory += OnToggleInventory;
         gameInput.EnableActions();
@@ -115,6 +121,7 @@ public class PlayerController : MonoBehaviour
         gameInput.Move -= OnMove;
         gameInput.Look -= OnLook;
         gameInput.Jump -= OnJump;
+        gameInput.Sprint -= OnSprint;
         gameInput.PrimaryAttack -= OnPrimaryAttack;
         gameInput.ToggleInventory -= OnToggleInventory;
     }
@@ -140,7 +147,8 @@ public class PlayerController : MonoBehaviour
 
         wasToggleInventoryPressed = toggleInventoryPressed;
         
-        if (IsUiInputBlocked)
+        bool uiInputBlocked = IsUiInputBlocked;
+        if (uiInputBlocked)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -150,9 +158,17 @@ public class PlayerController : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }
-
-        HandleMovement();
-        HandleJump();
+        
+        if (uiInputBlocked)
+        {
+            StopHorizontalMovement();
+        }
+        else
+        {
+            HandleMovement();
+            HandleJump();  
+        }
+        
         jumpCooldownTimer.Tick(Time.fixedDeltaTime);
         toggleInventoryTimer.Tick(Time.fixedDeltaTime);
     }
@@ -172,12 +188,20 @@ public class PlayerController : MonoBehaviour
 
         Vector3 currentVelocity = rb.linearVelocity;
         Vector3 moveDirection = (orientation.right * moveInput.x + orientation.forward * moveInput.y).normalized;
-        Vector3 targetVelocity = moveDirection * moveSpeed;
+        float currentMoveSpeed = sprintPressed ? sprintSpeed : moveSpeed;
+        Vector3 targetVelocity = moveDirection * currentMoveSpeed;
 
         if (!IsGrounded() && moveInput.sqrMagnitude <= 0.01f)
             return;
 
         rb.linearVelocity = new Vector3(targetVelocity.x, currentVelocity.y, targetVelocity.z);
+    }
+
+    private void StopHorizontalMovement()
+    {
+        Vector3 currentVelocity = rb.linearVelocity;
+        rb.linearVelocity = new Vector3(0f, currentVelocity.y, 0f);
+        rb.angularVelocity = Vector3.zero;
     }
 
     private void HandleLook()
@@ -224,6 +248,11 @@ public class PlayerController : MonoBehaviour
 
     private void SetInventoryVisible(bool visible)
     {
+        SetInventoryVisible(visible, true);
+    }
+
+    private void SetInventoryVisible(bool visible, bool refreshWhenOpen)
+    {
         if (InventoryRoot == null)
         {
             return;
@@ -231,7 +260,7 @@ public class PlayerController : MonoBehaviour
 
         if (InventoryRoot.gameObject.activeSelf == visible)
         {
-            if (visible)
+            if (visible && refreshWhenOpen)
             {
                 uiManager?.RefreshInventory();
             }
@@ -246,7 +275,12 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        uiManager?.RefreshInventory();
+        StopHorizontalMovement();
+
+        if (refreshWhenOpen)
+        {
+            uiManager?.RefreshInventory();
+        }
 
         if (buildPlacer != null && buildPlacer.enabled)
         {

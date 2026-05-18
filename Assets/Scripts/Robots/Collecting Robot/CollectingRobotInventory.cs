@@ -36,76 +36,110 @@ namespace Coreline.Robots
         public IReadOnlyList<RobotResourceStack> ResourceStacks => resourceStacks;
         public bool HasAnyItems => itemStacks.Count > 0 || resourceStacks.Count > 0;
 
+        public bool CanAcceptItem(InventoryItemData item, int amount = 1)
+        {
+            return item != null && amount > 0 && GetAvailableItemSpace(item) >= amount;
+        }
+
         public bool TryAddItem(InventoryItemData item, int amount = 1)
         {
-            if (item == null || amount <= 0)
+            if (!CanAcceptItem(item, amount))
             {
                 return false;
             }
 
-            RobotInventoryItemStack existing = itemStacks.Find(stack => stack.item == item);
-            if (existing != null)
+            int remaining = amount;
+            int maxStackAmount = EffectiveMaxAmountPerStack;
+
+            foreach (RobotInventoryItemStack stack in itemStacks)
             {
-                int previousAmount = existing.amount;
-                existing.amount = Mathf.Min(existing.amount + amount, maxAmountPerStack);
-                NotifyChangedIfAmountChanged(previousAmount, existing.amount);
-                return true;
+                if (remaining <= 0)
+                {
+                    break;
+                }
+
+                if (stack == null || stack.item != item || stack.amount >= maxStackAmount)
+                {
+                    continue;
+                }
+
+                int added = Mathf.Min(maxStackAmount - stack.amount, remaining);
+                stack.amount += added;
+                remaining -= added;
             }
 
-            if (!HasFreeStackSlot)
+            while (remaining > 0 && HasFreeStackSlot)
             {
-                return false;
+                int added = Mathf.Min(maxStackAmount, remaining);
+                itemStacks.Add(new RobotInventoryItemStack
+                {
+                    item = item,
+                    amount = added
+                });
+                remaining -= added;
             }
-
-            itemStacks.Add(new RobotInventoryItemStack
-            {
-                item = item,
-                amount = Mathf.Min(amount, maxAmountPerStack)
-            });
 
             InventoryChanged?.Invoke();
-            return true;
+            return remaining <= 0;
+        }
+
+        public bool CanAcceptResource(OreType oreType, int amount = 1)
+        {
+            return amount > 0 && GetAvailableResourceSpace(oreType) >= amount;
         }
 
         public bool TryAddResource(OreType oreType, int amount = 1)
         {
-            if (amount <= 0)
+            if (!CanAcceptResource(oreType, amount))
             {
                 return false;
             }
 
-            RobotResourceStack existing = resourceStacks.Find(stack => stack.oreType == oreType);
-            if (existing != null)
+            int remaining = amount;
+            int maxStackAmount = EffectiveMaxAmountPerStack;
+
+            foreach (RobotResourceStack stack in resourceStacks)
             {
-                int previousAmount = existing.amount;
-                existing.amount = Mathf.Min(existing.amount + amount, maxAmountPerStack);
-                NotifyChangedIfAmountChanged(previousAmount, existing.amount);
-                return true;
+                if (remaining <= 0)
+                {
+                    break;
+                }
+
+                if (stack == null || stack.oreType != oreType || stack.amount >= maxStackAmount)
+                {
+                    continue;
+                }
+
+                int added = Mathf.Min(maxStackAmount - stack.amount, remaining);
+                stack.amount += added;
+                remaining -= added;
             }
 
-            if (!HasFreeStackSlot)
+            while (remaining > 0 && HasFreeStackSlot)
             {
-                return false;
+                int added = Mathf.Min(maxStackAmount, remaining);
+                resourceStacks.Add(new RobotResourceStack
+                {
+                    oreType = oreType,
+                    amount = added
+                });
+                remaining -= added;
             }
-
-            resourceStacks.Add(new RobotResourceStack
-            {
-                oreType = oreType,
-                amount = Mathf.Min(amount, maxAmountPerStack)
-            });
 
             InventoryChanged?.Invoke();
-            return true;
+            return remaining <= 0;
         }
 
         public int GetResourceAmount(OreType oreType)
         {
             int amount = 0;
 
-            RobotResourceStack resourceStack = resourceStacks.Find(stack => stack.oreType == oreType);
-            if (resourceStack != null)
+            foreach (RobotResourceStack resourceStack in resourceStacks)
             {
-                amount += resourceStack.amount;
+                if (resourceStack != null && resourceStack.oreType == oreType)
+                {
+                    amount += resourceStack.amount;
+                }
             }
 
             foreach (RobotInventoryItemStack itemStack in itemStacks)
@@ -227,14 +261,39 @@ namespace Coreline.Robots
         }
 
         private int UsedStackCount => itemStacks.Count + resourceStacks.Count;
-        private bool HasFreeStackSlot => UsedStackCount < Mathf.Max(1, maxItemStacks);
+        private int EffectiveMaxItemStacks => Mathf.Max(1, maxItemStacks);
+        private int EffectiveMaxAmountPerStack => Mathf.Max(1, maxAmountPerStack);
+        private int FreeStackSlotCount => Mathf.Max(0, EffectiveMaxItemStacks - UsedStackCount);
+        private bool HasFreeStackSlot => FreeStackSlotCount > 0;
 
-        private void NotifyChangedIfAmountChanged(int previousAmount, int currentAmount)
+        private int GetAvailableItemSpace(InventoryItemData item)
         {
-            if (previousAmount != currentAmount)
+            int availableSpace = FreeStackSlotCount * EffectiveMaxAmountPerStack;
+
+            foreach (RobotInventoryItemStack stack in itemStacks)
             {
-                InventoryChanged?.Invoke();
+                if (stack != null && stack.item == item)
+                {
+                    availableSpace += Mathf.Max(0, EffectiveMaxAmountPerStack - stack.amount);
+                }
             }
+
+            return availableSpace;
+        }
+
+        private int GetAvailableResourceSpace(OreType oreType)
+        {
+            int availableSpace = FreeStackSlotCount * EffectiveMaxAmountPerStack;
+
+            foreach (RobotResourceStack stack in resourceStacks)
+            {
+                if (stack != null && stack.oreType == oreType)
+                {
+                    availableSpace += Mathf.Max(0, EffectiveMaxAmountPerStack - stack.amount);
+                }
+            }
+
+            return availableSpace;
         }
     }
 }

@@ -101,7 +101,11 @@ public class UIManager : MonoBehaviour, ITimeTracker
         inventoryNeedsRefresh = true;
         RefreshInventory();
 
-        if (equippedItem != null && equippedItem.item == item)
+        if (equippedItem == null && IsPickaxeTool(item))
+        {
+            EquipFirstPickaxe();
+        }
+        else if (equippedItem != null && equippedItem.item == item)
         {
             RefreshEquippedItem();
         }
@@ -330,19 +334,23 @@ public class UIManager : MonoBehaviour, ITimeTracker
 
     public void EquipItem(InventoryItem item)
     {
-        equippedItem = item != null && !item.isEmpty ? item : null;
-        if (equippedItem == null)
+        if (item == null || item.isEmpty)
         {
-            RefreshEquippedItem();
             return;
         }
 
-        if (equippedItem.item is RobotCraftingRecipe robotRecipe)
+        if (item.item is RobotCraftingRecipe robotRecipe)
         {
-            BeginRobotPlacement(equippedItem, robotRecipe);
+            BeginRobotPlacement(item, robotRecipe);
             return;
         }
 
+        if (!CanEquipItem(item))
+        {
+            return;
+        }
+
+        equippedItem = item;
         if (equippedItem.IsTool)
         {
             ToolItemSO tool = equippedItem.item as ToolItemSO;
@@ -356,6 +364,36 @@ public class UIManager : MonoBehaviour, ITimeTracker
             }
         }
         RefreshEquippedItem();
+    }
+
+    public bool EquipFirstPickaxe()
+    {
+        EnsureInventoryItems();
+
+        foreach (InventoryItem inventoryItem in Items)
+        {
+            if (!CanEquipItem(inventoryItem))
+            {
+                continue;
+            }
+
+            equippedItem = inventoryItem;
+            RefreshEquippedItem();
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool CanEquipItem(InventoryItem item)
+    {
+        return item != null && !item.isEmpty && IsPickaxeTool(item.item);
+    }
+
+    private static bool IsPickaxeTool(InventoryItemData item)
+    {
+        ToolItemSO tool = item as ToolItemSO;
+        return tool != null && tool.toolType == ToolType.Pickaxe;
     }
 
     private void BeginRobotPlacement(InventoryItem inventorySlot, RobotCraftingRecipe recipe)

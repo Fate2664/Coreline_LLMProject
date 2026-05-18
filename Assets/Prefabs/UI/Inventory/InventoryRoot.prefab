@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8485727018063295328}
   - component: {fileID: 3158127655879680044}
   - component: {fileID: 3709247749699470289}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: InventoryRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -29,7 +29,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.32, z: 1}
-  m_LocalScale: {x: 0.0010691672, y: 0.0010691672, z: 0.0010691672}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 8789009473177298132}
@@ -65,10 +65,10 @@ MonoBehaviour:
   layout:
     Size:
       X:
-        Raw: 1300
+        Raw: 1330
         Type: 0
       Y:
-        Raw: 410.0791
+        Raw: 409.99997
         Type: 0
       Z:
         Raw: 0
@@ -78,10 +78,10 @@ MonoBehaviour:
         Raw: 0
         Type: 0
       Y:
-        Raw: -0.32
+        Raw: -322.29
         Type: 0
       Z:
-        Raw: 1
+        Raw: 0
         Type: 0
     Padding:
       Left:
@@ -188,8 +188,8 @@ MonoBehaviour:
       Y: 0
       Z: 0
     RotateSize: 0
-    AspectRatio: {x: 1, y: 0.31544545, z: 0}
-    AspectRatioAxis: 1
+    AspectRatio: {x: 3.2439027, y: 1, z: 0}
+    AspectRatioAxis: 2
   autoLayout:
     Axis: 1
     Spacing:
@@ -227,7 +227,7 @@ MonoBehaviour:
     ReceiveShadows: 1
   PreviewSize: {x: 1300, y: 410.0791, z: 0}
   visuals:
-    Color: {r: 0.8867924, g: 0.6595728, b: 0.48104307, a: 1}
+    Color: {r: 0.25, g: 0.25, b: 0.25, a: 1}
     CornerRadius:
       Raw: 7.1
       Type: 0
@@ -261,19 +261,19 @@ MonoBehaviour:
       Rotation: 0
       Enabled: 0
     Border:
-      Color: {r: 0.4811321, g: 0.25298956, b: 0.097588114, a: 1}
+      Color: {r: 0.1, g: 0.1, b: 0.1, a: 1}
       Width:
-        Raw: 5.1
+        Raw: 5.11
         Type: 0
       Enabled: 1
       Direction: 2
     Shadow:
-      Color: {r: 0.1509434, g: 0.09736562, b: 0.059095763, a: 1}
+      Color: {r: 0.1, g: 0.1, b: 0.1, a: 0.7176471}
       Width:
-        Raw: 9.65
+        Raw: 4.41
         Type: 0
       Blur:
-        Raw: 3.05
+        Raw: 4.72
         Type: 0
       Offset:
         X:
@@ -283,7 +283,7 @@ MonoBehaviour:
           Raw: 0
           Type: 0
       Enabled: 1
-      Direction: 1
+      Direction: 0
     Image:
       Adjustment:
         CenterUV: {x: 0, y: 0}
@@ -308,7 +308,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   info:
-    SortingOrder: 0
+    SortingOrder: 2
     RenderQueue: 4000
     RenderOverOpaqueGeometry: 1
 --- !u!1 &1649791192226457656
@@ -322,7 +322,7 @@ GameObject:
   - component: {fileID: 8028293084592017634}
   - component: {fileID: 7813157342634353832}
   - component: {fileID: 3706485698108932502}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Icon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -535,7 +535,7 @@ MonoBehaviour:
     ReceiveShadows: 1
   PreviewSize: {x: 1, y: 1, z: 0}
   visuals:
-    Color: {r: 0.6415094, g: 0, b: 0, a: 1}
+    Color: {r: 0.8113208, g: 0, b: 0, a: 1}
     CornerRadius:
       Raw: 0
       Type: 0
@@ -615,7 +615,7 @@ GameObject:
   - component: {fileID: 2042355898623115457}
   - component: {fileID: 2725942259133872309}
   - component: {fileID: 7110091173117859356}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Grid
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -828,9 +828,9 @@ MonoBehaviour:
     ReceiveShadows: 1
   PreviewSize: {x: 1, y: 1, z: 0}
   visuals:
-    Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    Color: {r: 0.29803923, g: 0.29803923, b: 0.29803923, a: 1}
     CornerRadius:
-      Raw: 0
+      Raw: 13.93
       Type: 0
     RadialFill:
       Center:
@@ -862,19 +862,19 @@ MonoBehaviour:
       Rotation: 0
       Enabled: 0
     Border:
-      Color: {r: 0.42318046, g: 0.31293145, b: 0.23668446, a: 1}
+      Color: {r: 0.1, g: 0.1, b: 0.1, a: 1}
       Width:
-        Raw: 3.17
+        Raw: 3.22
         Type: 0
       Enabled: 1
       Direction: 2
     Shadow:
-      Color: {r: 0.1482479, g: 0.09778767, b: 0.05814034, a: 1}
+      Color: {r: 0.2, g: 0.2, b: 0.2, a: 1}
       Width:
-        Raw: 10
+        Raw: 5.2
         Type: 0
       Blur:
-        Raw: 10
+        Raw: 7.83
         Type: 0
       Offset:
         X:
@@ -883,8 +883,8 @@ MonoBehaviour:
         Y:
           Raw: 0
           Type: 0
-      Enabled: 1
-      Direction: 1
+      Enabled: 0
+      Direction: 0
     Image:
       Adjustment:
         CenterUV: {x: 0, y: 0}
@@ -893,7 +893,7 @@ MonoBehaviour:
         scaleMode: 1
       Mode: 1
     SoftenEdges: 1
-    FillEnabled: 0
+    FillEnabled: 1
   texture: {fileID: 0}
   sprite: {fileID: 0}
 --- !u!114 &7110091173117859356
@@ -928,7 +928,7 @@ GameObject:
   - component: {fileID: 5271603308512347798}
   - component: {fileID: 7455196709118427914}
   - component: {fileID: 3760686837109648967}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: CloseButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -944,7 +944,7 @@ Transform:
   m_GameObject: {fileID: 3080684914905846931}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 118.03955, z: 0}
+  m_LocalPosition: {x: 0, y: 117.999985, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1142,9 +1142,9 @@ MonoBehaviour:
     ReceiveShadows: 1
   PreviewSize: {x: 1, y: 1, z: 0}
   visuals:
-    Color: {r: 0.6698113, g: 0.47944456, b: 0.33174616, a: 1}
+    Color: {r: 0.2, g: 0.2, b: 0.2, a: 1}
     CornerRadius:
-      Raw: 3
+      Raw: 9.4
       Type: 0
     RadialFill:
       Center:
@@ -1176,28 +1176,28 @@ MonoBehaviour:
       Rotation: 0
       Enabled: 0
     Border:
-      Color: {r: 0.8862745, g: 0.65882355, b: 0.48235294, a: 1}
+      Color: {r: 0.1, g: 0.1, b: 0.1, a: 1}
       Width:
-        Raw: 2.18
+        Raw: 2.78
         Type: 0
-      Enabled: 0
+      Enabled: 1
       Direction: 0
     Shadow:
-      Color: {r: 0, g: 0, b: 0, a: 0.5}
+      Color: {r: 0, g: 0, b: 0, a: 0.7529412}
       Width:
-        Raw: 2.03
+        Raw: 4.77
         Type: 0
       Blur:
-        Raw: 2
+        Raw: 8.27
         Type: 0
       Offset:
         X:
           Raw: 0
           Type: 0
         Y:
-          Raw: -1
+          Raw: 0
           Type: 0
-      Enabled: 1
+      Enabled: 0
       Direction: 1
     Image:
       Adjustment:
@@ -1233,10 +1233,22 @@ MonoBehaviour:
         ButtonRoot: {fileID: 5271603308512347798}
         OnClicked:
           m_PersistentCalls:
-            m_Calls: []
-        DefaultColor: {r: 0.4627451, g: 0.3137255, b: 0.2, a: 1}
-        HoverColor: {r: 0.4811321, g: 0.25298956, b: 0.097588114, a: 1}
-        PressedColor: {r: 0.8867924, g: 0.6595728, b: 0.48104307, a: 1}
+            m_Calls:
+            - m_Target: {fileID: 0}
+              m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+              m_MethodName: ToggleInventory
+              m_Mode: 1
+              m_Arguments:
+                m_ObjectArgument: {fileID: 0}
+                m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+                m_IntArgument: 0
+                m_FloatArgument: 0
+                m_StringArgument: 
+                m_BoolArgument: 0
+              m_CallState: 2
+        DefaultColor: {r: 0.4, g: 0.4, b: 0.4, a: 1}
+        HoverColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+        PressedColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
 --- !u!114 &3760686837109648967
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1297,7 +1309,7 @@ GameObject:
   - component: {fileID: 4158096009933124266}
   - component: {fileID: 8823789315128256574}
   - component: {fileID: 2918383143402636441}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ToolsRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1313,7 +1325,7 @@ Transform:
   m_GameObject: {fileID: 5042963468688505459}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 553.6, y: 0, z: 0}
+  m_LocalPosition: {x: 568.6, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1359,7 +1371,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: 1107.2
+        Raw: 1137.2
         Type: 0
       Y:
         Raw: 0
@@ -1521,7 +1533,7 @@ GameObject:
   - component: {fileID: 8789009473177298132}
   - component: {fileID: 9093380526594567521}
   - component: {fileID: 4644429179651698533}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}

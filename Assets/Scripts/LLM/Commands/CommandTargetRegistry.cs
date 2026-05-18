@@ -243,7 +243,7 @@ namespace Coreline.Robots
                 return false;
             }
 
-            if (target.TargetType != CommandTargetType.ResourceNode)
+            if (!RequiresScannerVisibility(target))
             {
                 return true;
             }
@@ -251,6 +251,17 @@ namespace Coreline.Robots
             return !resourceNodesRequireScan ||
                    viewerPosition.HasValue &&
                    IsResourceVisibleFrom(target, viewerPosition.Value);
+        }
+
+        private static bool RequiresScannerVisibility(CommandTarget target)
+        {
+            if (target.TargetType == CommandTargetType.ResourceNode)
+            {
+                return true;
+            }
+
+            return target.TargetType == CommandTargetType.PickupItem &&
+                   (target.HasOreType || target.InventoryItemData is OreItemSO);
         }
 
         private bool IsResourceVisibleFrom(CommandTarget target, Vector3 viewerPosition)

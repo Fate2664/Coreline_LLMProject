@@ -84,6 +84,7 @@ namespace Coreline.Robots
             switch (command.ActionType)
             {
                 case RobotCommandAction.Move:
+                case RobotCommandAction.Follow:
                     return RequireTarget(command, registry, robotPosition, out error);
                 case RobotCommandAction.MineResource:
                     return ValidateMineCommand(command, registry, robotPosition, out error);
@@ -107,6 +108,7 @@ namespace Coreline.Robots
             return expandResourceMiningToAllVisibleNodes &&
                    resolveResourceTargets &&
                    command.ActionType == RobotCommandAction.MineResource &&
+                   !command.IsRepeating &&
                    !string.IsNullOrWhiteSpace(command.resource) &&
                    !TryGetValidTarget(command, registry, robotPosition, out _);
         }
@@ -170,6 +172,11 @@ namespace Coreline.Robots
 
             if (!string.IsNullOrWhiteSpace(command.resource))
             {
+                if (command.IsRepeating && string.IsNullOrWhiteSpace(command.target))
+                {
+                    return true;
+                }
+
                 error = $"No visible resource node found for '{command.resource}'. Move the mining robot inside a scanning robot radius first.";
                 return false;
             }

@@ -12,6 +12,7 @@ namespace Coreline.Robots
         [SerializeField] private float faceTargetTurnSpeed = 540f;
         [SerializeField] private float faceTargetAngleTolerance = 2f;
         [SerializeField] private float maxFaceTargetTime = 1.5f;
+        [SerializeField] private float repeatMineRetryInterval = 1f;
 
         private MiningRobotController miningRobot;
 
@@ -34,11 +35,71 @@ namespace Coreline.Robots
 
         private IEnumerator ExecuteMine(RobotCommand command)
         {
+            if (command.IsRepeating)
+            {
+                yield return ExecuteRepeatingMine(command);
+                yield break;
+            }
+
             if (!TryResolveTarget(command, out CommandTarget target))
             {
                 yield break;
             }
 
+            yield return MineTarget(command, target);
+        }
+
+        private IEnumerator ExecuteRepeatingMine(RobotCommand command)
+        {
+            if (Registry == null)
+            {
+                robot.RaiseError($"No {nameof(CommandTargetRegistry)} exists in the scene.");
+                yield break;
+            }
+
+            if (string.IsNullOrWhiteSpace(command.target) && string.IsNullOrWhiteSpace(command.resource))
+            {
+                robot.RaiseError("A repeating mine command requires a resource or target.");
+                yield break;
+            }
+
+            WaitForSeconds wait = new(Mathf.Max(0.1f, repeatMineRetryInterval));
+
+            while (true)
+            {
+                if (!TryGetRepeatingMineTarget(command, out CommandTarget target))
+                {
+                    StopAgent();
+                    robot.SetStatus(RobotWorkState.Idle);
+                    yield return wait;
+                    continue;
+                }
+
+                yield return MineTarget(command, target);
+                yield return wait;
+            }
+        }
+
+        private bool TryGetRepeatingMineTarget(RobotCommand command, out CommandTarget target)
+        {
+            target = null;
+            CommandTargetRegistry registry = Registry;
+            if (registry == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(command.target))
+            {
+                return registry.TryGetTarget(command.target, transform.position, out target);
+            }
+
+            return !string.IsNullOrWhiteSpace(command.resource) &&
+                   registry.TryFindNearestResource(command.resource, transform.position, out target);
+        }
+
+        private IEnumerator MineTarget(RobotCommand command, CommandTarget target)
+        {
             bool reached = false;
             yield return MoveToTarget(target, target.InteractionRadius, value => reached = value);
 

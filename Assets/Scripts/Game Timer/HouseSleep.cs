@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace Coreline
@@ -12,16 +11,17 @@ namespace Coreline
         private void Awake()
         {
             indicatorManager = GetComponentInChildren<IndicatorManager>();
+            playerInteractionDetector ??= FindFirstObjectByType<PlayerInteractionDetector>();
         }
 
         private void FixedUpdate()
         {
-            //Showing indicator
-            if (indicatorManager == null) return;
+            if (indicatorManager == null || playerInteractionDetector == null)
+            {
+                return;
+            }
 
-            if (playerInteractionDetector.CurrentTarget != null &&
-                playerInteractionDetector.CurrentIteractableObject != null &&
-                playerInteractionDetector.CurrentIteractableObject.CompareTag("House"))
+            if (ReferenceEquals(playerInteractionDetector.CurrentTarget, this))
             {
                 indicatorManager.ShowIndictor();
             }
@@ -33,6 +33,12 @@ namespace Coreline
 
         public void Interact(PlayerController interactor)
         {
+            if (TimeManager.Instance == null)
+            {
+                Debug.LogWarning("Cannot sleep because no TimeManager exists in the scene.", this);
+                return;
+            }
+
             TimeManager.Instance.Sleep();
         }
     }

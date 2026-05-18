@@ -14,11 +14,16 @@ public class InitializeInventoryItems : MonoBehaviour
     //This script gives items to the player at the start
     
     [SerializeField] private StartingInventoryItem[] items;
+    [SerializeField] private bool equipStartingPickaxe = true;
     
     private IEnumerator Start()
     {
-        UIManager uiManager = FindObjectOfType<UIManager>();
-        // Wait for one frame to ensure UpgradesPanel.Start() has run
+        UIManager uiManager = FindFirstObjectByType<UIManager>();
+        if (uiManager == null)
+        {
+            yield break;
+        }
+
         yield return null;
 
         foreach (var item in items)
@@ -27,6 +32,11 @@ public class InitializeInventoryItems : MonoBehaviour
             {
                 uiManager.AddItemToInventory(item.item, item.count);
             }
+        }
+
+        if (equipStartingPickaxe)
+        {
+            uiManager.EquipFirstPickaxe();
         }
     }
 }

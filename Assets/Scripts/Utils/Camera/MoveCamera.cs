@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace Coreline
@@ -6,10 +5,15 @@ namespace Coreline
     public class MoveCamera : MonoBehaviour
     {
         [SerializeField] private Transform cameraPosition;
-        
-        private void Update()
+
+        private void LateUpdate()
         {
-            transform.position = cameraPosition.position;    
+            if (cameraPosition == null)
+            {
+                return;
+            }
+
+            transform.position = cameraPosition.position;
         }
     }
 }

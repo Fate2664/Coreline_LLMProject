@@ -77,6 +77,8 @@ MonoBehaviour:
   defaultStoppingDistance: 1.5
   maxTravelTime: 45
   dynamicTargetRepathDistance: 0.5
+  followStoppingDistance: 2
+  followRepathInterval: 0.2
 --- !u!114 &1089754196660871451
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -165,7 +167,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 100
+  m_Radius: 50
   m_Center: {x: 0, y: 1.04, z: 0}
 --- !u!1001 &173546845228955233
 PrefabInstance:

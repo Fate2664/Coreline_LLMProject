@@ -1,6 +1,5 @@
 using System;
 using Coreline;
-using UnityEditor.Build.Player;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
@@ -16,6 +15,7 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public event UnityAction<bool> AltInteract =  delegate { };
     public event UnityAction<bool> Jump = delegate { }; 
     public event UnityAction<bool> ToggleInventory = delegate { };
+    public event UnityAction<bool> Sprint = delegate { };
     
     //UI Actions
     public event UnityAction<bool> Exit  =  delegate { };
@@ -33,6 +33,7 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public bool IsPrimaryAttackPressed => inputActions.Player.PrimaryAttack.IsPressed();
     public bool IsInteractPressed => inputActions.Player.Interact.IsPressed();
     public bool IsAltInteractPressed => inputActions.Player.AltInteract.IsPressed();
+    public bool IsSprintPressed => inputActions.Player.Sprint.IsPressed();
     
     
     
@@ -84,6 +85,11 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public void OnAltInteract(InputAction.CallbackContext context)
     {
         AltInteract.Invoke(context.ReadValueAsButton());
+    }
+
+    public void OnSprint(InputAction.CallbackContext context)
+    {
+        Sprint.Invoke(context.ReadValueAsButton());
     }
 
     #endregion

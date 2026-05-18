@@ -1,17 +1,3 @@
-%YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf97cb59e5d0411bbbddaba921c2f530, type: 3}
-  m_Name: GoldOre
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.OreData
-  prefab: {fileID: 1115064809116736739, guid: a5d2317369e76b54796b7c3dfb73cf2b, type: 3}
-  inventoryItemData: {fileID: 11400000, guid: 257f579fa25662c40aebec4bd3cc89b5, type: 2}
-  pickupAmount: 1
+version https://git-lfs.github.com/spec/v1
+oid sha256:0fd8f707c46170c050c0953e26de46d224ee2a5755b625139ea112ae3e3533c5
+size 625

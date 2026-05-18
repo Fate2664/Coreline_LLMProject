@@ -10,6 +10,8 @@ namespace Coreline.Robots
     public class RobotChatUIController : MonoBehaviour
     {
         protected const string DefaultChatRootName = "LLMChatRoot";
+        private const string MiningChatRootName = "MiningRobotChat";
+        private const string CollectingChatRootName = "CollectionRobotChat";
         private const string PlayerTargetId = "player";
         private const string MiningRobotDropdownName = "DropDownSetting";
         private const string NoMiningRobotSelection = "None";
@@ -83,7 +85,7 @@ namespace Coreline.Robots
             if (isOpen)
             {
                 isOpen = false;
-                IsAnyOpen = false;
+                IsAnyOpen = AnyChatControllerOpen();
             }
         }
 
@@ -130,6 +132,7 @@ namespace Coreline.Robots
             EnsureReferences();
             SubscribeToInput();
             SubscribeToCommandClient();
+            SubscribeToMiningRobotDropdown();
             EnsurePlayerTarget(player);
 
             ActiveRobot = robot;
@@ -155,16 +158,11 @@ namespace Coreline.Robots
 
         public void Close()
         {
-            if (!isOpen)
-            {
-                return;
-            }
-
             ActiveRobot = null;
             activeRobotTarget = null;
             lastAppliedRobotName = string.Empty;
             isOpen = false;
-            IsAnyOpen = false;
+            IsAnyOpen = AnyChatControllerOpen();
             miningRobotDropdownVisuals?.Collapse();
 
             if (gameObject.activeSelf)
@@ -524,7 +522,7 @@ namespace Coreline.Robots
             string resource = ExtractResourceFromMissingResourceError(reason);
             if (!string.IsNullOrWhiteSpace(resource))
             {
-                return $"I can't see any {resource} nodes in the area.";
+                return $"I cannot see any {resource}. Please place a scanning robot for me to see some {resource}.";
             }
 
             return "I didn't understand your instruction. Please try again.";
@@ -692,6 +690,26 @@ namespace Coreline.Robots
             return FindOrCreateInScene<RobotChatUIController>();
         }
 
+        public static string GetExpectedRootNameForController<T>() where T : RobotChatUIController
+        {
+            return GetExpectedRootNameForController(typeof(T));
+        }
+
+        public static string GetExpectedRootNameForController(System.Type controllerType)
+        {
+            if (controllerType == typeof(MiningRobotChatUIController))
+            {
+                return MiningChatRootName;
+            }
+
+            if (controllerType == typeof(CollectingRobotChatUIController))
+            {
+                return CollectingChatRootName;
+            }
+
+            return DefaultChatRootName;
+        }
+
         protected static T FindOrCreateInScene<T>() where T : RobotChatUIController
         {
             T existing = FindFirstObjectByType<T>(FindObjectsInactive.Include);
@@ -700,14 +718,48 @@ namespace Coreline.Robots
                 return existing;
             }
 
-            GameObject root = FindSceneObject(DefaultChatRootName);
+            string expectedRootName = GetExpectedRootNameForController<T>();
+            GameObject root = FindSceneObject(expectedRootName);
+            if (root == null && !string.Equals(expectedRootName, DefaultChatRootName, System.StringComparison.Ordinal))
+            {
+                root = FindSceneObject(DefaultChatRootName);
+            }
+
             if (root == null)
             {
-                Debug.LogWarning($"Could not find a scene object named {DefaultChatRootName}.");
+                Debug.LogWarning(
+                    $"Could not find a scene object named {expectedRootName} for {typeof(T).Name}. " +
+                    $"Add the matching robot chat UI prefab to the scene.");
                 return null;
             }
 
-            return root.AddComponent<T>();
+            RobotChatUIController existingController = root.GetComponent<RobotChatUIController>();
+            if (existingController != null && existingController is not T)
+            {
+                Debug.LogWarning(
+                    $"Found {root.name}, but it already has {existingController.GetType().Name}. " +
+                    $"Expected {typeof(T).Name} on a separate {expectedRootName} UI root.",
+                    existingController);
+                return null;
+            }
+
+            return root.GetComponent<T>() ?? root.AddComponent<T>();
+        }
+
+        private static bool AnyChatControllerOpen()
+        {
+            RobotChatUIController[] controllers =
+                FindObjectsByType<RobotChatUIController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+            for (int i = 0; i < controllers.Length; i++)
+            {
+                if (controllers[i] != null && controllers[i].isOpen)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static GameObject FindSceneObject(string objectName)

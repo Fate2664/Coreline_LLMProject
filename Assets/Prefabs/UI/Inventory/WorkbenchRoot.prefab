@@ -533,7 +533,7 @@ GameObject:
   - component: {fileID: 6048544063048155221}
   - component: {fileID: 2534351266896659197}
   m_Layer: 5
-  m_Name: CraftItemInfo
+  m_Name: CraftItemInfoText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -546,7 +546,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 445630176386906813}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -751,7 +751,7 @@ MonoBehaviour:
         Min: -Infinity
         Max: Infinity
     Alignment:
-      X: 0
+      X: 1
       Y: 1
       Z: 0
     AutoSize:
@@ -844,8 +844,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 400
-  m_fontSizeBase: 400
+  m_fontSize: 300
+  m_fontSizeBase: 300
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2183,7 +2183,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5470150821171254563}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 152.6, z: 0}
   m_LocalScale: {x: 0.8245417, y: 0.8245416, z: 0.8245417}
   m_ConstrainProportionsScale: 1
@@ -2482,6 +2482,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotWorkbenchUIController
   recipes:
   - {fileID: 11400000, guid: 6e9e778353322f544bcb53d43eee43e4, type: 2}
+  - {fileID: 11400000, guid: 2a152356e4a0a214bad0c75484feee93, type: 2}
+  - {fileID: 11400000, guid: 06e57196491b9d74999fee9d27b0d44d, type: 2}
   oreItemDefinitions:
   - {fileID: 11400000, guid: af51f0f7cbb7bb74484bcc154ed84959, type: 2}
   - {fileID: 11400000, guid: cf23b6ce0c63f85418a5bc296dc4e060, type: 2}
@@ -2496,7 +2498,6 @@ MonoBehaviour:
   - {fileID: 3703470689766293540}
   requirementSlots: []
   requirementSlotPrefab: {fileID: 2748903491163396903, guid: caae0de169cec0047af2091394b4b06a, type: 3}
-  robotTypeText: {fileID: 8753940114543669267}
   craftInfoText: {fileID: 6048544063048155221}
   craftButtonText: {fileID: 2970137490648056663}
   statusText: {fileID: 0}
@@ -2504,15 +2505,18 @@ MonoBehaviour:
   closeButtonRoot: {fileID: 2936438395458390889}
   playerController: {fileID: 0}
   playerInventory: {fileID: 0}
-  spawnPoint: {fileID: 0}
-  spawnForwardOffset: 2.5
-  navMeshSampleRadius: 2
+  playerInventoryCloseButton: {fileID: 0}
+  disablePlayerInventoryCloseButtonWhileOpen: 1
+  closePlayerInventoryWhenWorkbenchCloses: 1
   hideOnStart: 1
   unlockCursorWhileOpen: 1
   selectedOptionColor: {r: 0.9, g: 0.65, b: 0.2, a: 1}
   unavailableOptionColor: {r: 0.2, g: 0.12, b: 0.12, a: 1}
   requirementMetColor: {r: 0.2, g: 0.35, b: 0.2, a: 1}
   requirementMissingColor: {r: 0.35, g: 0.15, b: 0.15, a: 1}
+  craftButtonDefaultColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
+  craftButtonRequirementsMetColor: {r: 0.2, g: 0.45, b: 0.25, a: 1}
+  craftButtonRequirementsNotMetColor: {r: 0.45, g: 0.15, b: 0.15, a: 1}
 --- !u!1 &5953528427960550372
 GameObject:
   m_ObjectHideFlags: 0
@@ -2524,8 +2528,9 @@ GameObject:
   - component: {fileID: 6238205224324045447}
   - component: {fileID: 3788288856975215025}
   - component: {fileID: 2932041527875704207}
+  - component: {fileID: 8710133465940569082}
   m_Layer: 5
-  m_Name: RequirmentsRoot
+  m_Name: RequirementsRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2690,7 +2695,7 @@ MonoBehaviour:
         Min: -Infinity
         Max: Infinity
     Alignment:
-      X: -1
+      X: 1
       Y: 1
       Z: 0
     AutoSize:
@@ -2805,6 +2810,22 @@ MonoBehaviour:
     FillEnabled: 1
   texture: {fileID: 0}
   sprite: {fileID: 0}
+--- !u!114 &8710133465940569082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5953528427960550372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e23569ec8e3ccb44f93ff9101c870fcb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Nova::Nova.ListView
+  listItemPrefabs:
+  - {fileID: 2748903491163396903, guid: caae0de169cec0047af2091394b4b06a, type: 3}
+  outOfViewDistance: 0
+  _uiBlock: {fileID: 0}
 --- !u!1 &6169558609960352940
 GameObject:
   m_ObjectHideFlags: 0
@@ -3200,7 +3221,7 @@ GameObject:
   - component: {fileID: 6095129195907348574}
   - component: {fileID: 6461417242919277303}
   m_Layer: 5
-  m_Name: OptionsRoot
+  m_Name: CraftOptionsRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4168,6 +4189,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 477722242928637914}
     m_Modifications:
     - target: {fileID: 7267347564201748, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
+      propertyPath: texture
+      value: 
+      objectReference: {fileID: 2800000, guid: 23079cc09552b30418fb3a34f35e0453, type: 3}
+    - target: {fileID: 7267347564201748, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: layout.Size.X.Raw
       value: 0.94011974
       objectReference: {fileID: 0}
@@ -4177,7 +4202,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1652594738663421652, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: m_Name
-      value: EquipedItem (2)
+      value: CollectionRobot
       objectReference: {fileID: 0}
     - target: {fileID: 2101899674418940026, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4285,6 +4310,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 477722242928637914}
     m_Modifications:
     - target: {fileID: 7267347564201748, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
+      propertyPath: texture
+      value: 
+      objectReference: {fileID: 2800000, guid: a39666672b9861c4bb758dbdfaec27b2, type: 3}
+    - target: {fileID: 7267347564201748, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: layout.Size.X.Raw
       value: 0.94011974
       objectReference: {fileID: 0}
@@ -4294,7 +4323,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1652594738663421652, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: m_Name
-      value: EquipedItem
+      value: MiningRobot
       objectReference: {fileID: 0}
     - target: {fileID: 1652594738663421652, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: m_IsActive
@@ -4406,6 +4435,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 477722242928637914}
     m_Modifications:
     - target: {fileID: 7267347564201748, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
+      propertyPath: texture
+      value: 
+      objectReference: {fileID: 2800000, guid: 850697d7e2bc2b34a8a1d82172082f43, type: 3}
+    - target: {fileID: 7267347564201748, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: layout.Size.X.Raw
       value: 0.94011974
       objectReference: {fileID: 0}
@@ -4415,7 +4448,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1652594738663421652, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: m_Name
-      value: EquipedItem (1)
+      value: ScanningRobot
       objectReference: {fileID: 0}
     - target: {fileID: 2101899674418940026, guid: 5c8b612cdc47a564290427a9663ec160, type: 3}
       propertyPath: m_LocalPosition.x

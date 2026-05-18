@@ -1,17 +1,3 @@
-%YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf97cb59e5d0411bbbddaba921c2f530, type: 3}
-  m_Name: CoalOre
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.OreData
-  prefab: {fileID: 6197598707761456954, guid: 52bd17ce65269e047a79ab9f17b7eb34, type: 3}
-  inventoryItemData: {fileID: 11400000, guid: af51f0f7cbb7bb74484bcc154ed84959, type: 2}
-  pickupAmount: 1
+version https://git-lfs.github.com/spec/v1
+oid sha256:dd5a3acaa3e7453492f02eac108024336328aa97730279d409faeb4e71657464
+size 625

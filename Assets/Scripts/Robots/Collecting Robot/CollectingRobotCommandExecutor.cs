@@ -16,6 +16,7 @@ namespace Coreline.Robots
         [SerializeField] private float followCollectDuration = 120f;
         [SerializeField] private float visiblePickupRetryInterval = 0.25f;
         [SerializeField] private float noVisiblePickupStopDelay = 3f;
+        [SerializeField] private float repeatCollectRetryInterval = 1f;
 
         private CollectingRobotController collectingRobot;
 
@@ -67,14 +68,21 @@ namespace Coreline.Robots
                 yield break;
             }
 
+            if (command.IsRepeating)
+            {
+                yield return ExecuteRepeatingCollectVisible(command);
+                yield break;
+            }
+
             yield return ExecuteCollectVisible(command);
         }
 
         private IEnumerator ExecuteCollectVisible(RobotCommand command)
         {
             bool collectedAny = false;
+            bool inventoryBlocked = false;
 
-            while (collectingRobot.TryGetNearestVisiblePickup(command.resource, transform.position, out CommandTarget visiblePickup))
+            while (TryGetNearestCollectablePickup(command.resource, out CommandTarget visiblePickup, out inventoryBlocked))
             {
                 bool pickedUp = false;
                 yield return MoveAndPickup(visiblePickup, value => pickedUp = value);
@@ -88,9 +96,61 @@ namespace Coreline.Robots
                 yield return null;
             }
 
+            if (inventoryBlocked)
+            {
+                StopForFullInventory();
+                yield break;
+            }
+
             if (!collectedAny)
             {
-                PickupNearby(command.resource);
+                if (PickupNearby(command.resource))
+                {
+                    yield break;
+                }
+            }
+        }
+
+        private IEnumerator ExecuteRepeatingCollectVisible(RobotCommand command)
+        {
+            WaitForSeconds wait = new(Mathf.Max(0.1f, repeatCollectRetryInterval));
+
+            while (true)
+            {
+                bool collectedAny = false;
+                bool inventoryBlocked = false;
+
+                while (TryGetNearestCollectablePickup(command.resource, out CommandTarget visiblePickup, out inventoryBlocked))
+                {
+                    bool pickedUp = false;
+                    yield return MoveAndPickup(visiblePickup, value => pickedUp = value);
+                    collectedAny |= pickedUp;
+
+                    if (!pickedUp)
+                    {
+                        collectingRobot.ForgetVisiblePickup(visiblePickup);
+                    }
+
+                    yield return null;
+                }
+
+                if (inventoryBlocked)
+                {
+                    StopForFullInventory();
+                    yield break;
+                }
+
+                if (!collectedAny)
+                {
+                    if (PickupNearby(command.resource))
+                    {
+                        yield break;
+                    }
+                }
+
+                StopAgent();
+                robot.SetStatus(RobotWorkState.Idle);
+                yield return wait;
             }
         }
 
@@ -110,7 +170,7 @@ namespace Coreline.Robots
             float previousStoppingDistance = Agent.stoppingDistance;
             float elapsed = 0f;
             float timeWithoutVisiblePickup = 0f;
-            float commandDuration = Mathf.Max(0.1f, followCollectDuration);
+            float commandDuration = command.IsRepeating ? float.PositiveInfinity : Mathf.Max(0.1f, followCollectDuration);
 
             Agent.stoppingDistance = Mathf.Max(0.05f, followDistance);
             Agent.isStopped = false;
@@ -122,7 +182,7 @@ namespace Coreline.Robots
                     break;
                 }
 
-                if (collectingRobot.TryGetNearestVisiblePickup(command.resource, transform.position, out CommandTarget visiblePickup))
+                if (TryGetNearestCollectablePickup(command.resource, out CommandTarget visiblePickup, out bool inventoryBlocked))
                 {
                     timeWithoutVisiblePickup = 0f;
 
@@ -141,6 +201,12 @@ namespace Coreline.Robots
                     continue;
                 }
 
+                if (inventoryBlocked)
+                {
+                    StopForFullInventory();
+                    break;
+                }
+
                 robot.SetStatus(RobotWorkState.Walking);
 
                 if (!Agent.pathPending)
@@ -151,7 +217,9 @@ namespace Coreline.Robots
                 if (!Agent.pathPending && Agent.remainingDistance <= Agent.stoppingDistance + 0.05f)
                 {
                     timeWithoutVisiblePickup += visiblePickupRetryInterval;
-                    if (timeWithoutVisiblePickup >= noVisiblePickupStopDelay && collectingRobot.SelectedMiningRobot == null)
+                    if (!command.IsRepeating &&
+                        timeWithoutVisiblePickup >= noVisiblePickupStopDelay &&
+                        collectingRobot.SelectedMiningRobot == null)
                     {
                         break;
                     }
@@ -181,6 +249,15 @@ namespace Coreline.Robots
 
             if (target == null)
             {
+                onComplete(false);
+                yield break;
+            }
+
+            if (!CanAcceptPickupTarget(target))
+            {
+                robot.RaiseError($"No robot inventory space for pickup target '{target.TargetId}'.");
+                StopAgent();
+                robot.SetStatus(RobotWorkState.Idle);
                 onComplete(false);
                 yield break;
             }
@@ -225,7 +302,7 @@ namespace Coreline.Robots
             yield return new WaitForSeconds(deliveryDuration);
         }
 
-        private void PickupNearby(string resource)
+        private bool PickupNearby(string resource)
         {
             Collider[] hits = Physics.OverlapSphere(transform.position, pickupRadius, pickupLayers, QueryTriggerInteraction.Collide);
             HashSet<CommandTarget> pickedTargets = new();
@@ -233,16 +310,25 @@ namespace Coreline.Robots
             foreach (Collider hit in hits)
             {
                 CommandTarget target = hit.GetComponentInParent<CommandTarget>();
-                if (target == null || target.TargetType != CommandTargetType.PickupItem || !target.MatchesResource(resource))
+                if (target == null ||
+                    target.TargetType != CommandTargetType.PickupItem ||
+                    !target.MatchesResource(resource) ||
+                    !collectingRobot.CanSeePickupTarget(target))
                 {
                     continue;
                 }
 
                 if (pickedTargets.Add(target))
                 {
-                    TryPickupTarget(target);
+                    if (!TryPickupTarget(target) && !CanAcceptPickupTarget(target))
+                    {
+                        StopForFullInventory();
+                        return true;
+                    }
                 }
             }
+
+            return false;
         }
 
         private bool TryPickupTarget(CommandTarget target)
@@ -281,6 +367,50 @@ namespace Coreline.Robots
             }
 
             return true;
+        }
+
+        private bool TryGetNearestCollectablePickup(string resource, out CommandTarget target, out bool inventoryBlocked)
+        {
+            target = null;
+            inventoryBlocked = false;
+
+            List<CommandTarget> visiblePickups = collectingRobot.GetVisiblePickupTargets(resource, transform.position);
+            for (int i = 0; i < visiblePickups.Count; i++)
+            {
+                CommandTarget candidate = visiblePickups[i];
+                if (CanAcceptPickupTarget(candidate))
+                {
+                    target = candidate;
+                    return true;
+                }
+
+                inventoryBlocked = true;
+                collectingRobot.ForgetVisiblePickup(candidate);
+            }
+
+            return false;
+        }
+
+        private bool CanAcceptPickupTarget(CommandTarget target)
+        {
+            if (target == null || collectingRobot == null || collectingRobot.Inventory == null)
+            {
+                return false;
+            }
+
+            if (target.InventoryItemData != null)
+            {
+                return collectingRobot.Inventory.CanAcceptItem(target.InventoryItemData, target.PickupAmount);
+            }
+
+            return target.HasOreType && collectingRobot.Inventory.CanAcceptResource(target.OreType, target.PickupAmount);
+        }
+
+        private void StopForFullInventory()
+        {
+            StopAgent();
+            robot.SetStatus(RobotWorkState.Idle);
+            robot.RaiseError("Collection robot inventory is full.");
         }
 
         private bool TryGetExplicitTarget(RobotCommand command, out CommandTarget target)

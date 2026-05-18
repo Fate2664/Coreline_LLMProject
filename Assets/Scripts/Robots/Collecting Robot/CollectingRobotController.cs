@@ -13,6 +13,7 @@ namespace Coreline.Robots
         [SerializeField] private LayerMask visionLayers = ~0;
         [SerializeField] private float fallbackVisionRadius = 8f;
         [SerializeField] private bool refreshVisionWithOverlap = true;
+        [SerializeField] private bool orePickupsRequireScan = true;
 
         private readonly HashSet<CommandTarget> visiblePickupTargets = new();
         private Animator animator;
@@ -25,7 +26,6 @@ namespace Coreline.Robots
         protected override void Awake()
         {
             base.Awake();
-            inventory = EnsureComponent(inventory);
             animator = GetComponentInChildren<Animator>();
 
             if (visionTrigger != null)
@@ -72,7 +72,7 @@ namespace Coreline.Robots
 
             foreach (CommandTarget candidate in visiblePickupTargets)
             {
-                if (!IsUsablePickupTarget(candidate) || !candidate.MatchesResource(resource))
+                if (!IsVisiblePickupTarget(candidate) || !candidate.MatchesResource(resource))
                 {
                     continue;
                 }
@@ -97,7 +97,7 @@ namespace Coreline.Robots
             List<CommandTarget> results = new();
             foreach (CommandTarget target in visiblePickupTargets)
             {
-                if (IsUsablePickupTarget(target) && target.MatchesResource(resource))
+                if (IsVisiblePickupTarget(target) && target.MatchesResource(resource))
                 {
                     results.Add(target);
                 }
@@ -119,6 +119,11 @@ namespace Coreline.Robots
             {
                 visiblePickupTargets.Remove(target);
             }
+        }
+
+        public bool CanSeePickupTarget(CommandTarget target)
+        {
+            return IsVisiblePickupTarget(target);
         }
         
         public override bool CanExecuteAction(RobotCommandAction action)
@@ -146,7 +151,7 @@ namespace Coreline.Robots
 
         private void RefreshVisiblePickupTargets()
         {
-            visiblePickupTargets.RemoveWhere(target => !IsUsablePickupTarget(target));
+            visiblePickupTargets.RemoveWhere(target => !IsVisiblePickupTarget(target));
 
             if (!refreshVisionWithOverlap)
             {
@@ -170,7 +175,7 @@ namespace Coreline.Robots
             Collider[] hits = Physics.OverlapSphere(center, radius, visionLayers, QueryTriggerInteraction.Collide);
             foreach (Collider hit in hits)
             {
-                if (TryGetPickupTarget(hit, out CommandTarget target))
+                if (TryGetPickupTarget(hit, out CommandTarget target) && IsVisiblePickupTarget(target))
                 {
                     visiblePickupTargets.Add(target);
                 }
@@ -188,6 +193,28 @@ namespace Coreline.Robots
             return target != null &&
                    target.gameObject.activeInHierarchy &&
                    target.TargetType == CommandTargetType.PickupItem;
+        }
+
+        private bool IsVisiblePickupTarget(CommandTarget target)
+        {
+            if (!IsUsablePickupTarget(target))
+            {
+                return false;
+            }
+
+            if (!orePickupsRequireScan || !IsOrePickupTarget(target))
+            {
+                return true;
+            }
+
+            CommandTargetRegistry registry = CommandTargetRegistry.Instance;
+            return registry != null && registry.IsTargetVisible(target, transform.position);
+        }
+
+        private static bool IsOrePickupTarget(CommandTarget target)
+        {
+            return target != null &&
+                   (target.HasOreType || target.InventoryItemData is OreItemSO);
         }
 
         private static float GetWorldSphereRadius(SphereCollider sphereCollider)
