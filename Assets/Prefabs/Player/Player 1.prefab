@@ -93,7 +93,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7141999654565568100}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.96837753, z: -0, w: 0.24948962}
+  m_LocalRotation: {x: 0, y: -0.96837664, z: 0, w: 0.24949285}
   m_LocalPosition: {x: 2.787826, y: 1.88395, z: 7.942205}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -115,6 +115,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 5
+  sprintSpeed: 8
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -131,6 +132,7 @@ MonoBehaviour:
   InventoryRoot: {fileID: 0}
   uiManager: {fileID: 0}
   buildPlacer: {fileID: 0}
+  startWithInventoryOpen: 0
 --- !u!114 &4850551401805210364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -168,12 +170,13 @@ MonoBehaviour:
   items:
   - item: {fileID: 11400000, guid: 73362df6ca806324a9ddcf4dfa27290e, type: 2}
     count: 1
-  - item: {fileID: 11400000, guid: 257f579fa25662c40aebec4bd3cc89b5, type: 2}
-    count: 50
-  - item: {fileID: 11400000, guid: 374f20701770bac4aa5c50bb8f1ac181, type: 2}
-    count: 50
-  - item: {fileID: 11400000, guid: af51f0f7cbb7bb74484bcc154ed84959, type: 2}
-    count: 50
+  - item: {fileID: 11400000, guid: 06e57196491b9d74999fee9d27b0d44d, type: 2}
+    count: 5
+  - item: {fileID: 11400000, guid: 6e9e778353322f544bcb53d43eee43e4, type: 2}
+    count: 5
+  - item: {fileID: 11400000, guid: 2a152356e4a0a214bad0c75484feee93, type: 2}
+    count: 5
+  equipStartingPickaxe: 1
 --- !u!114 &3660598748348404493
 MonoBehaviour:
   m_ObjectHideFlags: 0

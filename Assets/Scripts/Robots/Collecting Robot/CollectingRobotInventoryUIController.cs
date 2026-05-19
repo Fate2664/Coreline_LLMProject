@@ -49,6 +49,7 @@ namespace Coreline.Robots
         private bool playerInventoryWasOpenOnOpen;
         private bool playerInventoryCloseButtonWasActive;
         private bool hasCachedPlayerInventoryCloseButtonState;
+        private CollectingRobotController pausedRobot;
 
         public static bool IsAnyOpen { get; private set; }
         public CollectingRobotController ActiveRobot { get; private set; }
@@ -77,6 +78,7 @@ namespace Coreline.Robots
         {
             UnsubscribeFromActiveInventory();
             UnsubscribeFromCloseButton();
+            ReleasePausedRobot();
 
             if (isOpen)
             {
@@ -149,6 +151,7 @@ namespace Coreline.Robots
             HideDragPreview();
             RestorePlayerInventoryState();
             UnsubscribeFromActiveInventory();
+            ReleasePausedRobot();
             ActiveRobot = null;
             isOpen = false;
             IsAnyOpen = false;
@@ -178,12 +181,38 @@ namespace Coreline.Robots
                 ActiveRobot.Inventory.InventoryChanged -= HandleInventoryChanged;
             }
 
+            ReleasePausedRobot();
             ActiveRobot = robot;
 
             if (ActiveRobot != null && ActiveRobot.Inventory != null)
             {
                 ActiveRobot.Inventory.InventoryChanged += HandleInventoryChanged;
             }
+
+            SetPausedRobot(ActiveRobot);
+        }
+
+        private void SetPausedRobot(CollectingRobotController robot)
+        {
+            if (pausedRobot == robot)
+            {
+                return;
+            }
+
+            ReleasePausedRobot();
+            pausedRobot = robot;
+            pausedRobot?.PauseForInteraction();
+        }
+
+        private void ReleasePausedRobot()
+        {
+            if (pausedRobot == null)
+            {
+                return;
+            }
+
+            pausedRobot.ResumeFromInteraction();
+            pausedRobot = null;
         }
 
         private void HandleInventoryChanged()

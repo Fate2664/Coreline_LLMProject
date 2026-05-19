@@ -15,6 +15,9 @@ namespace Coreline.Robots
         private BaseRobotCommandExecutor commandExecutor;
         private CommandTarget commandTarget;
         private RobotWorkState currentState = RobotWorkState.Idle;
+        private int pauseRequestCount;
+        private RobotWorkState pausedWorkState = RobotWorkState.Idle;
+        private bool hasPausedWorkState;
 
         public event Action<RobotWorkState> StatusChanged;
         public event Action<string> ErrorRaised;
@@ -26,6 +29,7 @@ namespace Coreline.Robots
         public CommandTarget CommandTarget => commandTarget;
         public string RobotTargetId => EnsureRobotCommandTarget().TargetId;
         public RobotWorkState CurrentState => currentState;
+        public bool IsPaused => pauseRequestCount > 0;
         protected virtual string RobotTargetIdPrefix => "Robot";
 
         protected virtual void Awake()
@@ -81,9 +85,18 @@ namespace Coreline.Robots
                 }
             }
 
+            if (commandQueue == null)
+            {
+                RaiseError("No robot command queue is assigned.");
+                return false;
+            }
+
             if (clearExisting)
             {
                 commandQueue.Clear();
+                commandExecutor?.CancelCurrentCommand();
+                ClearPausedWorkState();
+                SetStatus(RobotWorkState.Idle);
             }
 
             commandQueue.EnqueueSequence(commandsToQueue);
@@ -105,7 +118,37 @@ namespace Coreline.Robots
                 agent.ResetPath();
             }
 
+            ClearPausedWorkState();
             SetStatus(RobotWorkState.Idle);
+        }
+
+        public void PauseForInteraction()
+        {
+            if (pauseRequestCount == 0)
+            {
+                pausedWorkState = currentState;
+                hasPausedWorkState = true;
+            }
+
+            pauseRequestCount++;
+            PauseAgentWithoutClearingPath();
+            SetStatus(RobotWorkState.Idle);
+        }
+
+        public void ResumeFromInteraction()
+        {
+            if (pauseRequestCount <= 0)
+            {
+                return;
+            }
+
+            pauseRequestCount--;
+
+            if (pauseRequestCount == 0)
+            {
+                RestorePausedWorkState();
+                ApplyMovementForCurrentState();
+            }
         }
 
         public void SetStatus(RobotWorkState state)
@@ -128,6 +171,31 @@ namespace Coreline.Robots
 
         public virtual void HandleMovement()
         {
+            if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+            {
+                return;
+            }
+
+            if (IsPaused)
+            {
+                PauseAgentWithoutClearingPath();
+                return;
+            }
+
+            ApplyMovementForCurrentState();
+        }
+
+        public virtual void HandleMining()
+        {
+        }
+
+        private void ApplyMovementForCurrentState()
+        {
+            if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+            {
+                return;
+            }
+
             if (currentState == RobotWorkState.Walking)
             {
                 agent.isStopped = false;
@@ -142,8 +210,38 @@ namespace Coreline.Robots
             }
         }
 
-        public virtual void HandleMining()
+        private void PauseAgentWithoutClearingPath()
         {
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+            }
+        }
+
+        private void RestorePausedWorkState()
+        {
+            RobotWorkState stateToRestore = hasPausedWorkState
+                ? pausedWorkState
+                : currentState;
+
+            ClearPausedWorkState();
+
+            if (stateToRestore != RobotWorkState.Idle &&
+                commandExecutor != null &&
+                commandExecutor.HasActiveCommand)
+            {
+                SetStatus(stateToRestore);
+            }
+            else
+            {
+                SetStatus(RobotWorkState.Idle);
+            }
+        }
+
+        private void ClearPausedWorkState()
+        {
+            pausedWorkState = RobotWorkState.Idle;
+            hasPausedWorkState = false;
         }
 
         private bool ShouldGenerateRobotTargetId(CommandTarget target, string id)

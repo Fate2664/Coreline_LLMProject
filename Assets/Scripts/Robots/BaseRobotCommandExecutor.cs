@@ -21,6 +21,8 @@ namespace Coreline.Robots
 
         protected CommandTargetRegistry Registry => targetRegistry != null ? targetRegistry : CommandTargetRegistry.Instance;
         protected NavMeshAgent Agent => robot.Agent;
+        protected bool IsRobotPaused => robot != null && robot.IsPaused;
+        public bool HasActiveCommand => activeRoutine != null && activeCommand != null;
 
 
         protected virtual void Awake()
@@ -31,6 +33,12 @@ namespace Coreline.Robots
 
         protected virtual void Update()
         {
+            if (IsRobotPaused)
+            {
+                PauseAgent();
+                return;
+            }
+
             if (activeRoutine != null)
             {
                 return;
@@ -65,6 +73,7 @@ namespace Coreline.Robots
             activeCommand = command;
             command.Normalize();
 
+            yield return WaitWhileRobotPaused();
             yield return ExecuteCommandByAction(command);
 
             activeCommand = null;
@@ -131,6 +140,13 @@ namespace Coreline.Robots
 
             while (target != null && target.gameObject.activeInHierarchy)
             {
+                if (IsRobotPaused)
+                {
+                    PauseAgent();
+                    yield return null;
+                    continue;
+                }
+
                 robot.SetStatus(RobotWorkState.Walking);
                 Agent.isStopped = false;
 
@@ -152,7 +168,7 @@ namespace Coreline.Robots
         {
             robot.SetStatus(RobotWorkState.Idle);
             StopAgent();
-            yield return new WaitForSeconds(Mathf.Max(1, command.amount));
+            yield return WaitForSecondsPausable(Mathf.Max(1, command.amount));
         }
 
         #endregion
@@ -173,6 +189,13 @@ namespace Coreline.Robots
             float elapsed = 0f;
             while (elapsed < maxTravelTime)
             {
+                if (IsRobotPaused)
+                {
+                    PauseAgent();
+                    yield return null;
+                    continue;
+                }
+
                 if (target == null)
                 {
                     Agent.stoppingDistance = previousStoppingDistance;
@@ -180,6 +203,7 @@ namespace Coreline.Robots
                     yield break;
                 }
 
+                Agent.isStopped = false;
                 Vector3 targetDestination = target.DestinationPosition;
                 float repathDistanceSqr = dynamicTargetRepathDistance * dynamicTargetRepathDistance;
                 if (!Agent.pathPending && (targetDestination - currentDestination).sqrMagnitude >= repathDistanceSqr)
@@ -237,8 +261,49 @@ namespace Coreline.Robots
 
         protected void StopAgent()
         {
+            if (Agent == null || !Agent.enabled || !Agent.isOnNavMesh)
+            {
+                return;
+            }
+
             Agent.isStopped = true;
             Agent.ResetPath();
+        }
+
+        protected void PauseAgent()
+        {
+            if (Agent != null && Agent.enabled && Agent.isOnNavMesh)
+            {
+                Agent.isStopped = true;
+            }
+        }
+
+        protected IEnumerator WaitWhileRobotPaused()
+        {
+            while (IsRobotPaused)
+            {
+                PauseAgent();
+                yield return null;
+            }
+        }
+
+        protected IEnumerator WaitForSecondsPausable(float seconds)
+        {
+            float elapsed = 0f;
+            float duration = Mathf.Max(0f, seconds);
+
+            while (elapsed < duration)
+            {
+                if (IsRobotPaused)
+                {
+                    PauseAgent();
+                    yield return null;
+                    continue;
+                }
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
         }
     }
 }

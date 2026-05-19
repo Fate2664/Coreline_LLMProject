@@ -38,6 +38,7 @@ namespace Coreline.Robots
         private bool isOpen;
         private CommandTarget playerTarget;
         private CommandTarget activeRobotTarget;
+        private BaseRobotController pausedRobot;
         private string lastAppliedRobotName = string.Empty;
         private DropDownVisuals miningRobotDropdownVisuals;
         private readonly MultiOptionSetting miningRobotDropdownSetting = new()
@@ -81,6 +82,7 @@ namespace Coreline.Robots
             UnsubscribeFromInput();
             UnsubscribeFromCommandClient();
             UnsubscribeFromMiningRobotDropdown();
+            ReleasePausedRobot();
 
             if (isOpen)
             {
@@ -135,6 +137,7 @@ namespace Coreline.Robots
             SubscribeToMiningRobotDropdown();
             EnsurePlayerTarget(player);
 
+            SetPausedRobot(robot);
             ActiveRobot = robot;
             activeRobotTarget = EnsureRobotTarget(robot);
             RefreshRobotTypeText();
@@ -158,6 +161,7 @@ namespace Coreline.Robots
 
         public void Close()
         {
+            ReleasePausedRobot();
             ActiveRobot = null;
             activeRobotTarget = null;
             lastAppliedRobotName = string.Empty;
@@ -169,6 +173,29 @@ namespace Coreline.Robots
             {
                 gameObject.SetActive(false);
             }
+        }
+
+        private void SetPausedRobot(BaseRobotController robot)
+        {
+            if (pausedRobot == robot)
+            {
+                return;
+            }
+
+            ReleasePausedRobot();
+            pausedRobot = robot;
+            pausedRobot?.PauseForInteraction();
+        }
+
+        private void ReleasePausedRobot()
+        {
+            if (pausedRobot == null)
+            {
+                return;
+            }
+
+            pausedRobot.ResumeFromInteraction();
+            pausedRobot = null;
         }
 
         private void SubmitPrompt(string prompt)

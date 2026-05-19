@@ -22,6 +22,12 @@ namespace Coreline.Robots
             miningRobot = GetComponent<MiningRobotController>();
         }
 
+        public override void CancelCurrentCommand()
+        {
+            base.CancelCurrentCommand();
+            miningRobot?.ClearMiningLookTarget();
+        }
+
         protected override IEnumerator ExecuteCommandByAction(RobotCommand command)
         {
             if (command.ActionType == RobotCommandAction.MineResource)
@@ -63,20 +69,20 @@ namespace Coreline.Robots
                 yield break;
             }
 
-            WaitForSeconds wait = new(Mathf.Max(0.1f, repeatMineRetryInterval));
-
             while (true)
             {
+                yield return WaitWhileRobotPaused();
+
                 if (!TryGetRepeatingMineTarget(command, out CommandTarget target))
                 {
                     StopAgent();
                     robot.SetStatus(RobotWorkState.Idle);
-                    yield return wait;
+                    yield return WaitForSecondsPausable(repeatMineRetryInterval);
                     continue;
                 }
 
                 yield return MineTarget(command, target);
-                yield return wait;
+                yield return WaitForSecondsPausable(repeatMineRetryInterval);
             }
         }
 
@@ -109,6 +115,7 @@ namespace Coreline.Robots
             }
 
             StopAgent();
+            yield return WaitWhileRobotPaused();
             yield return FaceTarget(target);
 
             if (!target.TryGetMineable(out global::IMineable mineable))
@@ -131,6 +138,8 @@ namespace Coreline.Robots
                 int hitCount = Mathf.Max(1, command.amount > 1 ? command.amount : maxMiningHits);
                 for (int i = 0; i < hitCount; i++)
                 {
+                    yield return WaitWhileRobotPaused();
+
                     if (target == null || mineable == null)
                     {
                         yield break;
@@ -145,7 +154,7 @@ namespace Coreline.Robots
                         yield break;
                     }
 
-                    yield return new WaitForSeconds(miningInterval);
+                    yield return WaitForSecondsPausable(miningInterval);
                 }
             }
             finally
@@ -164,6 +173,13 @@ namespace Coreline.Robots
             float elapsed = 0f;
             while (elapsed < maxFaceTargetTime)
             {
+                if (IsRobotPaused)
+                {
+                    PauseAgent();
+                    yield return null;
+                    continue;
+                }
+
                 if (!TryGetFlatDirectionToTarget(target, out Vector3 direction))
                 {
                     yield break;
@@ -191,8 +207,17 @@ namespace Coreline.Robots
             float elapsed = 0f;
             const float timeout = 5f;
 
-            while (!miningRobot.IsMiningAnimationReady && miningRobot.CurrentState == RobotWorkState.Mining && elapsed < timeout)
+            while (!miningRobot.IsMiningAnimationReady &&
+                   (miningRobot.CurrentState == RobotWorkState.Mining || IsRobotPaused) &&
+                   elapsed < timeout)
             {
+                if (IsRobotPaused)
+                {
+                    PauseAgent();
+                    yield return null;
+                    continue;
+                }
+
                 elapsed += Time.deltaTime;
                 yield return null;
             }

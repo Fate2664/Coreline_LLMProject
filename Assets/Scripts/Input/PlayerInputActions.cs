@@ -165,6 +165,15 @@ namespace Coreline
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Crouch/Slide"",
+                    ""type"": ""Button"",
+                    ""id"": ""0358a4d6-37bf-4f20-9764-190f0c95446e"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -297,6 +306,17 @@ namespace Coreline
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Sprint"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a6f88ae9-697a-4a28-9f22-db1f3999af04"",
+                    ""path"": ""<Keyboard>/c"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Crouch/Slide"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -509,6 +529,7 @@ namespace Coreline
             m_Player_ToggleInventory = m_Player.FindAction("ToggleInventory", throwIfNotFound: true);
             m_Player_AltInteract = m_Player.FindAction("AltInteract", throwIfNotFound: true);
             m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
+            m_Player_CrouchSlide = m_Player.FindAction("Crouch/Slide", throwIfNotFound: true);
             // UI
             m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
             m_UI_Exit = m_UI.FindAction("Exit", throwIfNotFound: true);
@@ -606,6 +627,7 @@ namespace Coreline
         private readonly InputAction m_Player_ToggleInventory;
         private readonly InputAction m_Player_AltInteract;
         private readonly InputAction m_Player_Sprint;
+        private readonly InputAction m_Player_CrouchSlide;
         /// <summary>
         /// Provides access to input actions defined in input action map "Player".
         /// </summary>
@@ -649,6 +671,10 @@ namespace Coreline
             /// Provides access to the underlying input action "Player/Sprint".
             /// </summary>
             public InputAction @Sprint => m_Wrapper.m_Player_Sprint;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/CrouchSlide".
+            /// </summary>
+            public InputAction @CrouchSlide => m_Wrapper.m_Player_CrouchSlide;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -699,6 +725,9 @@ namespace Coreline
                 @Sprint.started += instance.OnSprint;
                 @Sprint.performed += instance.OnSprint;
                 @Sprint.canceled += instance.OnSprint;
+                @CrouchSlide.started += instance.OnCrouchSlide;
+                @CrouchSlide.performed += instance.OnCrouchSlide;
+                @CrouchSlide.canceled += instance.OnCrouchSlide;
             }
 
             /// <summary>
@@ -734,6 +763,9 @@ namespace Coreline
                 @Sprint.started -= instance.OnSprint;
                 @Sprint.performed -= instance.OnSprint;
                 @Sprint.canceled -= instance.OnSprint;
+                @CrouchSlide.started -= instance.OnCrouchSlide;
+                @CrouchSlide.performed -= instance.OnCrouchSlide;
+                @CrouchSlide.canceled -= instance.OnCrouchSlide;
             }
 
             /// <summary>
@@ -981,6 +1013,13 @@ namespace Coreline
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnSprint(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Crouch/Slide" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnCrouchSlide(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

@@ -71,6 +71,11 @@ namespace Coreline.Robots
 
             Agent.isStopped = true;
 
+            if (IsPaused)
+            {
+                return;
+            }
+
             if (Agent.hasPath)
             {
                 Agent.ResetPath();

@@ -113,10 +113,10 @@ namespace Coreline.Robots
 
         private IEnumerator ExecuteRepeatingCollectVisible(RobotCommand command)
         {
-            WaitForSeconds wait = new(Mathf.Max(0.1f, repeatCollectRetryInterval));
-
             while (true)
             {
+                yield return WaitWhileRobotPaused();
+
                 bool collectedAny = false;
                 bool inventoryBlocked = false;
 
@@ -150,7 +150,7 @@ namespace Coreline.Robots
 
                 StopAgent();
                 robot.SetStatus(RobotWorkState.Idle);
-                yield return wait;
+                yield return WaitForSecondsPausable(repeatCollectRetryInterval);
             }
         }
 
@@ -177,6 +177,13 @@ namespace Coreline.Robots
 
             while (elapsed < commandDuration)
             {
+                if (IsRobotPaused)
+                {
+                    PauseAgent();
+                    yield return null;
+                    continue;
+                }
+
                 if (followTarget == null || !followTarget.gameObject.activeInHierarchy)
                 {
                     break;
@@ -208,6 +215,7 @@ namespace Coreline.Robots
                 }
 
                 robot.SetStatus(RobotWorkState.Walking);
+                Agent.isStopped = false;
 
                 if (!Agent.pathPending)
                 {
@@ -230,7 +238,7 @@ namespace Coreline.Robots
                 }
 
                 elapsed += visiblePickupRetryInterval;
-                yield return new WaitForSeconds(visiblePickupRetryInterval);
+                yield return WaitForSecondsPausable(visiblePickupRetryInterval);
             }
 
             Agent.stoppingDistance = previousStoppingDistance;
@@ -299,7 +307,7 @@ namespace Coreline.Robots
                 collectingRobot.Inventory.ClearAll();
             }
 
-            yield return new WaitForSeconds(deliveryDuration);
+            yield return WaitForSecondsPausable(deliveryDuration);
         }
 
         private bool PickupNearby(string resource)

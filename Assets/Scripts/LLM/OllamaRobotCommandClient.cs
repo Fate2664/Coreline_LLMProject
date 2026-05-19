@@ -13,7 +13,6 @@ namespace Coreline.Robots
         [SerializeField] private RobotCommandPromptBuilder promptBuilder;
         [SerializeField] private RobotCommandValidator commandValidator;
         [SerializeField] private CommandTargetRegistry targetRegistry;
-        [SerializeField] private bool clearRobotQueueOnSubmit;
         [SerializeField] private bool validateBeforeSubmit = true;
         [SerializeField] private bool logRawResponses = true;
         [SerializeField] private bool logAcceptedCommands = true;
@@ -156,7 +155,7 @@ namespace Coreline.Robots
                 return;
             }
 
-            bool submitted = targetRobot.SubmitCommands(sequenceToSubmit, clearRobotQueueOnSubmit, validate: false);
+            bool submitted = targetRobot.SubmitCommands(sequenceToSubmit, clearExisting: true, validate: false);
             if (!submitted)
             {
                 Reject("The target robot rejected the command sequence.");
@@ -449,7 +448,7 @@ namespace Coreline.Robots
                 lastMiningCommandIndex = i;
             }
 
-            bool shouldInferMissingMiningResources = promptResources.Count > 1 &&
+            bool shouldInferMissingMiningResources = promptResources.Count > 0 &&
                                                      (miningTemplate != null ||
                                                       robot is MiningRobotController ||
                                                       PromptMentionsMining(playerPrompt));
@@ -458,7 +457,7 @@ namespace Coreline.Robots
                 return;
             }
 
-            int insertIndex = lastMiningCommandIndex >= 0 ? lastMiningCommandIndex + 1 : sequence.sequence.Count;
+            int insertIndex = lastMiningCommandIndex >= 0 ? lastMiningCommandIndex + 1 : 0;
             foreach (string resource in promptResources)
             {
                 if (existingMiningResources.Contains(resource))
