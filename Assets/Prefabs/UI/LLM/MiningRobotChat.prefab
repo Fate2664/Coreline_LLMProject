@@ -3584,12 +3584,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b772210e5e6c6d041bd16a97bc005b2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.OllamaRobotCommandClient
-  modelName: gemma4:e2b
+  modelName: llama3.2
   targetRobot: {fileID: 0}
   promptBuilder: {fileID: 4648861902795791782}
   commandValidator: {fileID: 8633213175364376088}
   targetRegistry: {fileID: 0}
-  clearRobotQueueOnSubmit: 0
   validateBeforeSubmit: 1
   logRawResponses: 1
   logAcceptedCommands: 1
@@ -3637,7 +3636,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef8c9d3d0e8222f47a81e340b93d536d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotCommandValidator
-  targetRegistry: {fileID: 0}
   resolveResourceTargets: 1
   expandResourceMiningToAllVisibleNodes: 1
 --- !u!114 &805860781517279922
