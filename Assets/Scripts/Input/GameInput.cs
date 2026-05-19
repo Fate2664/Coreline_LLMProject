@@ -51,6 +51,12 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
         inputActions.UI.Enable();
     }
 
+    public void DisableActions()
+    {
+        inputActions.Player.Disable();
+        inputActions.UI.Disable();
+    }
+
     #region Gameplay Actions
 
     public void OnMove(InputAction.CallbackContext context)
