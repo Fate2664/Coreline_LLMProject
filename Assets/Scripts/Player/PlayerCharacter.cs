@@ -1,4 +1,5 @@
 using KinematicCharacterController;
+using UnityEditor.Search;
 using UnityEngine;
 
 namespace Coreline
@@ -12,7 +13,14 @@ namespace Coreline
     public enum Stance
     {
         Stand,
-        Crouch
+        Crouch,
+        Slide
+    }
+
+    public struct CharacterState
+    {
+        public bool Grounded;
+        public Stance Stance;
     }
 
     public struct CharacterInput
@@ -28,18 +36,21 @@ namespace Coreline
         [SerializeField] private Transform cameraTarget;
         [SerializeField] private Transform root;
 
-        [Space(10)] [Header("Walking")] 
-        [SerializeField] private float walkSpeed = 20f;
+        [Space(10)] [Header("Walking")] [SerializeField]
+        private float walkSpeed = 20f;
+
         [SerializeField] private float walkAcceleration = 25f;
 
-        [Space(10)] [Header("Jumping")] 
-        [SerializeField] private float jumpSpeed = 20f;
+        [Space(10)] [Header("Jumping")] [SerializeField]
+        private float jumpSpeed = 20f;
+
         [SerializeField] private float airSpeed = 15f;
         [SerializeField] private float airAcceleration = 70f;
         [SerializeField] private float gravity = -90f;
-        [Space(10)] 
-        [Header("Crouching")]
-        [SerializeField] private float crouchSpeed = 7f;
+
+        [Space(10)] [Header("Crouching")] [SerializeField]
+        private float crouchSpeed = 7f;
+
         [SerializeField] private float crouchAcceleration = 20f;
         [SerializeField] private float standHeight = 2f;
         [SerializeField] private float crouchHeight = 1f;
@@ -47,8 +58,17 @@ namespace Coreline
         [Range(0, 1)] [SerializeField] private float standCameraTargetHeight = .9f;
         [Range(0, 1)] [SerializeField] private float crouchCameraTargetHeight = .7f;
 
+        [Space(10)] [Header("Sliding")] 
+        [SerializeField] private float slideStartSpeed = 25f;
+        [SerializeField] private float slideSteerAcceleration = 5f;
+        [SerializeField] private float slideEndSpeed = 15f;
+        [SerializeField] private float slideFriction = .8f;
+        [SerializeField] private float slideGravity = -60f;
+
         private KinematicCharacterMotor _motor;
-        private Stance _stance;
+        private CharacterState _state;
+        private CharacterState _lastState;
+        private CharacterState _tempState;
 
         private Quaternion _requestedRotation;
         private Vector3 _requestedMovement;
@@ -63,7 +83,8 @@ namespace Coreline
 
         public void Initialize()
         {
-            _stance = Stance.Stand;
+            _state.Stance = Stance.Stand;
+            _lastState = _state;
             _motor.CharacterController = this;
             _uncrouchOverlapResults = new Collider[8];
         }
@@ -94,15 +115,18 @@ namespace Coreline
             var currentHeight = _motor.Capsule.height;
             var normalizedHeight = currentHeight / standHeight;
 
-            var cameraTargetHeight = currentHeight * (_stance is Stance.Stand ? standCameraTargetHeight : crouchCameraTargetHeight);
+            var cameraTargetHeight = currentHeight *
+                                     (_state.Stance is Stance.Stand
+                                         ? standCameraTargetHeight
+                                         : crouchCameraTargetHeight);
             var rootTargetScale = new Vector3(1f, normalizedHeight, 1f);
 
             cameraTarget.localPosition = Vector3.Lerp
             (
                 a: cameraTarget.localPosition,
-                b: new Vector3(0f, cameraTargetHeight, 0f), 
+                b: new Vector3(0f, cameraTargetHeight, 0f),
                 t: 1f - Mathf.Exp(-crouchHeightTransition * deltaTime)
-                );
+            );
 
             root.localScale = Vector3.Lerp(
                 a: root.localScale,
@@ -135,18 +159,70 @@ namespace Coreline
                     direction: _requestedMovement,
                     surfaceNormal: _motor.GroundingStatus.GroundNormal
                 ) * _requestedMovement.magnitude;
+                
+                //Start sliding
+                {
+                    var isMoving = groundedMovement.sqrMagnitude > 0f;
+                    var isCrouching = _state.Stance is Stance.Crouch;
+                    var wasStanding = _lastState.Stance is Stance.Stand;
+                    var wasInAir = !_lastState.Grounded;
+                    if (isMoving && isCrouching && (wasStanding || wasInAir))
+                    {
+                        _state.Stance = Stance.Slide;
+                        
+                        var slideSpeed = Mathf.Max(slideStartSpeed, currentVelocity.magnitude);
+                        currentVelocity = _motor.GetDirectionTangentToSurface(
+                            direction: currentVelocity,
+                            surfaceNormal: _motor.GroundingStatus.GroundNormal
+                        ) * slideSpeed;
+                    }
+                }
+                //Move
+                if (_state.Stance is Stance.Stand or Stance.Crouch)
+                {
+                    //Calculate the speed and acceleration
+                    var speed = _state.Stance is Stance.Stand ? walkSpeed : crouchSpeed;
+                    var acceleration = _state.Stance is Stance.Stand ? walkAcceleration : crouchAcceleration;
 
-                //Calculate the speed and acceleration
-                var speed = _stance is Stance.Stand ? walkSpeed : crouchSpeed;
-                var acceleration = _stance is Stance.Stand ? walkAcceleration : crouchAcceleration;
-
-                //and move along the ground in that direction
-                var targetVelocity = groundedMovement * speed;
-                currentVelocity = Vector3.Lerp(
-                    a: currentVelocity,
-                    b: targetVelocity,
-                    t: 1f - Mathf.Exp(-acceleration * deltaTime)
+                    //and move along the ground in that direction
+                    var targetVelocity = groundedMovement * speed;
+                    currentVelocity = Vector3.Lerp(
+                        a: currentVelocity,
+                        b: targetVelocity,
+                        t: 1f - Mathf.Exp(-acceleration * deltaTime)
                     );
+                }
+                //Continue sliding
+                else
+                {
+                    //Friction
+                    currentVelocity -= currentVelocity * (slideFriction * deltaTime);
+                    
+                    //Slope
+                    {
+                        var force = Vector3.ProjectOnPlane(
+                            vector: -_motor.CharacterUp,
+                            planeNormal: _motor.GroundingStatus.GroundNormal
+                        ) * slideGravity;
+                        
+                        currentVelocity -= force * deltaTime;
+                    }
+                    
+                    //Steer
+                    {
+                        var currentSpeed = currentVelocity.magnitude;
+                        //Target velocity is the player's movement direction at the current speed.
+                        var targetVelocity = groundedMovement * currentSpeed;
+                        var steerForce = (targetVelocity - currentVelocity) * (slideSteerAcceleration * deltaTime);
+                        //Add steer force but clamp velocity so the slide speed doesn't increase due to direct movement input
+                        currentVelocity += steerForce;
+                        currentVelocity = Vector3.ClampMagnitude(currentVelocity, currentSpeed);
+                    }
+                    
+                    //Stop
+                    if (currentVelocity.sqrMagnitude < slideEndSpeed)
+                        _state.Stance = Stance.Crouch;
+                }
             }
             //else in the air
             else
@@ -159,17 +235,17 @@ namespace Coreline
                     (
                         vector: _requestedMovement,
                         planeNormal: _motor.CharacterUp
-                        ) * _requestedMovement.magnitude;
-                    
+                    ) * _requestedMovement.magnitude;
+
                     //Current velocity on movement plane
                     var currentPlanarVelocity = Vector3.ProjectOnPlane
                     (
                         vector: currentVelocity,
                         planeNormal: _motor.CharacterUp
                     );
-                    
+
                     //Calculate movement force
-                    var movementForce = planarMovement * airAcceleration * deltaTime;
+                    var movementForce = planarMovement * (airAcceleration * deltaTime);
                     //Add force to the current planar velocity for a target velocity
                     var targetPlanarVelocity = currentPlanarVelocity + movementForce;
                     //Limit the target velocity to air speed
@@ -177,14 +253,16 @@ namespace Coreline
                     //Steer towards current velocity
                     currentVelocity += targetPlanarVelocity - currentPlanarVelocity;
                 }
+
                 //Gravity
-                currentVelocity += _motor.CharacterUp * gravity * deltaTime;
+                currentVelocity += _motor.CharacterUp * (gravity * deltaTime);
             }
 
             if (_requestedJump)
             {
                 _requestedJump = false;
-
+                _requestedCrouch = false;
+                
                 //Unstick the player from the ground
                 _motor.ForceUnground(time: 0);
 
@@ -198,20 +276,27 @@ namespace Coreline
 
         public void BeforeCharacterUpdate(float deltaTime)
         {
+            _tempState = _state;
+
             //Crouch
-            if (_requestedCrouch && _stance is Stance.Stand)
+            if (_requestedCrouch && _state.Stance is Stance.Stand)
             {
-                _stance = Stance.Crouch;
+                _state.Stance = Stance.Crouch;
                 _motor.SetCapsuleDimensions(radius: _motor.Capsule.radius, height: crouchHeight,
                     yOffset: crouchHeight * 0.5f);
             }
         }
 
-        public void PostGroundingUpdate(float deltaTime) { }
+        public void PostGroundingUpdate(float deltaTime)
+        {
+            if (!_motor.GroundingStatus.IsStableOnGround && _state.Stance is Stance.Slide)
+                _state.Stance = Stance.Crouch;
+        }
+
         public void AfterCharacterUpdate(float deltaTime)
         {
             //Uncrouch
-            if (!_requestedCrouch && _stance is not Stance.Stand)
+            if (!_requestedCrouch && _state.Stance is not Stance.Stand)
             {
                 _motor.SetCapsuleDimensions(radius: _motor.Capsule.radius, height: standHeight,
                     yOffset: standHeight * 0.5f);
@@ -231,17 +316,37 @@ namespace Coreline
                 }
                 else
                 {
-                    _stance = Stance.Stand;
+                    _state.Stance = Stance.Stand;
                 }
             }
+
+            //Update state to reflect relevant motor properties
+            _state.Grounded = _motor.GroundingStatus.IsStableOnGround;
+            //Update the _lastState to store the character state snapshot taken at
+            //the beginning of this character update
+            _lastState = _tempState;
         }
 
-        public void OnGroundHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport) { }
+        public void OnGroundHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint,
+            ref HitStabilityReport hitStabilityReport)
+        {
+        }
 
-        public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport) { }
+        public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint,
+            ref HitStabilityReport hitStabilityReport)
+        {
+        }
+
         public bool IsColliderValidForCollisions(Collider coll) => true;
-        public void OnDiscreteCollisionDetected(Collider hitCollider) { }
-        public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport) { }
+
+        public void OnDiscreteCollisionDetected(Collider hitCollider)
+        {
+        }
+
+        public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint,
+            Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport)
+        {
+        }
 
         public Transform GetCameraTarget() => cameraTarget;
     }
