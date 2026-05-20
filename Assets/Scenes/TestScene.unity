@@ -1567,7 +1567,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.PlayerCharacter
   cameraTarget: {fileID: 1014759893}
-  walkSpeed: 20
+  root: {fileID: 1332923823}
+  walkSpeed: 10
+  walkAcceleration: 25
+  jumpSpeed: 20
+  airSpeed: 15
+  airAcceleration: 70
+  gravity: -90
+  crouchSpeed: 7
+  crouchAcceleration: 20
+  standHeight: 2
+  crouchHeight: 1
+  crouchHeightTransition: 15
+  standCameraTargetHeight: 0.9
+  crouchCameraTargetHeight: 0.7
 --- !u!114 &1822102641
 MonoBehaviour:
   m_ObjectHideFlags: 0
