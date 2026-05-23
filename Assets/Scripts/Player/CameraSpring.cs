@@ -4,16 +4,46 @@ namespace Coreline
 {
     public class CameraSpring : MonoBehaviour
     {
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
-        {
+        [Min(0.01f)] [SerializeField] private float halfLife = 0.075f;
+        [SerializeField] private float frequency = 18f;
+        [SerializeField] private float angularDisplacement = 2f;
+        [SerializeField] private float linearDisplacement = 0.05f;
         
+        private Vector3 springPosition;
+        private Vector3 springVelocity;
+        
+        public void Initialize()
+        {
+            springPosition = transform.position;
+            springVelocity = Vector3.zero;
         }
 
-        // Update is called once per frame
-        void Update()
+        public void UpdateSpring(float deltaTime, Vector3 up)
         {
-        
+            transform.localPosition = Vector3.zero;
+            
+            Spring(ref springPosition, ref springVelocity, transform.position, halfLife, frequency, deltaTime);    
+            
+            var localSpringPosition = springPosition - transform.position;
+            var springHeight = Vector3.Dot(localSpringPosition, up);
+            
+            transform.localEulerAngles = new Vector3(-springHeight * angularDisplacement, 0f, 0f);
+            transform.localPosition = localSpringPosition * linearDisplacement;
+        }
+
+        private static void Spring(ref Vector3 current, ref Vector3 velocity, Vector3 target, float halfLife,
+            float frequency, float timeStep)
+        {
+            var dampingRatio = -Mathf.Log(.5f) / (frequency * halfLife);
+            var f = 1.0f + 2.0f * timeStep * dampingRatio * frequency;
+            var oo = frequency * frequency;
+            var hoo = timeStep * oo;
+            var hhoo = timeStep * hoo;
+            var detInv = 1.0f / (f + hhoo);
+            var detX = f * current + timeStep * velocity + hhoo * target;
+            var detV = velocity + hoo * (target - current);
+            current = detX * detInv;
+            velocity = detV * detInv;
         }
     }
 }

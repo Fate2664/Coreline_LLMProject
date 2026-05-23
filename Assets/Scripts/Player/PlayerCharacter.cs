@@ -22,6 +22,7 @@ namespace Coreline
         public bool Grounded;
         public Stance Stance;
         public Vector3 Velocity;
+        public Vector3 Acceleration;
     }
 
     public struct CharacterInput
@@ -91,6 +92,10 @@ namespace Coreline
         private bool ungroundedDueToJump;
 
         #endregion
+        
+        public Transform GetCameraTarget() => cameraTarget;
+        public CharacterState GetState() => state;
+        public CharacterState GetLastState() => lastState;
 
         private void Awake()
         {
@@ -172,6 +177,8 @@ namespace Coreline
 
         public void UpdateVelocity(ref Vector3 currentVelocity, float deltaTime)
         {
+            state.Acceleration = Vector3.zero;
+            
             //If on the ground
             if (motor.GroundingStatus.IsStableOnGround)
             {
@@ -230,11 +237,13 @@ namespace Coreline
 
                     //and move along the ground in that direction
                     var targetVelocity = groundedMovement * speed;
-                    currentVelocity = Vector3.Lerp(
+                    var moveVelocity = Vector3.Lerp(
                         a: currentVelocity,
                         b: targetVelocity,
                         t: 1f - Mathf.Exp(-acceleration * deltaTime)
                     );
+                    state.Acceleration = (moveVelocity - currentVelocity) / deltaTime;
+                    currentVelocity = moveVelocity;
                 }
                 //Continue sliding
                 else
@@ -257,10 +266,14 @@ namespace Coreline
                         var currentSpeed = currentVelocity.magnitude;
                         //Target velocity is the player's movement direction at the current speed.
                         var targetVelocity = groundedMovement * currentSpeed;
-                        var steerForce = (targetVelocity - currentVelocity) * (slideSteerAcceleration * deltaTime);
+                        var steerVelocity = currentVelocity;
+                        var steerForce = (targetVelocity - steerVelocity) * (slideSteerAcceleration * deltaTime);
                         //Add steer force but clamp velocity so the slide speed doesn't increase due to direct movement input
-                        currentVelocity += steerForce;
-                        currentVelocity = Vector3.ClampMagnitude(currentVelocity, currentSpeed);
+                        steerVelocity += steerForce;
+                        steerVelocity = Vector3.ClampMagnitude(steerVelocity, currentSpeed);
+                        
+                        state.Acceleration = (steerVelocity - currentVelocity) / deltaTime;
+                        currentVelocity = steerVelocity;
                     }
                     
                     //Stop
@@ -430,7 +443,6 @@ namespace Coreline
         public bool IsColliderValidForCollisions(Collider coll) => true;
         public void OnDiscreteCollisionDetected(Collider hitCollider) { }
         public void ProcessHitStabilityReport(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, Vector3 atCharacterPosition, Quaternion atCharacterRotation, ref HitStabilityReport hitStabilityReport) { }
-
-        public Transform GetCameraTarget() => cameraTarget;
+        
     }
 }

@@ -9,6 +9,8 @@ namespace Coreline
 
         private PlayerCharacter playerCharacter;
         private PlayerCamera playerCamera;
+        private CameraSpring playerCameraSpring;
+        private CameraTilt playerCameraTilt;
 
         private Vector2 lookInput;
         private void OnLook(Vector2 value) => lookInput = value;
@@ -39,6 +41,8 @@ namespace Coreline
         {
             playerCharacter = GetComponentInChildren<PlayerCharacter>();
             playerCamera = GetComponentInChildren<PlayerCamera>();
+            playerCameraSpring = GetComponentInChildren<CameraSpring>();
+            playerCameraTilt = GetComponentInChildren<CameraTilt>();
         }
 
         private void Start()
@@ -47,6 +51,8 @@ namespace Coreline
             input.EnableActions();
             playerCharacter.Initialize();
             playerCamera.Initialize(playerCharacter.GetCameraTarget());
+            playerCameraSpring.Initialize();
+            playerCameraTilt.Initialize();
         }
 
         private void OnEnable()
@@ -92,7 +98,13 @@ namespace Coreline
 
         private void LateUpdate()
         {
-            playerCamera.UpdatePosition(playerCharacter.GetCameraTarget());
+            var deltaTime = Time.deltaTime;
+            var cameraTarget = playerCharacter.GetCameraTarget();
+            var state = playerCharacter.GetState();
+            
+            playerCamera.UpdatePosition(cameraTarget);
+            playerCameraSpring.UpdateSpring(deltaTime, cameraTarget.up);
+            playerCameraTilt.UpdateTilt(deltaTime, state.Stance is Stance.Slide, state.Acceleration ,cameraTarget.up);
         }
     }
 }
