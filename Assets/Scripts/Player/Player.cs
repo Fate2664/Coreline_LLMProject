@@ -16,6 +16,8 @@ namespace Coreline
         private void OnLook(Vector2 value) => lookInput = value;
         private Vector2 moveInput;
         private void OnMove(Vector2 value) => moveInput = value;
+        private bool sprintInput;
+        private void OnSprint(bool pressed) => sprintInput = pressed;
         private bool jumpInput;
         private bool jumpInputHeld;
         private void OnJump(bool pressed)
@@ -88,7 +90,8 @@ namespace Coreline
                 Rotation = playerCamera.transform.rotation,
                 Move = moveInput,
                 Jump = jumpInput,
-                Crouch = crouchInput ? CrouchInput.Toggle : CrouchInput.None
+                Crouch = crouchInput ? CrouchInput.Pressed : CrouchInput.None,
+                CrouchHeld = crouchInputHeld
             };
             playerCharacter.UpdateInput(characterInput);
             crouchInput = false;

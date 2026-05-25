@@ -7,7 +7,7 @@ namespace Coreline
     public enum CrouchInput
     {
         None,
-        Toggle
+        Pressed
     }
 
     public enum Stance
@@ -31,6 +31,7 @@ namespace Coreline
         public Vector2 Move;
         public bool Jump;
         public CrouchInput Crouch;
+        public bool CrouchHeld;
     }
 
     public class PlayerCharacter : MonoBehaviour, ICharacterController
@@ -84,6 +85,7 @@ namespace Coreline
         private Vector3 requestedMovement;
         private bool requestedJump;
         private bool requestedCrouch;
+        private bool requestedCrouchHeld;
         private bool requestedCrouchInAir;
         private Collider[] uncrouchOverlapResults;
 
@@ -119,19 +121,22 @@ namespace Coreline
             requestedMovement = Vector3.ClampMagnitude(requestedMovement, 1f);
             //Orient the input so it's relative to the direction the player is facing
             requestedMovement = input.Rotation * requestedMovement;
-    
+            
+            //Jumping
             var wasRequestingJump = requestedJump;
             requestedJump = requestedJump || input.Jump;
             if (requestedJump && !wasRequestingJump)
                 timeSinceJumpRequested = 0f;
-
+            
+            //Crouching
             var wasRequestingCrouch = requestedCrouch;
             requestedCrouch = input.Crouch switch
             {
-                CrouchInput.Toggle => !requestedCrouch,
+                CrouchInput.Pressed => !requestedCrouch,
                 CrouchInput.None => requestedCrouch,
                 _ => requestedCrouch
             };
+            requestedCrouchHeld = input.CrouchHeld;
             if (requestedCrouch && !wasRequestingCrouch)
                 requestedCrouchInAir = !state.Grounded;
             else if (!requestedCrouch && wasRequestingCrouch)
@@ -198,7 +203,7 @@ namespace Coreline
                     var isCrouching = state.Stance is Stance.Crouch;
                     var wasStanding = lastState.Stance is Stance.Stand;
                     var wasInAir = !lastState.Grounded;
-                    if (isMoving && isCrouching && (wasStanding || wasInAir))
+                    if (isMoving && isCrouching && requestedCrouchHeld && (wasStanding || wasInAir))
                     {
                         state.Stance = Stance.Slide;
                         
@@ -248,37 +253,46 @@ namespace Coreline
                 //Continue sliding
                 else
                 {
-                    //Friction
-                    currentVelocity -= currentVelocity * (slideFriction * deltaTime);
-                    
-                    //Slope
+                    //Hold crouch check
+                    if (!requestedCrouchHeld)
                     {
-                        var force = Vector3.ProjectOnPlane(
-                            vector: -motor.CharacterUp,
-                            planeNormal: motor.GroundingStatus.GroundNormal
-                        ) * slideGravity;
-                        
-                        currentVelocity -= force * deltaTime;
-                    }
-                    
-                    //Steer
-                    {
-                        var currentSpeed = currentVelocity.magnitude;
-                        //Target velocity is the player's movement direction at the current speed.
-                        var targetVelocity = groundedMovement * currentSpeed;
-                        var steerVelocity = currentVelocity;
-                        var steerForce = (targetVelocity - steerVelocity) * (slideSteerAcceleration * deltaTime);
-                        //Add steer force but clamp velocity so the slide speed doesn't increase due to direct movement input
-                        steerVelocity += steerForce;
-                        steerVelocity = Vector3.ClampMagnitude(steerVelocity, currentSpeed);
-                        
-                        state.Acceleration = (steerVelocity - currentVelocity) / deltaTime;
-                        currentVelocity = steerVelocity;
-                    }
-                    
-                    //Stop
-                    if (currentVelocity.sqrMagnitude < slideEndSpeed)
+                        requestedCrouch = false;
                         state.Stance = Stance.Crouch;
+                    }
+                    else
+                    {
+                        //Friction
+                        currentVelocity -= currentVelocity * (slideFriction * deltaTime);
+                        
+                        //Slope
+                        {
+                            var force = Vector3.ProjectOnPlane(
+                                vector: -motor.CharacterUp,
+                                planeNormal: motor.GroundingStatus.GroundNormal
+                            ) * slideGravity;
+                            
+                            currentVelocity -= force * deltaTime;
+                        }
+                        
+                        //Steer
+                        {
+                            var currentSpeed = currentVelocity.magnitude;
+                            //Target velocity is the player's movement direction at the current speed.
+                            var targetVelocity = groundedMovement * currentSpeed;
+                            var steerVelocity = currentVelocity;
+                            var steerForce = (targetVelocity - steerVelocity) * (slideSteerAcceleration * deltaTime);
+                            //Add steer force but clamp velocity so the slide speed doesn't increase due to direct movement input
+                            steerVelocity += steerForce;
+                            steerVelocity = Vector3.ClampMagnitude(steerVelocity, currentSpeed);
+                            
+                            state.Acceleration = (steerVelocity - currentVelocity) / deltaTime;
+                            currentVelocity = steerVelocity;
+                        }
+                        
+                        //Stop
+                        if (currentVelocity.sqrMagnitude < slideEndSpeed)
+                            state.Stance = Stance.Crouch;
+                    }
                 }
             }
             //else in the air

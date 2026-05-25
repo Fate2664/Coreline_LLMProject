@@ -332,8 +332,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.CameraTilt
   attackDamping: 0.5
   decayDamping: 0.3
-  walkStrength: 0.075
-  slideStrength: 0.25
+  walkStrength: 0.05
+  slideStrength: 0.15
   strengthResponse: 5
 --- !u!1001 &232498568
 PrefabInstance:
