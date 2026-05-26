@@ -332,7 +332,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.CameraTilt
   attackDamping: 0.5
   decayDamping: 0.3
-  walkStrength: 0.05
+  walkStrength: 0.01
   slideStrength: 0.15
   strengthResponse: 5
 --- !u!1001 &232498568
@@ -1927,8 +1927,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.PlayerCharacter
   cameraTarget: {fileID: 1014759893}
   root: {fileID: 1332923823}
-  walkSpeed: 10
+  walkSpeed: 5
   walkAcceleration: 25
+  sprintSpeed: 10
+  sprintAcceleration: 25
   jumpSpeed: 15
   airSpeed: 12
   airAcceleration: 70

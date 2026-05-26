@@ -29,6 +29,7 @@ namespace Coreline
     {
         public Quaternion Rotation;
         public Vector2 Move;
+        public bool Sprint;
         public bool Jump;
         public CrouchInput Crouch;
         public bool CrouchHeld;
@@ -40,12 +41,14 @@ namespace Coreline
 
         [SerializeField] private Transform cameraTarget;
         [SerializeField] private Transform root;
-
         [Space(10)] 
         [Header("Walking")] 
         [SerializeField] private float walkSpeed = 20f;
         [SerializeField] private float walkAcceleration = 25f;
-
+        [Space(10)]
+        [Header("Sprinting")]
+        [SerializeField] private float sprintSpeed = 20f;
+        [SerializeField] private float sprintAcceleration = 25f;
         [Space(10)] 
         [Header("Jumping")] 
         [SerializeField] private float jumpSpeed = 20f;
@@ -53,7 +56,6 @@ namespace Coreline
         [SerializeField] private float airAcceleration = 70f;
         [SerializeField] private float gravity = -90f;
         [SerializeField] private float coyoteTime = 0.2f;
-
         [Space(10)] 
         [Header("Crouching")] 
         [SerializeField] private float crouchSpeed = 7f;
@@ -63,7 +65,6 @@ namespace Coreline
         [SerializeField] private float crouchHeightTransition = 15f;
         [Range(0, 1)] [SerializeField] private float standCameraTargetHeight = .9f;
         [Range(0, 1)] [SerializeField] private float crouchCameraTargetHeight = .7f;
-
         [Space(10)] 
         [Header("Sliding")] 
         [SerializeField] private float slideStartSpeed = 25f;
@@ -83,6 +84,7 @@ namespace Coreline
 
         private Quaternion requestedRotation;
         private Vector3 requestedMovement;
+        private bool requestedSprint;
         private bool requestedJump;
         private bool requestedCrouch;
         private bool requestedCrouchHeld;
@@ -121,6 +123,9 @@ namespace Coreline
             requestedMovement = Vector3.ClampMagnitude(requestedMovement, 1f);
             //Orient the input so it's relative to the direction the player is facing
             requestedMovement = input.Rotation * requestedMovement;
+            
+            //Sprinting
+            requestedSprint = input.Sprint;
             
             //Jumping
             var wasRequestingJump = requestedJump;
@@ -203,7 +208,9 @@ namespace Coreline
                     var isCrouching = state.Stance is Stance.Crouch;
                     var wasStanding = lastState.Stance is Stance.Stand;
                     var wasInAir = !lastState.Grounded;
-                    if (isMoving && isCrouching && requestedCrouchHeld && (wasStanding || wasInAir))
+                    //Player needs to be moving + trying to sprint + in crouch mode + holding down crouch + was standing last state
+                    //or was in the air last state to start sliding
+                    if (isMoving && requestedSprint && isCrouching && requestedCrouchHeld && (wasStanding || wasInAir))
                     {
                         state.Stance = Stance.Slide;
                         
@@ -237,8 +244,20 @@ namespace Coreline
                 if (state.Stance is Stance.Stand or Stance.Crouch)
                 {
                     //Calculate the speed and acceleration
-                    var speed = state.Stance is Stance.Stand ? walkSpeed : crouchSpeed;
-                    var acceleration = state.Stance is Stance.Stand ? walkAcceleration : crouchAcceleration;
+                    var speed = state.Stance switch
+                    {
+                        Stance.Stand when requestedSprint => sprintSpeed,
+                        Stance.Stand => walkSpeed,
+                        Stance.Crouch => crouchSpeed,
+                        _ => walkSpeed
+                    };
+                    var acceleration = state.Stance switch
+                    {
+                        Stance.Stand when requestedSprint => sprintAcceleration,
+                        Stance.Stand => walkAcceleration,
+                        Stance.Crouch => crouchAcceleration,
+                        _ => walkAcceleration
+                    };
 
                     //and move along the ground in that direction
                     var targetVelocity = groundedMovement * speed;

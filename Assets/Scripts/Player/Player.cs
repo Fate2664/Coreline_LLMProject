@@ -61,6 +61,7 @@ namespace Coreline
         {
             input.Look += OnLook;
             input.Move += OnMove;
+            input.Sprint += OnSprint;
             input.Jump += OnJump;
             input.CrouchSlide += OnCrouch;
         }
@@ -69,6 +70,7 @@ namespace Coreline
         {
             input.Look -= OnLook;
             input.Move -= OnMove;
+            input.Sprint -= OnSprint;
             input.Jump -= OnJump;
             input.CrouchSlide -= OnCrouch;
             input.DisableActions();
@@ -89,6 +91,7 @@ namespace Coreline
             {
                 Rotation = playerCamera.transform.rotation,
                 Move = moveInput,
+                Sprint = sprintInput,
                 Jump = jumpInput,
                 Crouch = crouchInput ? CrouchInput.Pressed : CrouchInput.None,
                 CrouchHeld = crouchInputHeld
