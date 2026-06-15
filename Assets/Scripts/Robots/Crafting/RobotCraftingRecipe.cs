@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Coreline;
 using UnityEngine;
 
@@ -12,49 +10,13 @@ namespace Coreline.Robots
         Scanning
     }
 
-    [Serializable]
-    public class RobotCraftingRequirement
-    {
-        public OreType oreType;
-        [Min(1)] public int amount = 1;
-    }
-
     [CreateAssetMenu(menuName = "Robots/Crafting/Robot Crafting Recipe")]
-    public class RobotCraftingRecipe : InventoryItemData
+    public sealed class RobotCraftingRecipe : CraftingRecipe
     {
         [SerializeField] private CraftableRobotType robotType;
-        [SerializeField] private string displayName;
-        [SerializeField, TextArea(2, 5)] private string description;
-        [SerializeField] private Sprite icon;
         [SerializeField] private GameObject robotPrefab;
-        [SerializeField] private List<RobotCraftingRequirement> requirements = new();
 
         public CraftableRobotType RobotType => robotType;
-        public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
-        public string Description => description;
-        public Sprite Icon => icon;
         public GameObject RobotPrefab => robotPrefab;
-        public IReadOnlyList<RobotCraftingRequirement> Requirements => requirements;
-        public InventoryItemData CraftedItem => this;
-
-        private void OnEnable()
-        {
-            SyncInventoryDescription();
-        }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            SyncInventoryDescription();
-        }
-#endif
-
-        private void SyncInventoryDescription()
-        {
-            itemDesc ??= new ItemDescription();
-            itemDesc.Name = DisplayName;
-            itemDesc.ToolTip = description;
-            itemDesc.Icon = icon;
-        }
     }
 }

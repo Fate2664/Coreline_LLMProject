@@ -22,12 +22,28 @@ namespace Coreline
 
         private void OnTriggerEnter(Collider other)
         {
-            if (!other.CompareTag("Player"))
+            PlayerInventory playerInventory = other.GetComponentInParent<PlayerInventory>();
+            if (playerInventory == null && !other.CompareTag("Player"))
+            {
                 return;
-            //Add ore to inventory
-            UIManager uiManager = FindObjectOfType<UIManager>();
-            if (uiManager == null) return;
-            uiManager.AddItemToInventory(oreData.inventoryItemData, oreData.pickupAmount);
+            }
+
+            playerInventory ??=
+                FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
+
+            if (playerInventory == null ||
+                oreData == null ||
+                oreData.inventoryItemData == null)
+            {
+                return;
+            }
+
+            if (!playerInventory.TryAddItem(
+                    oreData.inventoryItemData,
+                    oreData.pickupAmount))
+            {
+                return;
+            }
             
             Destroy(gameObject);
         }

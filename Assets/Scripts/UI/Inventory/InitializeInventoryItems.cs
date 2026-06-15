@@ -11,32 +11,45 @@ public class StartingInventoryItem
 
 public class InitializeInventoryItems : MonoBehaviour
 {
-    //This script gives items to the player at the start
-    
+    [SerializeField] private PlayerInventory playerInventory;
     [SerializeField] private StartingInventoryItem[] items;
-    [SerializeField] private bool equipStartingPickaxe = true;
-    
+    [SerializeField] private bool countForProgression = true;
+
     private IEnumerator Start()
     {
-        UIManager uiManager = FindFirstObjectByType<UIManager>();
-        if (uiManager == null)
+        ResolveInventory();
+
+        if (playerInventory == null)
         {
-            yield break;
+            yield return null;
+            ResolveInventory();
         }
 
-        yield return null;
+        if (playerInventory == null)
+        {
+            Debug.LogWarning(
+                $"{nameof(InitializeInventoryItems)} could not find a {nameof(PlayerInventory)}.",
+                this);
+            yield break;
+        }
 
         foreach (var item in items)
         {
             if (item != null && item.item != null)
             {
-                uiManager.AddItemToInventory(item.item, item.count);
+                playerInventory.TryAddItem(
+                    item.item,
+                    item.count,
+                    countForProgression);
             }
         }
+    }
 
-        if (equipStartingPickaxe)
-        {
-            uiManager.EquipFirstPickaxe();
-        }
+    private void ResolveInventory()
+    {
+        playerInventory ??= GetComponent<PlayerInventory>();
+        playerInventory ??= GetComponentInParent<PlayerInventory>();
+        playerInventory ??=
+            FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
     }
 }

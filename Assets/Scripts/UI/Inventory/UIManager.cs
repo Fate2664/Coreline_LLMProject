@@ -11,7 +11,7 @@ public class UIManager : MonoBehaviour, ITimeTracker
     #region Class Variables
 
     [Header("References")]
-    [SerializeField] private PlayerController playerController;
+    [SerializeField] private UIPanel inventoryPanel;
     [SerializeField] private BuildPlacer  buildPlacer;
     [Header("Inventory")]
     [SerializeField] private ItemDatabase ItemDatabase = null;
@@ -163,6 +163,45 @@ public class UIManager : MonoBehaviour, ITimeTracker
         }
 
         return total;
+    }
+
+    public bool TryRemoveItem(InventoryItemData item, int count = 1)
+    {
+        if (item == null || count <= 0 || GetItemCount(item) < count)
+        {
+            return false;
+        }
+
+        EnsureInventoryItems();
+
+        int remaining = count;
+        for (int i = 0; i < Items.Count && remaining > 0; i++)
+        {
+            InventoryItem inventoryItem = Items[i];
+            if (inventoryItem == null || inventoryItem.isEmpty || inventoryItem.item != item)
+            {
+                continue;
+            }
+
+            int removed = Mathf.Min(inventoryItem.count, remaining);
+            inventoryItem.DecreaseCount(removed);
+            remaining -= removed;
+
+            if (inventoryItem.count <= 0)
+            {
+                if (equippedItem == inventoryItem)
+                {
+                    equippedItem = null;
+                }
+
+                Items[i] = new InventoryItem();
+            }
+        }
+
+        inventoryNeedsRefresh = true;
+        RefreshInventory();
+        RefreshEquippedItem();
+        return remaining <= 0;
     }
 
     public int GetOreCount(OreType oreType)
@@ -424,7 +463,8 @@ public class UIManager : MonoBehaviour, ITimeTracker
 
         equippedItem = null;
         RefreshEquippedItem();
-        playerController?.CloseInventory();
+        inventoryPanel ??= GetComponentInParent<UIPanel>();
+        inventoryPanel?.Close();
     }
 
     private bool TryConsumeInventorySlot(InventoryItem inventorySlot, int amount)
@@ -457,54 +497,12 @@ public class UIManager : MonoBehaviour, ITimeTracker
         return true;
     }
 
-    public bool TryUseEquippedItem(int amount = 1)
-    {
-        if (equippedItem == null || equippedItem.isEmpty || equippedItem.count < amount) return false;
-        
-        equippedItem.DecreaseCount(amount);
-
-        if (equippedItem.count <= 0)
-        {
-            int index = Items.IndexOf(equippedItem);
-            if (index >= 0) Items[index] = new InventoryItem();
-            equippedItem = null;
-        }
-        
-        inventoryNeedsRefresh = true;
-        RefreshInventory();
-        RefreshEquippedItem();
-        return true;
-    }
-
     public void UnEquipItem()
     {
         equippedItem = null;
         RefreshEquippedItem();
     }
 
-    private void HoeEquipped()
-    {
-        playerController.ToggleInventory();
-        buildPlacer.enabled = true;
-        buildPlacer.SetDestroyMode(false);
-        buildPlacer.placementPieceType = BuildPieceType.Floor;
-    }
-
-    public void FenceEquipped()
-    {
-        playerController.ToggleInventory();
-        buildPlacer.enabled = true;
-        buildPlacer.SetDestroyMode(false);
-        buildPlacer.placementPieceType = BuildPieceType.Wall;
-    }
-
-    public void DestroyEquipped()
-    {
-        playerController.ToggleInventory();
-        buildPlacer.enabled = true;
-        buildPlacer.SetDestroyMode(true);
-    }
-    
     private void RefreshEquippedItem()
     {
         if (EquipItemRoot == null || !EquipItemRoot.TryGetVisuals(out InventoryItemVisuals visuals)) return;

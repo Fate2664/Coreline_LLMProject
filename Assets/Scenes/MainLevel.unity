@@ -175,6 +175,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 8491585512226170808, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
+      propertyPath: uiStateController
+      value: 
+      objectReference: {fileID: 804688999}
     - target: {fileID: 8893651802353326611, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
       propertyPath: m_Cameras.Array.size
       value: 2
@@ -206,6 +210,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5339276839706148047, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
       insertIndex: -1
       addedObject: {fileID: 157549772}
+    - targetCorrespondingSourceObject: {fileID: 5339276839706148047, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 157549777}
   m_SourcePrefab: {fileID: 100100000, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
 --- !u!4 &4414451 stripped
 Transform:
@@ -2352,6 +2359,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3087c9e39c7eb24ba640a5773c04872, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InitializeInventoryItems
+  playerInventory: {fileID: 157549777}
   items:
   - item: {fileID: 11400000, guid: 73362df6ca806324a9ddcf4dfa27290e, type: 2}
     count: 1
@@ -2361,7 +2369,51 @@ MonoBehaviour:
     count: 5
   - item: {fileID: 11400000, guid: 2a152356e4a0a214bad0c75484feee93, type: 2}
     count: 5
-  equipStartingPickaxe: 1
+  countForProgression: 1
+--- !u!114 &157549777
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157549768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60481a8262dc980499d86d0dd27f45ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.PlayerInventory
+  inventory:
+    slotCount: 14
+    maxStackSize: 99
+    slots:
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
+    - item: {fileID: 0}
+      amount: 0
 --- !u!1001 &159003647
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12019,7 +12071,7 @@ PrefabInstance:
     - target: {fileID: 2251786629011126894, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
       propertyPath: playerInventory
       value: 
-      objectReference: {fileID: 804688994}
+      objectReference: {fileID: 0}
     - target: {fileID: 2251786629011126894, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
       propertyPath: playerInventoryCloseButton
       value: 
@@ -12521,6 +12573,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: InventoryRoot
       objectReference: {fileID: 0}
+    - target: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4304742099185043198, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -12564,7 +12620,13 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1866951173}
+    - targetCorrespondingSourceObject: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1866951172}
   m_SourcePrefab: {fileID: 100100000, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
 --- !u!1001 &743881960
 PrefabInstance:
@@ -13631,6 +13693,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 804688992}
+  - component: {fileID: 804688999}
   - component: {fileID: 804688994}
   - component: {fileID: 804688993}
   - component: {fileID: 804688996}
@@ -13706,7 +13769,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 427d28f144fca97488d0ecfd21988be0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIManager
-  playerController: {fileID: 0}
+  inventoryPanel: {fileID: 0}
   buildPlacer: {fileID: 804688993}
   ItemDatabase: {fileID: 11400000, guid: 83056b7f6353ab44eaab4ee44e8d7945, type: 2}
   EquipItemRoot: {fileID: 757535247}
@@ -13870,6 +13933,23 @@ MonoBehaviour:
     respawnDelayOverride: 50
   defaultRespawnDelay: 50
   spawnedRockParent: {fileID: 0}
+--- !u!114 &804688999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 804688991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a71346b7a4f45bb8ace80e7b155a741, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.UIStateController
+  input: {fileID: 11400000, guid: 31eb6015498174141949f67362ae94bf, type: 2}
+  gameplayCursorLockMode: 1
+  gameplayCursorVisible: 0
+  uiCursorLockMode: 0
+  uiCursorVisible: 1
 --- !u!1001 &805643755
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -18496,10 +18576,14 @@ PrefabInstance:
     - target: {fileID: 6010747459263552323, guid: 3ff4196dda2a1254b9e31e1b40d35965, type: 3}
       propertyPath: playerInventory
       value: 
-      objectReference: {fileID: 804688994}
+      objectReference: {fileID: 0}
     - target: {fileID: 8748411735145936670, guid: 3ff4196dda2a1254b9e31e1b40d35965, type: 3}
       propertyPath: m_Name
       value: TotalCollectionRoot
+      objectReference: {fileID: 0}
+    - target: {fileID: 8748411735145936670, guid: 3ff4196dda2a1254b9e31e1b40d35965, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -33137,6 +33221,69 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c7fe83c52eb617d45bd0f368d30248fa, type: 3}
+--- !u!1 &1866951168 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+  m_PrefabInstance: {fileID: 741556176}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1866951170 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3158127655879680044, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+  m_PrefabInstance: {fileID: 741556176}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1866951168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c395591f6f08fb41897eb437d91b587, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1866951172
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1866951168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a993d6467b8754b4fae0733db7cd3880, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.InventoryPanel
+  playerInventory: {fileID: 157549777}
+  panel: {fileID: 1866951173}
+  grid: {fileID: 854741073}
+  closeButtonRoot: {fileID: 2065147040}
+  padding: 10
+--- !u!114 &1866951173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1866951168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8b8776978664573977074517a7be0c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.UIPanel
+  stateController: {fileID: 804688999}
+  visualRoot: {fileID: 1866951170}
+  startOpen: 0
+  registerWhenEnabled: 1
+  deactivateWhenClosed: 1
+  blocksGameplayInput: 1
+  requiresCursor: 1
+  closeOnExit: 1
+  animateOnStart: 0
+  openDuration: 0.25
+  closeDuration: 0.2
+  useUnscaledTime: 1
+  opened:
+    m_PersistentCalls:
+      m_Calls: []
+  closed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &1868460911
 PrefabInstance:
   m_ObjectHideFlags: 0

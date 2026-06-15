@@ -21,7 +21,8 @@ namespace Coreline.Robots
 
         [Header("Player Inventory")]
         [SerializeField] private PlayerController playerController;
-        [SerializeField] private UIManager playerInventoryUI;
+        [SerializeField] private PlayerInventory playerInventory;
+        [SerializeField] private InventoryPanel playerInventoryPanel;
         [SerializeField] private GameObject playerInventoryCloseButton;
         [SerializeField] private bool disablePlayerInventoryCloseButtonWhileOpen = true;
         [SerializeField] private bool closePlayerInventoryWhenRobotInventoryCloses = true;
@@ -399,7 +400,7 @@ namespace Coreline.Robots
 
         private bool IsPointerOverPlayerInventory(Ray pointerRay)
         {
-            if (playerInventoryUI == null || playerInventoryUI.Grid == null)
+            if (playerInventoryPanel == null || playerInventoryPanel.Grid == null)
             {
                 return false;
             }
@@ -407,7 +408,7 @@ namespace Coreline.Robots
             uiBlockHits.Clear();
             Interaction.RaycastAll(pointerRay, uiBlockHits);
 
-            Transform playerGridTransform = playerInventoryUI.Grid.transform;
+            Transform playerGridTransform = playerInventoryPanel.Grid.transform;
             for (int i = 0; i < uiBlockHits.Count; i++)
             {
                 UIBlock hitBlock = uiBlockHits[i].UIBlock;
@@ -428,15 +429,15 @@ namespace Coreline.Robots
             }
 
             EnsurePlayerInventory(playerController);
-            if (playerInventoryUI == null)
+            if (playerInventory == null)
             {
-                Debug.LogWarning("Cannot transfer item because no player inventory UI was found.", this);
+                Debug.LogWarning("Cannot transfer item because no player inventory was found.", this);
                 return false;
             }
 
             RobotInventoryDisplaySource source = itemSources[index];
             InventoryItem item = items[index];
-            if (!playerInventoryUI.CanAcceptItem(item.item, source.Amount))
+            if (!playerInventory.CanAcceptItem(item.item, source.Amount))
             {
                 return false;
             }
@@ -453,9 +454,10 @@ namespace Coreline.Robots
                 return false;
             }
 
-            if (playerInventoryUI.TryAddItemToInventory(item.item, source.Amount))
+            if (playerInventory.TryAddItem(item.item, source.Amount))
             {
                 RefreshInventory();
+                playerInventoryPanel?.Refresh();
                 return true;
             }
 
@@ -613,21 +615,29 @@ namespace Coreline.Robots
         private void EnsurePlayerInventory(PlayerController player)
         {
             playerController ??= player;
-            playerInventoryUI ??= playerController != null
-                ? playerController.InventoryUIManager
+            playerInventory ??= playerController != null
+                ? playerController.GetComponent<PlayerInventory>() ??
+                  playerController.GetComponentInParent<PlayerInventory>()
                 : null;
-            playerInventoryUI ??= FindFirstObjectByType<UIManager>(FindObjectsInactive.Include);
+            playerInventory ??=
+                FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
+            playerInventoryPanel ??=
+                FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+
+            if (playerInventoryPanel != null && playerInventory != null)
+            {
+                playerInventoryPanel.Bind(playerInventory);
+            }
+
+            EnsurePlayerInventoryCloseButton();
         }
 
         private void OpenPlayerInventory()
         {
-            if (playerController == null)
-            {
-                playerController = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
-            }
-
-            playerInventoryWasOpenOnOpen = playerController != null && playerController.IsInventoryOpen;
-            playerController?.OpenInventory();
+            EnsurePlayerInventory(playerController);
+            playerInventoryWasOpenOnOpen =
+                playerInventoryPanel != null && playerInventoryPanel.IsOpen;
+            playerInventoryPanel?.Open();
             SetPlayerInventoryCloseButtonEnabled(false);
         }
 
@@ -636,10 +646,10 @@ namespace Coreline.Robots
             SetPlayerInventoryCloseButtonEnabled(true);
 
             if (closePlayerInventoryWhenRobotInventoryCloses &&
-                playerController != null &&
+                playerInventoryPanel != null &&
                 !playerInventoryWasOpenOnOpen)
             {
-                playerController.CloseInventory();
+                playerInventoryPanel.Close();
             }
 
             playerInventoryWasOpenOnOpen = false;
@@ -647,6 +657,8 @@ namespace Coreline.Robots
 
         private void SetPlayerInventoryCloseButtonEnabled(bool enabled)
         {
+            EnsurePlayerInventoryCloseButton();
+
             if (!disablePlayerInventoryCloseButtonWhileOpen || playerInventoryCloseButton == null)
             {
                 return;
@@ -664,6 +676,22 @@ namespace Coreline.Robots
             {
                 playerInventoryCloseButton.SetActive(playerInventoryCloseButtonWasActive);
                 hasCachedPlayerInventoryCloseButtonState = false;
+            }
+        }
+
+        private void EnsurePlayerInventoryCloseButton()
+        {
+            if (playerInventoryCloseButton != null || playerInventoryPanel == null)
+            {
+                return;
+            }
+
+            Transform closeButton = FindChildRecursive(
+                playerInventoryPanel.transform,
+                CloseButtonName);
+            if (closeButton != null)
+            {
+                playerInventoryCloseButton = closeButton.gameObject;
             }
         }
 

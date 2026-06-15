@@ -19,7 +19,6 @@ namespace Coreline.Robots
 
         [Header("Recipes")]
         [SerializeField] private List<RobotCraftingRecipe> recipes = new();
-        [SerializeField] private List<OreItemSO> oreItemDefinitions = new();
 
         [Header("UI Roots")]
         [SerializeField] private Transform optionsRoot;
@@ -39,7 +38,8 @@ namespace Coreline.Robots
 
         [Header("Crafting")]
         [SerializeField] private PlayerController playerController;
-        [SerializeField] private UIManager playerInventory;
+        [SerializeField] private PlayerInventory playerInventory;
+        [SerializeField] private InventoryPanel playerInventoryPanel;
 
         [Header("Player Inventory")]
         [SerializeField] private GameObject playerInventoryCloseButton;
@@ -64,7 +64,7 @@ namespace Coreline.Robots
         private readonly Dictionary<InventoryItemVisuals, int> optionVisualIndices = new();
         private readonly Dictionary<InventoryButtonVisuals, UnityEngine.Events.UnityAction> buttonActions = new();
         private readonly HashSet<ItemView> registeredOptionSlots = new();
-        private readonly List<RobotCraftingRequirement> spentRequirements = new();
+        private readonly CraftingService craftingService = new();
         private int selectedRecipeIndex;
         private bool buttonsSubscribed;
         private bool isOpen;
@@ -211,37 +211,16 @@ namespace Coreline.Robots
                 return;
             }
 
-            if (!CanAfford(recipe))
+            CraftingResult result = craftingService.TryCraft(recipe, playerInventory);
+            if (!result.Succeeded)
             {
-                SetStatus(BuildMissingRequirementsMessage(recipe));
+                SetStatus(BuildCraftingFailureMessage(recipe, result));
                 RefreshAll();
                 return;
             }
 
-            if (!CanStoreCraftedItem(recipe))
-            {
-                SetStatus($"No inventory space for {recipe.DisplayName}.");
-                RefreshAll();
-                return;
-            }
-
-            if (!TrySpendRequirements(recipe))
-            {
-                SetStatus("Could not spend the required ores.");
-                RefreshAll();
-                return;
-            }
-
-            if (!playerInventory.TryAddItemToInventory(recipe.CraftedItem))
-            {
-                RestoreSpentRequirements();
-                SetStatus($"No inventory space for {recipe.DisplayName}.");
-                RefreshAll();
-                return;
-            }
-
-            spentRequirements.Clear();
             SetStatus($"Crafted {recipe.DisplayName}.");
+            playerInventoryPanel?.Refresh();
             RefreshAll();
         }
 
@@ -294,76 +273,9 @@ namespace Coreline.Robots
             }
         }
 
-        private bool CanAfford(RobotCraftingRecipe recipe)
-        {
-            if (playerInventory == null || recipe == null)
-            {
-                return false;
-            }
-
-            foreach (RobotCraftingRequirement requirement in recipe.Requirements)
-            {
-                if (!IsValidRequirement(requirement))
-                {
-                    continue;
-                }
-
-                if (playerInventory.GetOreCount(requirement.oreType) < requirement.amount)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private bool CanStoreCraftedItem(RobotCraftingRecipe recipe)
-        {
-            return playerInventory != null &&
-                   recipe != null &&
-                   recipe.CraftedItem != null &&
-                   playerInventory.CanAcceptItem(recipe.CraftedItem);
-        }
-
         private bool CanCraft(RobotCraftingRecipe recipe)
         {
-            return CanAfford(recipe) && CanStoreCraftedItem(recipe);
-        }
-
-        private bool TrySpendRequirements(RobotCraftingRecipe recipe)
-        {
-            spentRequirements.Clear();
-
-            foreach (RobotCraftingRequirement requirement in recipe.Requirements)
-            {
-                if (!IsValidRequirement(requirement))
-                {
-                    continue;
-                }
-
-                if (!playerInventory.TryRemoveOre(requirement.oreType, requirement.amount))
-                {
-                    RestoreSpentRequirements();
-                    return false;
-                }
-
-                spentRequirements.Add(requirement);
-            }
-
-            return true;
-        }
-
-        private void RestoreSpentRequirements()
-        {
-            foreach (RobotCraftingRequirement requirement in spentRequirements)
-            {
-                if (TryFindOreItemDefinition(requirement.oreType, out OreItemSO itemData))
-                {
-                    playerInventory.TryAddItemToInventory(itemData, requirement.amount, countForProgression: false);
-                }
-            }
-
-            spentRequirements.Clear();
+            return craftingService.Evaluate(recipe, playerInventory).Succeeded;
         }
 
         private void RefreshOptionSlots()
@@ -440,7 +352,7 @@ namespace Coreline.Robots
             }
 
             int visibleRequirementCount = 0;
-            foreach (RobotCraftingRequirement requirement in recipe.Requirements)
+            foreach (CraftingIngredient requirement in recipe.Requirements)
             {
                 if (IsValidRequirement(requirement))
                 {
@@ -451,7 +363,7 @@ namespace Coreline.Robots
             CreateMissingRequirementSlots(visibleRequirementCount);
 
             int slotIndex = 0;
-            foreach (RobotCraftingRequirement requirement in recipe.Requirements)
+            foreach (CraftingIngredient requirement in recipe.Requirements)
             {
                 if (!IsValidRequirement(requirement) || slotIndex >= requirementSlots.Count)
                 {
@@ -478,24 +390,24 @@ namespace Coreline.Robots
             }
         }
 
-        private void BindRequirementSlot(InventoryItemVisuals visuals, RobotCraftingRequirement requirement)
+        private void BindRequirementSlot(InventoryItemVisuals visuals, CraftingIngredient requirement)
         {
-            int owned = playerInventory != null ? playerInventory.GetOreCount(requirement.oreType) : 0;
-            bool isMet = owned >= requirement.amount;
+            int owned = playerInventory != null ? playerInventory.GetItemCount(requirement.Item) : 0;
+            bool isMet = owned >= requirement.Amount;
 
             if (visuals.ContentRoot != null)
             {
                 visuals.ContentRoot.gameObject.SetActive(true);
             }
 
-            if (visuals.Image != null && TryFindOreItemDefinition(requirement.oreType, out OreItemSO itemData))
+            if (visuals.Image != null && requirement.Item?.itemDesc?.Icon != null)
             {
-                visuals.Image.SetImage(itemData.itemDesc.Icon);
+                visuals.Image.SetImage(requirement.Item.itemDesc.Icon);
             }
 
             if (visuals.Count != null)
             {
-                visuals.Count.Text = $"{owned}/{requirement.amount}";
+                visuals.Count.Text = $"{owned}/{requirement.Amount}";
             }
 
             if (visuals.ToolTipRoot != null)
@@ -505,7 +417,8 @@ namespace Coreline.Robots
 
             if (visuals.ToolTipText != null)
             {
-                visuals.ToolTipText.Text = $"{requirement.oreType}: {owned}/{requirement.amount}";
+                string itemName = requirement.Item?.itemDesc?.Name ?? requirement.Item?.name ?? "Item";
+                visuals.ToolTipText.Text = $"{itemName}: {owned}/{requirement.Amount}";
             }
 
             if (visuals.ItemRoot != null)
@@ -603,21 +516,41 @@ namespace Coreline.Robots
 
         private string BuildMissingRequirementsMessage(RobotCraftingRecipe recipe)
         {
-            foreach (RobotCraftingRequirement requirement in recipe.Requirements)
+            foreach (CraftingIngredient requirement in recipe.Requirements)
             {
                 if (!IsValidRequirement(requirement))
                 {
                     continue;
                 }
 
-                int owned = playerInventory != null ? playerInventory.GetOreCount(requirement.oreType) : 0;
-                if (owned < requirement.amount)
+                int owned = playerInventory != null ? playerInventory.GetItemCount(requirement.Item) : 0;
+                if (owned < requirement.Amount)
                 {
-                    return $"Need {requirement.amount - owned} more {requirement.oreType}.";
+                    string itemName = requirement.Item?.itemDesc?.Name ?? requirement.Item?.name ?? "item";
+                    return $"Need {requirement.Amount - owned} more {itemName}.";
                 }
             }
 
-            return "Missing required ores.";
+            return "Missing required items.";
+        }
+
+        private string BuildCraftingFailureMessage(RobotCraftingRecipe recipe, CraftingResult result)
+        {
+            switch (result.FailureReason)
+            {
+                case CraftingFailureReason.MissingIngredients:
+                    return BuildMissingRequirementsMessage(recipe);
+                case CraftingFailureReason.InventoryFull:
+                    return $"No inventory space for {recipe.DisplayName}.";
+                case CraftingFailureReason.InvalidInventory:
+                    return "No player inventory found.";
+                case CraftingFailureReason.InvalidRecipe:
+                    return "Recipe is not set up correctly.";
+                case CraftingFailureReason.TransactionFailed:
+                    return "Could not complete crafting.";
+                default:
+                    return "Could not craft item.";
+            }
         }
 
         private void SetStatus(string message)
@@ -628,56 +561,36 @@ namespace Coreline.Robots
             }
         }
 
-        private bool TryFindOreItemDefinition(OreType oreType, out OreItemSO itemData)
+        private static bool IsValidRequirement(CraftingIngredient requirement)
         {
-            foreach (OreItemSO definition in oreItemDefinitions)
-            {
-                if (definition != null && definition.oreType == oreType)
-                {
-                    itemData = definition;
-                    return true;
-                }
-            }
-
-            OreItemSO[] loadedDefinitions = Resources.FindObjectsOfTypeAll<OreItemSO>();
-            foreach (OreItemSO definition in loadedDefinitions)
-            {
-                if (definition != null && definition.oreType == oreType)
-                {
-                    itemData = definition;
-                    return true;
-                }
-            }
-
-            itemData = null;
-            return false;
-        }
-
-        private static bool IsValidRequirement(RobotCraftingRequirement requirement)
-        {
-            return requirement != null && requirement.amount > 0;
+            return requirement != null && requirement.IsValid;
         }
 
         private void EnsurePlayerInventory(PlayerController player)
         {
             playerController ??= player;
             playerInventory ??= playerController != null
-                ? playerController.InventoryUIManager
+                ? playerController.GetComponent<PlayerInventory>() ??
+                  playerController.GetComponentInParent<PlayerInventory>()
                 : null;
-            playerInventory ??= FindFirstObjectByType<UIManager>(FindObjectsInactive.Include);
+            playerInventory ??=
+                FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
+            playerInventoryPanel ??=
+                FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+            if (playerInventoryPanel != null && playerInventory != null)
+            {
+                playerInventoryPanel.Bind(playerInventory);
+            }
+
             EnsurePlayerInventoryCloseButton();
         }
 
         private void OpenPlayerInventory()
         {
-            if (playerController == null)
-            {
-                playerController = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
-            }
-
-            playerInventoryWasOpenOnOpen = playerController != null && playerController.IsInventoryOpen;
-            playerController?.OpenInventory();
-            playerInventory?.RefreshInventory();
+            EnsurePlayerInventory(playerController);
+            playerInventoryWasOpenOnOpen =
+                playerInventoryPanel != null && playerInventoryPanel.IsOpen;
+            playerInventoryPanel?.Open();
             SetPlayerInventoryCloseButtonEnabled(false);
         }
 
@@ -686,10 +599,10 @@ namespace Coreline.Robots
             SetPlayerInventoryCloseButtonEnabled(true);
 
             if (closePlayerInventoryWhenWorkbenchCloses &&
-                playerController != null &&
+                playerInventoryPanel != null &&
                 !playerInventoryWasOpenOnOpen)
             {
-                playerController.CloseInventory();
+                playerInventoryPanel.Close();
             }
 
             playerInventoryWasOpenOnOpen = false;
@@ -735,13 +648,9 @@ namespace Coreline.Robots
             }
 
             Transform inventoryRoot = null;
-            if (playerController != null && playerController.InventoryRootBlock != null)
+            if (playerInventoryPanel != null)
             {
-                inventoryRoot = playerController.InventoryRootBlock.transform;
-            }
-            else if (playerInventory != null)
-            {
-                inventoryRoot = playerInventory.transform;
+                inventoryRoot = playerInventoryPanel.transform;
             }
 
             if (inventoryRoot == null)

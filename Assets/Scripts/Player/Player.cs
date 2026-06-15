@@ -6,14 +6,18 @@ namespace Coreline
     public class Player : MonoBehaviour
     {
         [SerializeField] private GameInput input;
+        [SerializeField] private UIStateController uiStateController;
 
         private PlayerCharacter playerCharacter;
         private PlayerCamera playerCamera;
         private CameraSpring[] cameraSprings;
         private CameraTilt playerCameraTilt;
         private CharacterInput characterInput;
+        private CountDownTimer toggleInventoryTimer;
         
         public CharacterInput CharacterInput => characterInput;
+        public PlayerCharacter PlayerCharacter => playerCharacter;
+        public PlayerCamera PlayerCamera => playerCamera;
         
         #region Inputs
 
@@ -60,11 +64,19 @@ namespace Coreline
             playerCamera = GetComponentInChildren<PlayerCamera>();
             cameraSprings = GetComponentsInChildren<CameraSpring>();
             playerCameraTilt = GetComponentInChildren<CameraTilt>();
+            uiStateController ??=
+                FindFirstObjectByType<UIStateController>(FindObjectsInactive.Include);
+            
         }
 
         private void Start()
         {
-            Cursor.lockState = CursorLockMode.Locked;
+            if (uiStateController == null)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
+
             input.EnableActions();
             playerCharacter.Initialize();
             playerCamera.Initialize(playerCharacter.GetCameraTarget());
@@ -98,10 +110,19 @@ namespace Coreline
 
         #endregion
 
+        #region Update Methods
+
         private void Update()
         {
+            uiStateController ??= UIStateController.Instance;
+            bool gameplayInputBlocked =
+                uiStateController != null && uiStateController.BlocksGameplayInput;
+
             //Get camera input and update its rotation
-            var cameraInput = new CameraInput { Look = lookInput };
+            var cameraInput = new CameraInput
+            {
+                Look = gameplayInputBlocked ? Vector2.zero : lookInput
+            };
             var deltaTime = Time.deltaTime;
                 
             playerCamera.UpdateRotation(cameraInput);
@@ -110,12 +131,14 @@ namespace Coreline
             characterInput = new CharacterInput
             {
                 Rotation = playerCamera.transform.rotation,
-                Move = moveInput,
-                Sprint = sprintInput,
-                Jump = jumpInput,
-                Crouch = crouchInput ? CrouchInput.Pressed : CrouchInput.None,
-                CrouchHeld = crouchInputHeld,
-                PrimaryAttack = primaryAttackInput
+                Move = gameplayInputBlocked ? Vector2.zero : moveInput,
+                Sprint = !gameplayInputBlocked && sprintInput,
+                Jump = !gameplayInputBlocked && jumpInput,
+                Crouch = !gameplayInputBlocked && crouchInput
+                    ? CrouchInput.Pressed
+                    : CrouchInput.None,
+                CrouchHeld = !gameplayInputBlocked && crouchInputHeld,
+                PrimaryAttack = !gameplayInputBlocked && primaryAttackInput
             };
             playerCharacter.UpdateInput(characterInput);
             crouchInput = false;
@@ -137,5 +160,9 @@ namespace Coreline
             
             playerCameraTilt.UpdateTilt(deltaTime, state.Stance is Stance.Slide, state.Acceleration ,cameraTarget.up);
         }
+
+        #endregion
+        
+       
     }
 }

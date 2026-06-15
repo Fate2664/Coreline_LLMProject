@@ -11,7 +11,7 @@ namespace Coreline
         private const string OresRootName = "OresRoot";
 
         [Header("References")]
-        [SerializeField] private UIManager playerInventory;
+        [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private ListView oresRoot;
 
         [Header("Ore Progression")]
@@ -65,6 +65,21 @@ namespace Coreline
         public int GetCollectedAmount(OreType oreType)
         {
             return entriesByOreType.TryGetValue(oreType, out OreProgressionEntry entry) ? entry.CollectedAmount : 0;
+        }
+
+        public void Bind(PlayerInventory inventory)
+        {
+            if (playerInventory == inventory)
+            {
+                return;
+            }
+
+            UnsubscribeFromInventory();
+            playerInventory = inventory;
+            initializedFromCurrentInventory = false;
+            SubscribeToInventory();
+            InitializeProgressFromCurrentInventory();
+            RefreshList();
         }
 
         private void HandleItemAddedToInventory(InventoryItemData item, int amount)
@@ -252,7 +267,8 @@ namespace Coreline
 
         private void EnsureReferences()
         {
-            playerInventory ??= FindFirstObjectByType<UIManager>(FindObjectsInactive.Include);
+            playerInventory ??=
+                FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
             oresRoot ??= FindChildListView(OresRootName);
             oresRoot ??= GetComponentInChildren<ListView>(true);
         }
