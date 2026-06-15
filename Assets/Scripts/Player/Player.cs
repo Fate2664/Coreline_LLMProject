@@ -9,15 +9,24 @@ namespace Coreline
 
         private PlayerCharacter playerCharacter;
         private PlayerCamera playerCamera;
-        private CameraSpring playerCameraSpring;
+        private CameraSpring[] cameraSprings;
         private CameraTilt playerCameraTilt;
+        private CharacterInput characterInput;
+        
+        public CharacterInput CharacterInput => characterInput;
+        
+        #region Inputs
 
+        //Look
         private Vector2 lookInput;
         private void OnLook(Vector2 value) => lookInput = value;
+        //Move
         private Vector2 moveInput;
         private void OnMove(Vector2 value) => moveInput = value;
+        //Sprint
         private bool sprintInput;
         private void OnSprint(bool pressed) => sprintInput = pressed;
+        //Jump
         private bool jumpInput;
         private bool jumpInputHeld;
         private void OnJump(bool pressed)
@@ -27,6 +36,7 @@ namespace Coreline
             
             jumpInputHeld = pressed;
         } 
+        //Crouch
         private bool crouchInput;
         private bool crouchInputHeld;
         private void OnCrouch(bool pressed)
@@ -36,6 +46,11 @@ namespace Coreline
             
             crouchInputHeld = pressed;
         }
+        //Primary Attack
+        private bool primaryAttackInput;
+        private void OnPrimaryAttack(bool pressed) => primaryAttackInput = pressed;
+
+        #endregion
 
         #region Startup Methods
 
@@ -43,7 +58,7 @@ namespace Coreline
         {
             playerCharacter = GetComponentInChildren<PlayerCharacter>();
             playerCamera = GetComponentInChildren<PlayerCamera>();
-            playerCameraSpring = GetComponentInChildren<CameraSpring>();
+            cameraSprings = GetComponentsInChildren<CameraSpring>();
             playerCameraTilt = GetComponentInChildren<CameraTilt>();
         }
 
@@ -53,7 +68,10 @@ namespace Coreline
             input.EnableActions();
             playerCharacter.Initialize();
             playerCamera.Initialize(playerCharacter.GetCameraTarget());
-            playerCameraSpring.Initialize();
+            
+            foreach (var spring in cameraSprings)
+                spring.Initialize();
+            
             playerCameraTilt.Initialize();
         }
 
@@ -64,6 +82,7 @@ namespace Coreline
             input.Sprint += OnSprint;
             input.Jump += OnJump;
             input.CrouchSlide += OnCrouch;
+            input.PrimaryAttack += OnPrimaryAttack;
         }
 
         private void OnDisable()
@@ -73,6 +92,7 @@ namespace Coreline
             input.Sprint -= OnSprint;
             input.Jump -= OnJump;
             input.CrouchSlide -= OnCrouch;
+            input.PrimaryAttack -= OnPrimaryAttack;
             input.DisableActions();
         }
 
@@ -87,19 +107,21 @@ namespace Coreline
             playerCamera.UpdateRotation(cameraInput);
 
             //Get character input and update it.
-            var characterInput = new CharacterInput
+            characterInput = new CharacterInput
             {
                 Rotation = playerCamera.transform.rotation,
                 Move = moveInput,
                 Sprint = sprintInput,
                 Jump = jumpInput,
                 Crouch = crouchInput ? CrouchInput.Pressed : CrouchInput.None,
-                CrouchHeld = crouchInputHeld
+                CrouchHeld = crouchInputHeld,
+                PrimaryAttack = primaryAttackInput
             };
             playerCharacter.UpdateInput(characterInput);
             crouchInput = false;
             jumpInput = false;
             playerCharacter.UpdateBody(deltaTime);
+            
         }
 
         private void LateUpdate()
@@ -109,7 +131,10 @@ namespace Coreline
             var state = playerCharacter.GetState();
             
             playerCamera.UpdatePosition(cameraTarget);
-            playerCameraSpring.UpdateSpring(deltaTime, cameraTarget.up);
+            
+            foreach (var spring in  cameraSprings)
+                spring.UpdateSpring(deltaTime, cameraTarget.up);
+            
             playerCameraTilt.UpdateTilt(deltaTime, state.Stance is Stance.Slide, state.Acceleration ,cameraTarget.up);
         }
     }

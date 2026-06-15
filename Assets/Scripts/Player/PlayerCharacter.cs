@@ -33,6 +33,7 @@ namespace Coreline
         public bool Jump;
         public CrouchInput Crouch;
         public bool CrouchHeld;
+        public bool PrimaryAttack;
     }
 
     public class PlayerCharacter : MonoBehaviour, ICharacterController
@@ -85,6 +86,7 @@ namespace Coreline
         private Quaternion requestedRotation;
         private Vector3 requestedMovement;
         private bool requestedSprint;
+        private bool requestedPrimaryAttack;
         private bool requestedJump;
         private bool requestedCrouch;
         private bool requestedCrouchHeld;
@@ -101,6 +103,8 @@ namespace Coreline
         public CharacterState GetState() => state;
         public CharacterState GetLastState() => lastState;
 
+        #region Startup Methods
+
         private void Awake()
         {
             motor ??= GetComponent<KinematicCharacterMotor>();
@@ -113,6 +117,10 @@ namespace Coreline
             motor.CharacterController = this;
             uncrouchOverlapResults = new Collider[8];
         }
+
+        #endregion
+
+        #region Update Methods
 
         public void UpdateInput(CharacterInput input)
         {
@@ -146,6 +154,9 @@ namespace Coreline
                 requestedCrouchInAir = !state.Grounded;
             else if (!requestedCrouch && wasRequestingCrouch)
                 requestedCrouchInAir = false;
+            
+            //Primary Attack
+            requestedPrimaryAttack = input.PrimaryAttack;
         }
 
         public void UpdateBody(float deltaTime)
@@ -470,7 +481,8 @@ namespace Coreline
             //the beginning of this character update
             lastState = tempState;
         }
-
+        
+        #endregion
         public void OnGroundHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport) { }
         public void OnMovementHit(Collider hitCollider, Vector3 hitNormal, Vector3 hitPoint, ref HitStabilityReport hitStabilityReport) { }
         public bool IsColliderValidForCollisions(Collider coll) => true;

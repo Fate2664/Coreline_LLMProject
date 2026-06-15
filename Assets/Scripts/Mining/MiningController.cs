@@ -1,13 +1,13 @@
+using System;
 using System.Collections;
+using Coreline;
 using UnityEngine;
 
 public class MiningController : MonoBehaviour
 {
     private const int MaxMiningHits = 8;
 
-    [Header("References")] [SerializeField]
-    private GameInput gameInput;
-
+    [Header("References")] 
     [SerializeField] private PickaxeAnimation pickaxeAnimation;
     [SerializeField] private Transform pickaxeHitbox;
 
@@ -17,12 +17,27 @@ public class MiningController : MonoBehaviour
     [SerializeField] private float hitDelay = 0.05f;
     [SerializeField] private float damagePerHit = 1f;
 
+    private Player player;
     private bool isPrimaryAttackHeld;
     private Coroutine miningRoutine;
     private readonly Collider[] miningHits = new Collider[MaxMiningHits];
 
+    private void Awake()
+    {
+        player = GetComponent<Player>();
+    }
+
+    private void Update()
+    {
+        OnPrimaryAttack(player.CharacterInput.PrimaryAttack);
+    }
+
+
     public void OnPrimaryAttack(bool isPressed)
     {
+        if (isPrimaryAttackHeld == isPressed)
+            return;
+        
         isPrimaryAttackHeld = isPressed;
 
         if (isPrimaryAttackHeld)
