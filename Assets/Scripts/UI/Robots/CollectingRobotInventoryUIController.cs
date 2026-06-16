@@ -18,9 +18,11 @@ namespace Coreline.Robots
         [SerializeField] private GridView grid;
         [SerializeField] private ItemView closeButtonRoot;
         [SerializeField] private TextBlock robotNameText;
+        [SerializeField] private UIStateController uiStateController;
+        [SerializeField] private UIBlock2D visualRoot;
 
         [Header("Player Inventory")]
-        [SerializeField] private PlayerController playerController;
+        [SerializeField] private Player player;
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private InventoryPanel playerInventoryPanel;
         [SerializeField] private GameObject playerInventoryCloseButton;
@@ -32,6 +34,9 @@ namespace Coreline.Robots
         [SerializeField] private int slotCount = 24;
         [SerializeField] private int padding = 10;
         [SerializeField] private List<OreItemSO> oreItemDefinitions = new();
+        [SerializeField, Min(0f)] private float openDuration = 0.25f;
+        [SerializeField, Min(0f)] private float closeDuration = 0.2f;
+        [SerializeField] private bool useUnscaledAnimationTime = true;
 
         [Header("Drag Preview")]
         [SerializeField] private UIBlock2D dragPreviewIcon;
@@ -46,11 +51,13 @@ namespace Coreline.Robots
         private readonly List<UIBlockHit> uiBlockHits = new();
         private bool gridInitialized;
         private bool closeButtonSubscribed;
+        private bool isGameplayInputBlocked;
         private bool isOpen;
         private bool playerInventoryWasOpenOnOpen;
         private bool playerInventoryCloseButtonWasActive;
         private bool hasCachedPlayerInventoryCloseButtonState;
         private CollectingRobotController pausedRobot;
+        private UIVisuals visuals;
 
         public static bool IsAnyOpen { get; private set; }
         public CollectingRobotController ActiveRobot { get; private set; }
@@ -64,7 +71,7 @@ namespace Coreline.Robots
         {
             if (hideOnStart && !isOpen)
             {
-                Close();
+                HideImmediate();
             }
         }
 
@@ -79,7 +86,9 @@ namespace Coreline.Robots
         {
             UnsubscribeFromActiveInventory();
             UnsubscribeFromCloseButton();
+            UnregisterGameplayInputBlock();
             ReleasePausedRobot();
+            visuals?.KillAnimation();
 
             if (isOpen)
             {
@@ -104,7 +113,7 @@ namespace Coreline.Robots
             UpdateDragPreviewFromPointer();
         }
 
-        public void ToggleForRobot(CollectingRobotController robot, PlayerController player)
+        public void ToggleForRobot(CollectingRobotController robot, Player playerContext)
         {
             if (isOpen && ActiveRobot == robot)
             {
@@ -112,10 +121,10 @@ namespace Coreline.Robots
                 return;
             }
 
-            OpenForRobot(robot, player);
+            OpenForRobot(robot, playerContext);
         }
 
-        public void OpenForRobot(CollectingRobotController robot, PlayerController player)
+        public void OpenForRobot(CollectingRobotController robot, Player playerContext)
         {
             if (robot == null)
             {
@@ -134,11 +143,13 @@ namespace Coreline.Robots
             EnsureReferences();
             InitializeGrid();
             SubscribeToCloseButton();
-            EnsurePlayerInventory(player);
+            EnsurePlayerInventory(playerContext);
             OpenPlayerInventory();
             SetActiveRobot(robot);
             RefreshInventory();
             RefreshRobotNameText();
+            RegisterGameplayInputBlock();
+            ShowPanel();
 
             if (unlockCursorWhileOpen)
             {
@@ -152,15 +163,12 @@ namespace Coreline.Robots
             HideDragPreview();
             RestorePlayerInventoryState();
             UnsubscribeFromActiveInventory();
+            UnregisterGameplayInputBlock();
             ReleasePausedRobot();
             ActiveRobot = null;
             isOpen = false;
             IsAnyOpen = false;
-
-            if (gameObject.activeSelf)
-            {
-                gameObject.SetActive(false);
-            }
+            HidePanel();
         }
 
         public void RefreshInventory()
@@ -428,7 +436,7 @@ namespace Coreline.Robots
                 return false;
             }
 
-            EnsurePlayerInventory(playerController);
+            EnsurePlayerInventory(player);
             if (playerInventory == null)
             {
                 Debug.LogWarning("Cannot transfer item because no player inventory was found.", this);
@@ -612,12 +620,12 @@ namespace Coreline.Robots
             }
         }
 
-        private void EnsurePlayerInventory(PlayerController player)
+        private void EnsurePlayerInventory(Player playerContext)
         {
-            playerController ??= player;
-            playerInventory ??= playerController != null
-                ? playerController.GetComponent<PlayerInventory>() ??
-                  playerController.GetComponentInParent<PlayerInventory>()
+            player ??= playerContext;
+            playerInventory ??= player != null
+                ? player.GetComponent<PlayerInventory>() ??
+                  player.GetComponentInParent<PlayerInventory>()
                 : null;
             playerInventory ??=
                 FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
@@ -634,7 +642,7 @@ namespace Coreline.Robots
 
         private void OpenPlayerInventory()
         {
-            EnsurePlayerInventory(playerController);
+            EnsurePlayerInventory(player);
             playerInventoryWasOpenOnOpen =
                 playerInventoryPanel != null && playerInventoryPanel.IsOpen;
             playerInventoryPanel?.Open();
@@ -755,9 +763,50 @@ namespace Coreline.Robots
 
         private void EnsureReferences()
         {
+            visualRoot ??= GetComponent<UIBlock2D>();
+            visualRoot ??= GetComponentInChildren<UIBlock2D>(true);
+            visuals ??= new UIVisuals(visualRoot != null ? visualRoot.transform : transform);
             grid ??= GetComponentInChildren<GridView>(true);
             closeButtonRoot ??= FindChildItemViewWithVisuals<InventoryButtonVisuals>(CloseButtonName);
             robotNameText ??= FindChildComponentByName<TextBlock>(RobotNameTextName);
+            uiStateController ??= UIStateController.Instance;
+            uiStateController ??=
+                FindFirstObjectByType<UIStateController>(FindObjectsInactive.Include);
+        }
+
+        private void ShowPanel()
+        {
+            EnsureReferences();
+            visuals?.ShowUI(openDuration, useUnscaledAnimationTime);
+        }
+
+        private void HidePanel()
+        {
+            EnsureReferences();
+
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
+
+            visuals?.HideUI(closeDuration, useUnscaledAnimationTime, () =>
+            {
+                if (!isOpen && gameObject.activeSelf)
+                {
+                    gameObject.SetActive(false);
+                }
+            });
+        }
+
+        private void HideImmediate()
+        {
+            EnsureReferences();
+            visuals?.HideImmediate();
+
+            if (gameObject.activeSelf)
+            {
+                gameObject.SetActive(false);
+            }
         }
 
         private ItemView FindChildItemViewWithVisuals<TVisuals>(string preferredObjectName)
@@ -797,6 +846,38 @@ namespace Coreline.Robots
             }
 
             return null;
+        }
+
+        private void RegisterGameplayInputBlock()
+        {
+            if (isGameplayInputBlocked)
+            {
+                return;
+            }
+
+            EnsureReferences();
+
+            if (uiStateController == null)
+            {
+                Debug.LogWarning(
+                    $"{nameof(CollectingRobotInventoryUIController)} cannot block player input because no {nameof(UIStateController)} exists in the scene.",
+                    this);
+                return;
+            }
+
+            uiStateController.RegisterModalInputBlock(unlockCursorWhileOpen);
+            isGameplayInputBlocked = true;
+        }
+
+        private void UnregisterGameplayInputBlock()
+        {
+            if (!isGameplayInputBlocked)
+            {
+                return;
+            }
+
+            uiStateController?.UnregisterModalInputBlock(unlockCursorWhileOpen);
+            isGameplayInputBlocked = false;
         }
 
         public static CollectingRobotInventoryUIController FindOrCreateInScene()

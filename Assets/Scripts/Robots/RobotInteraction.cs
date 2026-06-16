@@ -24,13 +24,12 @@ namespace Coreline
 
         private void Start()
         {
-            playerInteractionDetector ??= FindFirstObjectByType<PlayerInteractionDetector>();
-            chatUI ??= ResolveChatUIForRobot();
-            collectingRobotInventoryUI ??= CollectingRobotInventoryUIController.FindOrCreateInScene();
+            EnsureReferences();
         }
 
         private void FixedUpdate()
         {
+            EnsureReferences();
             if (indicatorManager == null || playerInteractionDetector == null) return;
 
             bool isCurrentTarget = ReferenceEquals(playerInteractionDetector.CurrentTarget, this);
@@ -68,7 +67,7 @@ namespace Coreline
             }
         }
 
-        public void Interact(PlayerController player)
+        public void Interact(Player player)
         {
             if (robotController == null)
             {
@@ -91,7 +90,7 @@ namespace Coreline
             chatUI.OpenForRobot(robotController, player);
         }
 
-        public void AltInteract(PlayerController player)
+        public void AltInteract(Player player)
         {
             if (robotController is not CollectingRobotController collectingRobot)
             {
@@ -126,6 +125,13 @@ namespace Coreline
             }
 
             return chatUI != null ? chatUI : RobotChatUIController.FindOrCreateInScene();
+        }
+
+        private void EnsureReferences()
+        {
+            playerInteractionDetector ??= FindFirstObjectByType<PlayerInteractionDetector>();
+            chatUI ??= ResolveChatUIForRobot();
+            collectingRobotInventoryUI ??= CollectingRobotInventoryUIController.FindOrCreateInScene();
         }
 
         private string GetExpectedChatRootName()

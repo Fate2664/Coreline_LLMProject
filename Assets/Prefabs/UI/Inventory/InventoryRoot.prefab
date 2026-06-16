@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 8485727018063295328}
   - component: {fileID: 3158127655879680044}
   - component: {fileID: 3709247749699470289}
+  - component: {fileID: 3413079213681156071}
+  - component: {fileID: 6883501774751982880}
   m_Layer: 5
   m_Name: InventoryRoot
   m_TagString: Untagged
@@ -311,6 +313,53 @@ MonoBehaviour:
     SortingOrder: 2
     RenderQueue: 4000
     RenderOverOpaqueGeometry: 1
+--- !u!114 &3413079213681156071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 795221907819826415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8b8776978664573977074517a7be0c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.UIPanel
+  stateController: {fileID: 0}
+  visualRoot: {fileID: 3158127655879680044}
+  startOpen: 0
+  registerWhenEnabled: 1
+  deactivateWhenClosed: 1
+  blocksGameplayInput: 1
+  requiresCursor: 1
+  closeOnExit: 1
+  animateOnStart: 0
+  openDuration: 0.25
+  closeDuration: 0.2
+  useUnscaledTime: 1
+  opened:
+    m_PersistentCalls:
+      m_Calls: []
+  closed:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &6883501774751982880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 795221907819826415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a993d6467b8754b4fae0733db7cd3880, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.InventoryPanel
+  playerInventory: {fileID: 0}
+  panel: {fileID: 3413079213681156071}
+  grid: {fileID: 7110091173117859356}
+  closeButtonRoot: {fileID: 7455196709118427914}
+  padding: 10
 --- !u!1 &1649791192226457656
 GameObject:
   m_ObjectHideFlags: 0

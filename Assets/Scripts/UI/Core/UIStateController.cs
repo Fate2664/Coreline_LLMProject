@@ -19,6 +19,8 @@ namespace Coreline
         [SerializeField] private bool uiCursorVisible = true;
 
         private readonly List<UIPanel> openPanels = new();
+        private int modalInputBlockCount;
+        private int modalCursorRequestCount;
 
         public static UIStateController Instance { get; private set; }
 
@@ -26,8 +28,12 @@ namespace Coreline
 
         public IReadOnlyList<UIPanel> OpenPanels => openPanels;
         public bool HasOpenPanels => openPanels.Count > 0;
-        public bool BlocksGameplayInput => HasPanelMatching(panel => panel.BlocksGameplayInput);
-        public bool RequiresCursor => HasPanelMatching(panel => panel.RequiresCursor);
+        public bool BlocksGameplayInput =>
+            modalInputBlockCount > 0 ||
+            HasPanelMatching(panel => panel.BlocksGameplayInput);
+        public bool RequiresCursor =>
+            modalCursorRequestCount > 0 ||
+            HasPanelMatching(panel => panel.RequiresCursor);
         public UIPanel TopPanel => openPanels.Count > 0 ? openPanels[^1] : null;
         public static bool GameplayInputBlocked =>
             Instance != null && Instance.BlocksGameplayInput;
@@ -131,6 +137,30 @@ namespace Coreline
             }
 
             openPanels.Add(panel);
+            RefreshState();
+        }
+
+        public void RegisterModalInputBlock(bool requiresCursor = true)
+        {
+            modalInputBlockCount++;
+
+            if (requiresCursor)
+            {
+                modalCursorRequestCount++;
+            }
+
+            RefreshState();
+        }
+
+        public void UnregisterModalInputBlock(bool requiredCursor = true)
+        {
+            modalInputBlockCount = Mathf.Max(0, modalInputBlockCount - 1);
+
+            if (requiredCursor)
+            {
+                modalCursorRequestCount = Mathf.Max(0, modalCursorRequestCount - 1);
+            }
+
             RefreshState();
         }
 

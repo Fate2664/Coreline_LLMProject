@@ -175,6 +175,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 5339276839706148047, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 7175160201490054259, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
+      propertyPath: m_TagString
+      value: Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 8491585512226170808, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
+      propertyPath: buildPlacer
+      value: 
+      objectReference: {fileID: 804688993}
+    - target: {fileID: 8491585512226170808, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
+      propertyPath: inventoryPanel
+      value: 
+      objectReference: {fileID: 1866951172}
+    - target: {fileID: 8491585512226170808, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
+      propertyPath: playerInventory
+      value: 
+      objectReference: {fileID: 157549777}
     - target: {fileID: 8491585512226170808, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
       propertyPath: uiStateController
       value: 
@@ -716,11 +736,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2b35c1b656e276c449ef0cab9cb5ba19, type: 3}
---- !u!20 &27497559 stripped
-Camera:
-  m_CorrespondingSourceObject: {fileID: 4759271310751594575, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
-  m_PrefabInstance: {fileID: 4164813}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &27663752
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2326,6 +2341,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteractionDetector
   input: {fileID: 11400000, guid: 31eb6015498174141949f67362ae94bf, type: 2}
+  detectionRadius: 0.75
+  detectionCenterHeight: 0.8
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  maxDetectedColliders: 16
 --- !u!114 &157549773
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2414,6 +2435,17 @@ MonoBehaviour:
       amount: 0
     - item: {fileID: 0}
       amount: 0
+--- !u!114 &157549778 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8491585512226170808, guid: de8cd775dfbaefd4c844de1e48e79050, type: 3}
+  m_PrefabInstance: {fileID: 4164813}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 157549768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ea9c16dc9707e144a6d6e6a2046a7c6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Player
 --- !u!1001 &159003647
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7045,6 +7077,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2687301259811142518, guid: 05913792ea2349d4c8d4fdde4c047cef, type: 3}
   m_PrefabInstance: {fileID: 1836827824}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &433080584 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3067121406221078404, guid: 05913792ea2349d4c8d4fdde4c047cef, type: 3}
+  m_PrefabInstance: {fileID: 1836827824}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c395591f6f08fb41897eb437d91b587, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &434212306 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8560386294252704627, guid: c7fe83c52eb617d45bd0f368d30248fa, type: 3}
@@ -10897,13 +10940,13 @@ Transform:
   m_LocalScale: {x: 0.0012966807, y: 0.0012966807, z: 0.0012966807}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1578894306}
   - {fileID: 1731554356}
   - {fileID: 1179185135}
   - {fileID: 433080577}
   - {fileID: 60437527}
   - {fileID: 1163250861}
   - {fileID: 795145584}
+  - {fileID: 1578894306}
   m_Father: {fileID: 1602023786}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &625863209
@@ -11740,17 +11783,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: dee0601b8b1bac346ab72f3479d757b4, type: 3}
---- !u!114 &692973244 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4130280464595848342, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
-  m_PrefabInstance: {fileID: 739451851}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ccd57ae885e984419d40d63541fda7b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Nova::Nova.TextBlock
 --- !u!4 &692994280 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 185447747975765947, guid: df560bbcfede49047adbb80ade3598b5, type: 3}
@@ -12069,9 +12101,17 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2251786629011126894, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 157549778}
+    - target: {fileID: 2251786629011126894, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
       propertyPath: playerInventory
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 157549777}
+    - target: {fileID: 2251786629011126894, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
+      propertyPath: playerInventoryPanel
+      value: 
+      objectReference: {fileID: 1866951172}
     - target: {fileID: 2251786629011126894, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
       propertyPath: playerInventoryCloseButton
       value: 
@@ -12465,7 +12505,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1287456805184471447, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1287456805184471447, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -12495,9 +12535,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4866757950613955929, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
+      propertyPath: texture
+      value: 
+      objectReference: {fileID: 2800000, guid: 326f645cbfd415d469a58b26f02f3601, type: 3}
     - target: {fileID: 5647151702522648315, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       propertyPath: m_Name
       value: InfoRoot
+      objectReference: {fileID: 0}
+    - target: {fileID: 6380911320452671045, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
+      propertyPath: layout.Position.Z.Raw
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6825365287360080439, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -12507,14 +12555,21 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.x
       value: -86.87613
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    - target: {fileID: 8048355609731851500, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
+      propertyPath: managedReferences[6841561852523577471].ToolTipRoot
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 8048355609731851500, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
+      propertyPath: managedReferences[6841561852523577471].ToolTipText
+      value: 
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 209440815431656414, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: 3004391520176274682, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 1992318843099352749, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 481125554919290204, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
     - targetCorrespondingSourceObject: {fileID: 7521477215938150234, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
@@ -12573,10 +12628,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: InventoryRoot
       objectReference: {fileID: 0}
-    - target: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
-      propertyPath: m_IsActive
-      value: 1
+    - target: {fileID: 3158127655879680044, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+      propertyPath: layout.Position.Z.Raw
+      value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3413079213681156071, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+      propertyPath: stateController
+      value: 
+      objectReference: {fileID: 804688999}
     - target: {fileID: 4304742099185043198, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -12617,16 +12676,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6883501774751982880, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+      propertyPath: playerInventory
+      value: 
+      objectReference: {fileID: 157549777}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1866951173}
-    - targetCorrespondingSourceObject: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1866951172}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
 --- !u!1001 &743881960
 PrefabInstance:
@@ -12886,17 +12943,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2b35c1b656e276c449ef0cab9cb5ba19, type: 3}
---- !u!114 &757535247 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8048355609731851500, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
-  m_PrefabInstance: {fileID: 739451851}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0a75001f00536d40ad613f41ed2bdc0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Nova::Nova.ItemView
 --- !u!4 &763733754 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8884547607843059940, guid: 2b35c1b656e276c449ef0cab9cb5ba19, type: 3}
@@ -13694,7 +13740,6 @@ GameObject:
   m_Component:
   - component: {fileID: 804688992}
   - component: {fileID: 804688999}
-  - component: {fileID: 804688994}
   - component: {fileID: 804688993}
   - component: {fileID: 804688996}
   - component: {fileID: 804688995}
@@ -13757,30 +13802,6 @@ MonoBehaviour:
   previewMaterialValid: {fileID: 2100000, guid: 21bc63f5055ebb74ba4f672f512a9a11, type: 2}
   previewMaterialInvalid: {fileID: 2100000, guid: 5a1dd9dab5d209248891448422f633ef, type: 2}
   previewLiftY: 0.02
---- !u!114 &804688994
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 804688991}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 427d28f144fca97488d0ecfd21988be0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UIManager
-  inventoryPanel: {fileID: 0}
-  buildPlacer: {fileID: 804688993}
-  ItemDatabase: {fileID: 11400000, guid: 83056b7f6353ab44eaab4ee44e8d7945, type: 2}
-  EquipItemRoot: {fileID: 757535247}
-  closeButtonRoot: {fileID: 2065147040}
-  destructionButtonRoot: {fileID: 0}
-  Grid: {fileID: 854741073}
-  Count: 14
-  padding: 10
-  TimeText: {fileID: 1601855102}
-  TimePrefix: {fileID: 1809782674}
-  DayText: {fileID: 692973244}
 --- !u!114 &804688995
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13811,7 +13832,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5da66ad707f865b42af2bec2bfe3f63b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Nova.UIControls::NovaSamples.UIControls.InputManager
-  cam: {fileID: 27497559}
+  cam: {fileID: 1602023784}
   mouseEnabled: 1
   invertScrolling: 1
   touchEnabled: 1
@@ -14656,17 +14677,6 @@ Transform:
   - {fileID: 492864633}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &854741073 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7110091173117859356, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
-  m_PrefabInstance: {fileID: 741556176}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d98ac131f13464046ac83b0987d248af, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &857993045 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8923612322307923973, guid: e66cb15f22a1c774387d321ee47d271a, type: 3}
@@ -18576,7 +18586,7 @@ PrefabInstance:
     - target: {fileID: 6010747459263552323, guid: 3ff4196dda2a1254b9e31e1b40d35965, type: 3}
       propertyPath: playerInventory
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 157549777}
     - target: {fileID: 8748411735145936670, guid: 3ff4196dda2a1254b9e31e1b40d35965, type: 3}
       propertyPath: m_Name
       value: TotalCollectionRoot
@@ -19372,9 +19382,33 @@ PrefabInstance:
       value: CollectionRobotInventoryRoot
       objectReference: {fileID: 0}
     - target: {fileID: 8404078787931425008, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
+      propertyPath: player
+      value: 
+      objectReference: {fileID: 157549778}
+    - target: {fileID: 8404078787931425008, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
+      propertyPath: visualRoot
+      value: 
+      objectReference: {fileID: 1163250864}
+    - target: {fileID: 8404078787931425008, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
+      propertyPath: playerInventory
+      value: 
+      objectReference: {fileID: 157549777}
+    - target: {fileID: 8404078787931425008, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
+      propertyPath: dragPreviewCamera
+      value: 
+      objectReference: {fileID: 1602023784}
+    - target: {fileID: 8404078787931425008, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
       propertyPath: playerInventoryUI
       value: 
-      objectReference: {fileID: 804688994}
+      objectReference: {fileID: 0}
+    - target: {fileID: 8404078787931425008, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
+      propertyPath: uiStateController
+      value: 
+      objectReference: {fileID: 804688999}
+    - target: {fileID: 8404078787931425008, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
+      propertyPath: playerInventoryPanel
+      value: 
+      objectReference: {fileID: 1866951172}
     - target: {fileID: 8404078787931425008, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
       propertyPath: playerInventoryCloseButton
       value: 
@@ -19615,6 +19649,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7892272191247631139, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
   m_PrefabInstance: {fileID: 1147587181}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1163250864 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3399784522140165023, guid: 7c3ef8dfa528ab143b15de526f554e0d, type: 3}
+  m_PrefabInstance: {fileID: 1147587181}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c395591f6f08fb41897eb437d91b587, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1164810541
 GameObject:
   m_ObjectHideFlags: 0
@@ -23105,7 +23150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c2e74933dbdb634897466a10fcccfa2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.HouseSleep
-  playerInteractionDetector: {fileID: 0}
+  playerInteractionDetector: {fileID: 157549772}
 --- !u!4 &1320130501
 Transform:
   m_ObjectHideFlags: 0
@@ -24078,6 +24123,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2b35c1b656e276c449ef0cab9cb5ba19, type: 3}
+--- !u!114 &1370559601 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2251786629011126894, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
+  m_PrefabInstance: {fileID: 713577341}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0bc44c3c9e5edff46a47be050ed5a41d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotWorkbenchUIController
 --- !u!1001 &1371457824
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26522,6 +26578,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6082298127282826415, guid: ab3787f757082314fb65fb7ca4552c31, type: 3}
   m_PrefabInstance: {fileID: 1537104458}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1510182539 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 161265945549012915, guid: f8631a87f6f923047b3fa6f4a5a4fc89, type: 3}
+  m_PrefabInstance: {fileID: 2007173614}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c395591f6f08fb41897eb437d91b587, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &1512323629 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7546813994068566959, guid: dee0601b8b1bac346ab72f3479d757b4, type: 3}
@@ -28229,17 +28296,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2b35c1b656e276c449ef0cab9cb5ba19, type: 3}
---- !u!114 &1601855102 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4219052615938749723, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
-  m_PrefabInstance: {fileID: 739451851}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ccd57ae885e984419d40d63541fda7b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Nova::Nova.TextBlock
 --- !u!1 &1602023783
 GameObject:
   m_ObjectHideFlags: 0
@@ -32350,17 +32406,6 @@ Transform:
   - {fileID: 1695120198}
   m_Father: {fileID: 1159651479}
   m_LocalEulerAnglesHint: {x: 23.205, y: 243.61499, z: -0.741}
---- !u!114 &1809782674 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1571864213746620585, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
-  m_PrefabInstance: {fileID: 739451851}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ccd57ae885e984419d40d63541fda7b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Nova::Nova.TextBlock
 --- !u!1001 &1809856346
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32876,6 +32921,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 625441668}
     m_Modifications:
+    - target: {fileID: 805860781517279922, guid: 05913792ea2349d4c8d4fdde4c047cef, type: 3}
+      propertyPath: visualRoot
+      value: 
+      objectReference: {fileID: 433080584}
+    - target: {fileID: 805860781517279922, guid: 05913792ea2349d4c8d4fdde4c047cef, type: 3}
+      propertyPath: uiStateController
+      value: 
+      objectReference: {fileID: 804688999}
     - target: {fileID: 2687301259811142518, guid: 05913792ea2349d4c8d4fdde4c047cef, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -33221,69 +33274,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c7fe83c52eb617d45bd0f368d30248fa, type: 3}
---- !u!1 &1866951168 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
+--- !u!114 &1866951172 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6883501774751982880, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
   m_PrefabInstance: {fileID: 741556176}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1866951170 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3158127655879680044, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
-  m_PrefabInstance: {fileID: 741556176}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1866951168}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c395591f6f08fb41897eb437d91b587, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1866951172
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1866951168}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a993d6467b8754b4fae0733db7cd3880, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.InventoryPanel
-  playerInventory: {fileID: 157549777}
-  panel: {fileID: 1866951173}
-  grid: {fileID: 854741073}
-  closeButtonRoot: {fileID: 2065147040}
-  padding: 10
---- !u!114 &1866951173
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1866951168}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c8b8776978664573977074517a7be0c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Coreline.UIPanel
-  stateController: {fileID: 804688999}
-  visualRoot: {fileID: 1866951170}
-  startOpen: 0
-  registerWhenEnabled: 1
-  deactivateWhenClosed: 1
-  blocksGameplayInput: 1
-  requiresCursor: 1
-  closeOnExit: 1
-  animateOnStart: 0
-  openDuration: 0.25
-  closeDuration: 0.2
-  useUnscaledTime: 1
-  opened:
-    m_PersistentCalls:
-      m_Calls: []
-  closed:
-    m_PersistentCalls:
-      m_Calls: []
 --- !u!1001 &1868460911
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33604,7 +33605,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3618745667195828980, guid: 129a5851478c2964e9277e6c6e757a05, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 52.158947
+      value: 52.103
       objectReference: {fileID: 0}
     - target: {fileID: 3618745667195828980, guid: 129a5851478c2964e9277e6c6e757a05, type: 3}
       propertyPath: m_LocalPosition.z
@@ -33638,14 +33639,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5530778355978656436, guid: 129a5851478c2964e9277e6c6e757a05, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.7119
+      objectReference: {fileID: 0}
     - target: {fileID: 6363535786128296721, guid: 129a5851478c2964e9277e6c6e757a05, type: 3}
       propertyPath: workbenchUI
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1370559601}
     - target: {fileID: 6363535786128296721, guid: 129a5851478c2964e9277e6c6e757a05, type: 3}
       propertyPath: playerInteractionDetector
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 157549772}
     - target: {fileID: 7346824240490442483, guid: 129a5851478c2964e9277e6c6e757a05, type: 3}
       propertyPath: m_Name
       value: WorkBench
@@ -35467,6 +35472,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 625441668}
     m_Modifications:
     - target: {fileID: 245837667734293041, guid: f8631a87f6f923047b3fa6f4a5a4fc89, type: 3}
+      propertyPath: modelName
+      value: llama3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 245837667734293041, guid: f8631a87f6f923047b3fa6f4a5a4fc89, type: 3}
       propertyPath: targetRegistry
       value: 
       objectReference: {fileID: 804688997}
@@ -35510,6 +35519,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4691769551909209098, guid: f8631a87f6f923047b3fa6f4a5a4fc89, type: 3}
+      propertyPath: visualRoot
+      value: 
+      objectReference: {fileID: 1510182539}
+    - target: {fileID: 4691769551909209098, guid: f8631a87f6f923047b3fa6f4a5a4fc89, type: 3}
+      propertyPath: uiStateController
+      value: 
+      objectReference: {fileID: 804688999}
     - target: {fileID: 6831788171416795710, guid: f8631a87f6f923047b3fa6f4a5a4fc89, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
@@ -36377,17 +36394,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 3080684914905846931, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
   m_PrefabInstance: {fileID: 741556176}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2065147040 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7455196709118427914, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
-  m_PrefabInstance: {fileID: 741556176}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2065147037}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b0a75001f00536d40ad613f41ed2bdc0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Nova::Nova.ItemView
 --- !u!4 &2067848876 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8923612322307923973, guid: e66cb15f22a1c774387d321ee47d271a, type: 3}

@@ -10,8 +10,19 @@ namespace Coreline.Robots
 
         private bool wasCurrentTarget;
 
+        private void Awake()
+        {
+            EnsureReferences();
+        }
+
+        private void Start()
+        {
+            EnsureReferences();
+        }
+
         private void FixedUpdate()
         {
+            EnsureReferences();
             if (indicatorManager == null || playerInteractionDetector == null) return;
 
             bool isCurrentTarget = ReferenceEquals(playerInteractionDetector.CurrentTarget, this);
@@ -32,7 +43,7 @@ namespace Coreline.Robots
             wasCurrentTarget = isCurrentTarget;
         }
 
-        public void Interact(PlayerController interactor)
+        public void Interact(Player interactor)
         {
             workbenchUI ??= WorkbenchUIController.FindOrCreateInScene();
             if (workbenchUI == null)
@@ -41,6 +52,12 @@ namespace Coreline.Robots
             }
 
             workbenchUI.Toggle(interactor);
+        }
+
+        private void EnsureReferences()
+        {
+            playerInteractionDetector ??= FindFirstObjectByType<PlayerInteractionDetector>();
+            workbenchUI ??= WorkbenchUIController.FindOrCreateInScene();
         }
     }
 }

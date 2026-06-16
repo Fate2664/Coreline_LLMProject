@@ -1,11 +1,12 @@
+using Coreline;
 using UnityEngine;
 
 public interface IInteractable
 {
-    public void Interact(PlayerController interactor);
+    public void Interact(Player interactor);
 }
 
 public interface IAltInteractable
 {
-    public void AltInteract(PlayerController interactor);
+    public void AltInteract(Player interactor);
 }

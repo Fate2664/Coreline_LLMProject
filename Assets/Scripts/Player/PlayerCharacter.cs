@@ -34,6 +34,7 @@ namespace Coreline
         public CrouchInput Crouch;
         public bool CrouchHeld;
         public bool PrimaryAttack;
+        public bool Interact;
     }
 
     public class PlayerCharacter : MonoBehaviour, ICharacterController

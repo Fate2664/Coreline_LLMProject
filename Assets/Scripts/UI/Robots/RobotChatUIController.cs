@@ -25,6 +25,7 @@ namespace Coreline.Robots
         [SerializeField] private TextBlock robotNameText;
         [SerializeField] private TextField robotNameField;
         [SerializeField] private OllamaRobotCommandClient commandClient;
+        [SerializeField] private UIStateController uiStateController;
         [SerializeField] private bool hideOnStart = true;
         [SerializeField] private bool unlockCursorWhileOpen = true;
         [SerializeField] private bool closeAfterSubmit;
@@ -35,6 +36,7 @@ namespace Coreline.Robots
         private bool isSubscribed;
         private bool isCommandClientSubscribed;
         private bool isMiningRobotDropdownSubscribed;
+        private bool isGameplayInputBlocked;
         private bool isOpen;
         private CommandTarget playerTarget;
         private CommandTarget activeRobotTarget;
@@ -82,6 +84,7 @@ namespace Coreline.Robots
             UnsubscribeFromInput();
             UnsubscribeFromCommandClient();
             UnsubscribeFromMiningRobotDropdown();
+            UnregisterGameplayInputBlock();
             ReleasePausedRobot();
 
             if (isOpen)
@@ -109,10 +112,10 @@ namespace Coreline.Robots
 
         public void OpenForRobot(BaseRobotController robot)
         {
-            OpenForRobot(robot, FindFirstObjectByType<global::PlayerController>());
+            OpenForRobot(robot, FindFirstObjectByType<Coreline.Player>());
         }
 
-        public void OpenForRobot(BaseRobotController robot, global::PlayerController player)
+        public void OpenForRobot(BaseRobotController robot, Coreline.Player player)
         {
             if (robot == null)
             {
@@ -146,6 +149,7 @@ namespace Coreline.Robots
             RefreshMiningRobotDropdown(robot);
             isOpen = true;
             IsAnyOpen = true;
+            RegisterGameplayInputBlock();
 
             if (clearMessagesOnOpen)
             {
@@ -165,6 +169,7 @@ namespace Coreline.Robots
             ActiveRobot = null;
             activeRobotTarget = null;
             lastAppliedRobotName = string.Empty;
+            UnregisterGameplayInputBlock();
             isOpen = false;
             IsAnyOpen = AnyChatControllerOpen();
             miningRobotDropdownVisuals?.Collapse();
@@ -230,6 +235,9 @@ namespace Coreline.Robots
             robotTypeText ??= FindChildComponentByName<TextBlock>(RobotTypeTextName);
             robotNameField ??= FindChildComponentByName<TextField>(RobotNameTextName);
             robotNameText ??= FindChildComponentByName<TextBlock>(RobotNameTextName);
+            uiStateController ??= UIStateController.Instance;
+            uiStateController ??=
+                FindFirstObjectByType<UIStateController>(FindObjectsInactive.Include);
 
             if (miningRobotDropdownView != null)
             {
@@ -268,7 +276,7 @@ namespace Coreline.Robots
             return robot != null;
         }
 
-        private void EnsurePlayerTarget(global::PlayerController player)
+        private void EnsurePlayerTarget(Coreline.Player player)
         {
             if (player == null)
             {
@@ -771,6 +779,38 @@ namespace Coreline.Robots
             }
 
             return root.GetComponent<T>() ?? root.AddComponent<T>();
+        }
+
+        private void RegisterGameplayInputBlock()
+        {
+            if (isGameplayInputBlocked)
+            {
+                return;
+            }
+
+            EnsureReferences();
+
+            if (uiStateController == null)
+            {
+                Debug.LogWarning(
+                    $"{GetType().Name} cannot block player input because no {nameof(UIStateController)} exists in the scene.",
+                    this);
+                return;
+            }
+
+            uiStateController.RegisterModalInputBlock(unlockCursorWhileOpen);
+            isGameplayInputBlocked = true;
+        }
+
+        private void UnregisterGameplayInputBlock()
+        {
+            if (!isGameplayInputBlocked)
+            {
+                return;
+            }
+
+            uiStateController?.UnregisterModalInputBlock(unlockCursorWhileOpen);
+            isGameplayInputBlocked = false;
         }
 
         private static bool AnyChatControllerOpen()

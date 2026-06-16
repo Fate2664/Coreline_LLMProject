@@ -68,12 +68,7 @@ namespace Coreline
             activeTween = null;
         }
 
-        private void AnimateTo(
-            Vector3 scale,
-            float duration,
-            Ease ease,
-            bool useUnscaledTime,
-            Action onComplete)
+        private void AnimateTo(Vector3 scale, float duration, Ease ease, bool useUnscaledTime, Action onComplete)
         {
             KillAnimation();
 

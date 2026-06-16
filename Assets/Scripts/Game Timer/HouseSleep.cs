@@ -31,7 +31,7 @@ namespace Coreline
             }
         }
 
-        public void Interact(PlayerController interactor)
+        public void Interact(Player interactor)
         {
             if (TimeManager.Instance == null)
             {

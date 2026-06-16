@@ -21,6 +21,7 @@ namespace Coreline.Robots
         [SerializeField] private List<RobotCraftingRecipe> recipes = new();
 
         [Header("UI Roots")]
+        [SerializeField] private UIBlock2D visualRoot;
         [SerializeField] private Transform optionsRoot;
         [SerializeField] private Transform requirementsRoot;
         [SerializeField] private List<ItemView> optionSlots = new();
@@ -37,7 +38,7 @@ namespace Coreline.Robots
         [SerializeField] private ItemView closeButtonRoot;
 
         [Header("Crafting")]
-        [SerializeField] private PlayerController playerController;
+        [SerializeField] private Player player;
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private InventoryPanel playerInventoryPanel;
 
@@ -49,6 +50,9 @@ namespace Coreline.Robots
         [Header("Behaviour")]
         [SerializeField] private bool hideOnStart = true;
         [SerializeField] private bool unlockCursorWhileOpen = true;
+        [SerializeField, Min(0f)] private float openDuration = 0.25f;
+        [SerializeField, Min(0f)] private float closeDuration = 0.2f;
+        [SerializeField] private bool useUnscaledAnimationTime = true;
 
         [Header("Slot Colours")]
         [SerializeField] private Color selectedOptionColor = new(0.9f, 0.65f, 0.2f, 1f);
@@ -73,6 +77,7 @@ namespace Coreline.Robots
         private bool playerInventoryWasOpenOnOpen;
         private bool playerInventoryCloseButtonWasActive;
         private bool hasCachedPlayerInventoryCloseButtonState;
+        private UIVisuals visuals;
 
         public static bool IsAnyOpen { get; private set; }
         public RobotCraftingRecipe SelectedRecipe => TryGetSelectedRecipe(out RobotCraftingRecipe recipe) ? recipe : null;
@@ -87,7 +92,7 @@ namespace Coreline.Robots
         {
             if (hideOnStart && !isOpen)
             {
-                gameObject.SetActive(false);
+                HideImmediate();
             }
         }
 
@@ -103,6 +108,7 @@ namespace Coreline.Robots
         {
             UnsubscribeButtons();
             UnregisterOptionSlotHandlers();
+            visuals?.KillAnimation();
 
             if (isOpen)
             {
@@ -130,7 +136,7 @@ namespace Coreline.Robots
             RefreshCraftButton();
         }
 
-        public void Toggle(PlayerController player)
+        public void Toggle(Player playerContext)
         {
             if (isOpen)
             {
@@ -138,12 +144,12 @@ namespace Coreline.Robots
                 return;
             }
 
-            Open(player);
+            Open(playerContext);
         }
 
-        public void Open(PlayerController player)
+        public void Open(Player playerContext)
         {
-            playerController ??= player;
+            player ??= playerContext;
             isOpen = true;
             IsAnyOpen = true;
 
@@ -153,11 +159,12 @@ namespace Coreline.Robots
             }
 
             EnsureReferences();
-            EnsurePlayerInventory(player);
+            EnsurePlayerInventory(playerContext);
             OpenPlayerInventory();
             ClampSelectedRecipeIndex();
             hasAppliedCraftButtonColor = false;
             RefreshAll();
+            ShowPanel();
 
             if (unlockCursorWhileOpen)
             {
@@ -177,11 +184,7 @@ namespace Coreline.Robots
             isOpen = false;
             IsAnyOpen = false;
             hasAppliedCraftButtonColor = false;
-
-            if (gameObject.activeSelf)
-            {
-                gameObject.SetActive(false);
-            }
+            HidePanel();
         }
 
         public void SelectRecipe(int recipeIndex)
@@ -204,7 +207,7 @@ namespace Coreline.Robots
                 return;
             }
 
-            EnsurePlayerInventory(playerController);
+            EnsurePlayerInventory(player);
             if (playerInventory == null)
             {
                 SetStatus("No player inventory found.");
@@ -227,7 +230,7 @@ namespace Coreline.Robots
         public void RefreshAll()
         {
             EnsureReferences();
-            EnsurePlayerInventory(playerController);
+            EnsurePlayerInventory(player);
             ClampSelectedRecipeIndex();
             RefreshOptionSlots();
             RefreshRequirementSlots();
@@ -566,12 +569,12 @@ namespace Coreline.Robots
             return requirement != null && requirement.IsValid;
         }
 
-        private void EnsurePlayerInventory(PlayerController player)
+        private void EnsurePlayerInventory(Player playerContext)
         {
-            playerController ??= player;
-            playerInventory ??= playerController != null
-                ? playerController.GetComponent<PlayerInventory>() ??
-                  playerController.GetComponentInParent<PlayerInventory>()
+            player ??= playerContext;
+            playerInventory ??= player != null
+                ? player.GetComponent<PlayerInventory>() ??
+                  player.GetComponentInParent<PlayerInventory>()
                 : null;
             playerInventory ??=
                 FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
@@ -587,7 +590,7 @@ namespace Coreline.Robots
 
         private void OpenPlayerInventory()
         {
-            EnsurePlayerInventory(playerController);
+            EnsurePlayerInventory(player);
             playerInventoryWasOpenOnOpen =
                 playerInventoryPanel != null && playerInventoryPanel.IsOpen;
             playerInventoryPanel?.Open();
@@ -667,12 +670,50 @@ namespace Coreline.Robots
 
         private void EnsureReferences()
         {
+            visualRoot ??= GetComponent<UIBlock2D>();
+            visualRoot ??= GetComponentInChildren<UIBlock2D>(true);
+            visuals ??= new UIVisuals(visualRoot != null ? visualRoot.transform : transform);
             optionsRoot ??= FindChildTransform(OptionsRootName);
             requirementsRoot ??= FindChildTransform(RequirementsRootName) ?? FindChildTransform(RequirementsRootCorrectName);
             craftButtonRoot ??= FindChildItemViewWithVisuals<InventoryButtonVisuals>(CraftButtonName);
             closeButtonRoot ??= FindChildItemViewWithVisuals<InventoryButtonVisuals>(CloseButtonName);
             craftInfoText ??= FindChildComponentByName<TextBlock>(CraftInfoTextName);
             craftButtonText ??= FindChildComponentByName<TextBlock>(CraftButtonTextName);
+        }
+
+        private void ShowPanel()
+        {
+            EnsureReferences();
+            visuals?.ShowUI(openDuration, useUnscaledAnimationTime);
+        }
+
+        private void HidePanel()
+        {
+            EnsureReferences();
+
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
+
+            visuals?.HideUI(closeDuration, useUnscaledAnimationTime, () =>
+            {
+                if (!isOpen && gameObject.activeSelf)
+                {
+                    gameObject.SetActive(false);
+                }
+            });
+        }
+
+        private void HideImmediate()
+        {
+            EnsureReferences();
+            visuals?.HideImmediate();
+
+            if (gameObject.activeSelf)
+            {
+                gameObject.SetActive(false);
+            }
         }
 
         private void EnsureOptionSlots()
