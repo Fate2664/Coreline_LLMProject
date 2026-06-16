@@ -9,18 +9,17 @@ namespace Coreline
         [SerializeField] private GameInput input;
         [SerializeField] private UIStateController uiStateController;
         [SerializeField] private InventoryPanel inventoryPanel;
-        [SerializeField] private PlayerInventory playerInventory;
-        [SerializeField] private BuildPlacer buildPlacer;
-        [SerializeField, Min(0f)] private float toggleInventoryCooldown = 0.1f;
+        [SerializeField] private BuildPlacer buildPlacer; 
 
         private PlayerCharacter playerCharacter;
         private PlayerCamera playerCamera;
         private CameraSpring[] cameraSprings;
         private CameraTilt playerCameraTilt;
         private CharacterInput characterInput;
+        private PlayerInventory playerInventory;
         private CountDownTimer toggleInventoryTimer;
-        private InventoryPanel subscribedInventoryPanel;
         private bool wasToggleInventoryPressed;
+        private const float ToggleInventoryCooldown = 0.1f;
         
         public CharacterInput CharacterInput => characterInput;
         public PlayerCharacter PlayerCharacter => playerCharacter;
@@ -77,23 +76,12 @@ namespace Coreline
             playerCamera = GetComponentInChildren<PlayerCamera>();
             cameraSprings = GetComponentsInChildren<CameraSpring>();
             playerCameraTilt = GetComponentInChildren<CameraTilt>();
-            uiStateController ??=
-                FindFirstObjectByType<UIStateController>(FindObjectsInactive.Include);
-            playerInventory ??= GetComponent<PlayerInventory>() ?? GetComponentInParent<PlayerInventory>();
-            buildPlacer ??= FindFirstObjectByType<BuildPlacer>(FindObjectsInactive.Include);
-            inventoryPanel ??=
-                FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
-            toggleInventoryTimer = new CountDownTimer(toggleInventoryCooldown);
+            playerInventory = GetComponent<PlayerInventory>();
+            toggleInventoryTimer = new CountDownTimer(ToggleInventoryCooldown);
         }
 
         private void Start()
         {
-            if (uiStateController == null)
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
-
             input.EnableActions();
             playerCharacter.Initialize();
             playerCamera.Initialize(playerCharacter.GetCameraTarget());
@@ -114,7 +102,7 @@ namespace Coreline
             input.PrimaryAttack += OnPrimaryAttack;
             input.ToggleInventory += OnToggleInventory;
             input.Interact += OnInteract;
-            SubscribeToInventoryPanel();
+            inventoryPanel.SlotSelected += HandleItemSlotSelected;
         }
 
         private void OnDisable()
@@ -127,9 +115,7 @@ namespace Coreline
             input.PrimaryAttack -= OnPrimaryAttack;
             input.ToggleInventory -= OnToggleInventory;
             input.Interact -=  OnInteract;
-            toggleInventoryInput = false;
-            wasToggleInventoryPressed = false;
-            UnsubscribeFromInventoryPanel();
+            inventoryPanel.SlotSelected -= HandleItemSlotSelected;
             input.DisableActions();
         }
 
@@ -139,12 +125,9 @@ namespace Coreline
 
         private void Update()
         {
-            toggleInventoryTimer?.Tick(Time.deltaTime);
-            HandleInventoryToggleInput();
+            toggleInventoryTimer.Tick(Time.deltaTime);
 
-            uiStateController ??= UIStateController.Instance;
-            bool gameplayInputBlocked =
-                uiStateController != null && uiStateController.BlocksGameplayInput;
+            bool gameplayInputBlocked = uiStateController != null && uiStateController.BlocksGameplayInput;
 
             //Get camera input and update its rotation
             var cameraInput = new CameraInput
@@ -174,139 +157,13 @@ namespace Coreline
             jumpInput = false;
             playerCharacter.UpdateBody(deltaTime);
             
-        }
-
-        public void ToggleInventory()
-        {
-            if (IsInventoryToggleBlockedByContext())
-            {
-                return;
-            }
-
-            if (toggleInventoryTimer != null && toggleInventoryTimer.IsRunning)
-            {
-                return;
-            }
-
-            InventoryPanel panel = ResolveInventoryPanel();
-            if (panel == null)
-            {
-                return;
-            }
-
-            toggleInventoryTimer?.Start();
-            panel.Toggle();
-        }
-
-        public void OpenInventory()
-        {
-            ResolveInventoryPanel()?.Open();
-        }
-
-        public void CloseInventory()
-        {
-            ResolveInventoryPanel()?.Close();
-        }
-
-        private void HandleInventoryToggleInput()
-        {
-            if (toggleInventoryInput && !wasToggleInventoryPressed)
-            {
+            //Inventory Toggle
+            bool togglePressedThisFrame = toggleInventoryInput && !wasToggleInventoryPressed;
+            if (togglePressedThisFrame && !InventoryToggleBlocked() && !toggleInventoryTimer.IsRunning)
                 ToggleInventory();
-            }
-
+            
             wasToggleInventoryPressed = toggleInventoryInput;
-        }
-
-        private InventoryPanel ResolveInventoryPanel()
-        {
-            inventoryPanel ??=
-                FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
-            SubscribeToInventoryPanel();
-            return inventoryPanel;
-        }
-
-        private static bool IsInventoryToggleBlockedByContext()
-        {
-            return RobotChatUIController.IsAnyOpen ||
-                   CollectingRobotInventoryUIController.IsAnyOpen ||
-                   WorkbenchUIController.IsAnyOpen;
-        }
-
-        private void SubscribeToInventoryPanel()
-        {
-            if (inventoryPanel == null || subscribedInventoryPanel == inventoryPanel)
-            {
-                return;
-            }
-
-            UnsubscribeFromInventoryPanel();
-            subscribedInventoryPanel = inventoryPanel;
-            subscribedInventoryPanel.SlotSelected += HandleInventorySlotSelected;
-        }
-
-        private void UnsubscribeFromInventoryPanel()
-        {
-            if (subscribedInventoryPanel == null)
-            {
-                return;
-            }
-
-            subscribedInventoryPanel.SlotSelected -= HandleInventorySlotSelected;
-            subscribedInventoryPanel = null;
-        }
-
-        private void HandleInventorySlotSelected(int slotIndex, InventorySlot slot)
-        {
-            if (IsInventoryToggleBlockedByContext())
-            {
-                return;
-            }
-
-            if (slot == null || slot.Item is not RobotCraftingRecipe recipe)
-            {
-                return;
-            }
-
-            BeginRobotPlacement(recipe);
-        }
-
-        private void BeginRobotPlacement(RobotCraftingRecipe recipe)
-        {
-            playerInventory ??= GetComponent<PlayerInventory>() ?? GetComponentInParent<PlayerInventory>();
-            buildPlacer ??= FindFirstObjectByType<BuildPlacer>(FindObjectsInactive.Include);
-
-            if (buildPlacer == null)
-            {
-                Debug.LogWarning("Cannot place robot because no BuildPlacer exists in the scene.", this);
-                return;
-            }
-
-            if (recipe == null || recipe.RobotPrefab == null)
-            {
-                Debug.LogWarning("Cannot place robot because the selected robot item has no prefab assigned.", this);
-                return;
-            }
-
-            buildPlacer.BeginPrefabPlacement(recipe.RobotPrefab, placedObject =>
-            {
-                EnsurePlacedRobotTarget(placedObject);
-                playerInventory?.TryRemoveItem(recipe, 1);
-            });
-
-            CloseInventory();
-        }
-
-        private static void EnsurePlacedRobotTarget(GameObject placedObject)
-        {
-            if (placedObject == null)
-            {
-                return;
-            }
-
-            BaseRobotController robotController = placedObject.GetComponent<BaseRobotController>();
-            robotController ??= placedObject.GetComponentInChildren<BaseRobotController>();
-            robotController?.EnsureRobotCommandTarget();
+            
         }
 
         private void LateUpdate()
@@ -324,7 +181,31 @@ namespace Coreline
         }
 
         #endregion
+
+        #region Inventory Methods
+
+        public void ToggleInventory()
+        {
+            toggleInventoryTimer.Start();
+            inventoryPanel.Panel.Toggle();
+        }
+
+        private void HandleItemSlotSelected(int slotIndex, InventorySlot slot)
+        {
+            //Check for robot selected
+            if (InventoryToggleBlocked() || slot.Item is not RobotCraftingRecipe recipe)  return;
+
+            buildPlacer.BeginPrefabPlacement(recipe.RobotPrefab, placedObject =>
+            {
+                playerInventory?.TryRemoveItem(recipe, 1);
+            });
+            ToggleInventory();
+        }
         
+        private static bool InventoryToggleBlocked() => RobotChatUIController.IsAnyOpen || CollectingRobotInventoryUIController.IsAnyOpen || WorkbenchUIController.IsAnyOpen;
+
+       
+        #endregion
        
     }
 }

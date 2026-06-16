@@ -67,11 +67,6 @@ namespace Coreline
 
         public void BeginPrefabPlacement(GameObject prefab, Action<GameObject> onPlaced = null)
         {
-            if (prefab == null)
-            {
-                return;
-            }
-
             SetDestroyMode(false);
             placementPrefabOverride = prefab;
             placementCompleted = onPlaced;

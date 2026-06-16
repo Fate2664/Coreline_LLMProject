@@ -39,13 +39,6 @@ namespace Coreline
             SyncInventoryDescription();
         }
 
-#if UNITY_EDITOR
-        protected virtual void OnValidate()
-        {
-            SyncInventoryDescription();
-        }
-#endif
-
         private void SyncInventoryDescription()
         {
             itemDesc ??= new ItemDescription();

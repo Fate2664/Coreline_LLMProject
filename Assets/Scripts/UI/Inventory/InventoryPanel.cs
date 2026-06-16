@@ -8,14 +8,13 @@ namespace Coreline
     [DisallowMultipleComponent]
     public sealed class InventoryPanel : MonoBehaviour
     {
-        [Header("Bindings")]
-        [SerializeField] private PlayerInventory playerInventory;
+        [Header("Bindings")] [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private UIPanel panel;
         [SerializeField] private GridView grid;
         [SerializeField] private ItemView closeButtonRoot;
 
-        [Header("Grid Layout")]
-        [SerializeField, Min(0)] private int padding = 10;
+        [Header("Grid Layout")] [SerializeField, Min(0)]
+        private int padding = 10;
 
         private readonly List<InventorySlot> displayedSlots = new();
         private bool inventorySubscribed;
@@ -30,16 +29,10 @@ namespace Coreline
         public GridView Grid => grid;
         public bool IsOpen => panel != null && panel.IsOpen;
 
-        private void Awake()
-        {
-            ResolveReferences();
-        }
-
         private void OnEnable()
         {
-            ResolveReferences();
             SubscribeToInventory();
-            RebuildDisplayedSlots();
+            BuildDisplaySlots();
             RegisterGrid();
             RegisterCloseButton();
         }
@@ -70,38 +63,13 @@ namespace Coreline
             Refresh();
         }
 
-        public void Open()
-        {
-            ResolveReferences();
-            Refresh();
-            panel?.Open();
-        }
-
-        public void Close()
-        {
-            ResolveReferences();
-            panel?.Close();
-        }
-
-        public void Toggle()
-        {
-            ResolveReferences();
-            panel?.Toggle();
-        }
-
         public void Refresh()
         {
-            ResolveReferences();
             int previousSlotCount = displayedSlots.Count;
-            RebuildDisplayedSlots();
+            BuildDisplaySlots();
 
-            if (!gridRegistered || grid == null || !grid.gameObject.activeInHierarchy)
-            {
-                return;
-            }
-
-            if (previousSlotCount != displayedSlots.Count ||
-                boundSlotCount != displayedSlots.Count)
+            if (!gridRegistered || !grid.gameObject.activeInHierarchy) return;
+            if (previousSlotCount != displayedSlots.Count || boundSlotCount != displayedSlots.Count)
             {
                 SetGridDataSource();
                 return;
@@ -110,48 +78,9 @@ namespace Coreline
             grid.Refresh();
         }
 
-        private void ResolveReferences()
-        {
-            panel ??= GetComponent<UIPanel>();
-            grid ??= GetComponentInChildren<GridView>(true);
-        }
-
-        private void SubscribeToInventory()
-        {
-            if (inventorySubscribed || playerInventory == null)
-            {
-                return;
-            }
-
-            playerInventory.InventoryChanged += HandleInventoryChanged;
-            inventorySubscribed = true;
-        }
-
-        private void UnsubscribeFromInventory()
-        {
-            if (!inventorySubscribed || playerInventory == null)
-            {
-                inventorySubscribed = false;
-                return;
-            }
-
-            playerInventory.InventoryChanged -= HandleInventoryChanged;
-            inventorySubscribed = false;
-        }
-
-        private void HandleInventoryChanged()
-        {
-            Refresh();
-        }
-
-        private void RebuildDisplayedSlots()
+        private void BuildDisplaySlots()
         {
             displayedSlots.Clear();
-
-            if (playerInventory == null)
-            {
-                return;
-            }
 
             IReadOnlyList<InventorySlot> slots = playerInventory.Slots;
             for (int i = 0; i < slots.Count; i++)
@@ -160,112 +89,22 @@ namespace Coreline
             }
         }
 
-        private void RegisterGrid()
-        {
-            if (gridRegistered || grid == null)
-            {
-                return;
-            }
-
-            grid.AddDataBinder<InventorySlot, InventoryItemVisuals>(BindSlot);
-            grid.SetSliceProvider(ProvideSlice);
-            grid.AddGestureHandler<Gesture.OnHover, InventoryItemVisuals>(HandleSlotHovered);
-            grid.AddGestureHandler<Gesture.OnUnhover, InventoryItemVisuals>(HandleSlotUnhovered);
-            grid.AddGestureHandler<Gesture.OnPress, InventoryItemVisuals>(HandleSlotPressed);
-            grid.AddGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandleSlotReleased);
-            grid.AddGestureHandler<Gesture.OnCancel, InventoryItemVisuals>(HandleSlotCanceled);
-
-            gridRegistered = true;
-            SetGridDataSource();
-        }
-
-        private void UnregisterGrid()
-        {
-            if (!gridRegistered || grid == null)
-            {
-                gridRegistered = false;
-                return;
-            }
-
-            grid.RemoveDataBinder<InventorySlot, InventoryItemVisuals>(BindSlot);
-            grid.RemoveGestureHandler<Gesture.OnHover, InventoryItemVisuals>(HandleSlotHovered);
-            grid.RemoveGestureHandler<Gesture.OnUnhover, InventoryItemVisuals>(HandleSlotUnhovered);
-            grid.RemoveGestureHandler<Gesture.OnPress, InventoryItemVisuals>(HandleSlotPressed);
-            grid.RemoveGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandleSlotReleased);
-            grid.RemoveGestureHandler<Gesture.OnCancel, InventoryItemVisuals>(HandleSlotCanceled);
-            gridRegistered = false;
-        }
-
         private void SetGridDataSource()
         {
             grid.SetDataSource(displayedSlots);
             boundSlotCount = displayedSlots.Count;
         }
 
-        private void ProvideSlice(
-            int sliceIndex,
-            GridView gridView,
-            ref GridSlice2D gridSlice)
+        private void ProvideSlice(int sliceIndex, GridView gridView, ref GridSlice2D gridSlice)
         {
             gridSlice.Layout.AutoSize.Y = AutoSize.Shrink;
             gridSlice.AutoLayout.AutoSpace = true;
             gridSlice.Layout.Padding.Value = padding;
         }
 
-        private static void BindSlot(
-            Data.OnBind<InventorySlot> evt,
-            InventoryItemVisuals target,
-            int index)
+        private static void BindSlot(Data.OnBind<InventorySlot> evt, InventoryItemVisuals target, int index)
         {
             target.Bind(evt.UserData);
-        }
-
-        private static void HandleSlotHovered(
-            Gesture.OnHover evt,
-            InventoryItemVisuals target,
-            int index)
-        {
-            target.OnHover();
-        }
-
-        private static void HandleSlotUnhovered(
-            Gesture.OnUnhover evt,
-            InventoryItemVisuals target,
-            int index)
-        {
-            target.OnUnhover();
-        }
-
-        private static void HandleSlotPressed(
-            Gesture.OnPress evt,
-            InventoryItemVisuals target,
-            int index)
-        {
-            target.OnPressVisualOnly();
-            evt.Consume();
-        }
-
-        private void HandleSlotReleased(
-            Gesture.OnRelease evt,
-            InventoryItemVisuals target,
-            int index)
-        {
-            target.OnRelease();
-
-            if (TryGetSlot(index, out InventorySlot slot) && !slot.IsEmpty)
-            {
-                SlotSelected?.Invoke(index, slot);
-            }
-
-            evt.Consume();
-        }
-
-        private static void HandleSlotCanceled(
-            Gesture.OnCancel evt,
-            InventoryItemVisuals target,
-            int index)
-        {
-            target.OnCancel();
         }
 
         private bool TryGetSlot(int index, out InventorySlot slot)
@@ -280,48 +119,110 @@ namespace Coreline
             return false;
         }
 
+
+        #region Subscribe/Register Methods
+
         private void RegisterCloseButton()
         {
-            if (closeButtonRegistered || closeButtonRoot == null)
-            {
-                return;
-            }
+            if (closeButtonRegistered) return;
 
             UIBlock button = closeButtonRoot.UIBlock;
             button.AddGestureHandler<Gesture.OnHover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleHover);
             button.AddGestureHandler<Gesture.OnUnhover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleUnhover);
             button.AddGestureHandler<Gesture.OnPress, InventoryButtonVisuals>(InventoryButtonVisuals.HandlePress);
-            button.AddGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(HandleCloseButtonReleased);
+            button.AddGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(HandleCloseButtonPressed);
             closeButtonRegistered = true;
         }
+        
+        private void RegisterGrid()
+        {
+            if (gridRegistered) return;
+
+            grid.AddDataBinder<InventorySlot, InventoryItemVisuals>(BindSlot);
+            grid.SetSliceProvider(ProvideSlice);
+            grid.AddGestureHandler<Gesture.OnHover, InventoryItemVisuals>(InventoryItemVisuals.HandleHover);
+            grid.AddGestureHandler<Gesture.OnUnhover, InventoryItemVisuals>(InventoryItemVisuals.HandleUnhover);
+            grid.AddGestureHandler<Gesture.OnPress, InventoryItemVisuals>(HandleSlotPressed);
+            grid.AddGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandleSlotReleased);
+            gridRegistered = true;
+            SetGridDataSource();
+        }
+        
+        private void SubscribeToInventory()
+        {
+            if (inventorySubscribed) return;
+
+            playerInventory.InventoryUpdated += Refresh;
+            inventorySubscribed = true;
+        }
+        
+        #endregion
+
+        #region Unsubscribe/Unregister Methods
 
         private void UnregisterCloseButton()
         {
-            if (!closeButtonRegistered || closeButtonRoot == null)
-            {
-                closeButtonRegistered = false;
-                return;
-            }
+            if (!closeButtonRegistered) return;
 
             UIBlock button = closeButtonRoot.UIBlock;
             button.RemoveGestureHandler<Gesture.OnHover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleHover);
             button.RemoveGestureHandler<Gesture.OnUnhover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleUnhover);
             button.RemoveGestureHandler<Gesture.OnPress, InventoryButtonVisuals>(InventoryButtonVisuals.HandlePress);
-            button.RemoveGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(HandleCloseButtonReleased);
+            button.RemoveGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(HandleCloseButtonPressed);
             closeButtonRegistered = false;
         }
-
-        private void HandleCloseButtonReleased(
-            Gesture.OnRelease evt,
-            InventoryButtonVisuals target)
+        
+        private void UnregisterGrid()
         {
-            if (target.ButtonRoot != null)
-            {
-                target.ButtonRoot.Color = target.HoverColor;
-            }
+            if (!gridRegistered) return;
 
-            Close();
+            grid.RemoveDataBinder<InventorySlot, InventoryItemVisuals>(BindSlot);
+            grid.RemoveGestureHandler<Gesture.OnHover, InventoryItemVisuals>(InventoryItemVisuals.HandleHover);
+            grid.RemoveGestureHandler<Gesture.OnUnhover, InventoryItemVisuals>(InventoryItemVisuals.HandleUnhover);
+            grid.RemoveGestureHandler<Gesture.OnPress, InventoryItemVisuals>(HandleSlotPressed);
+            grid.RemoveGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandleSlotReleased);
+            gridRegistered = false;
+        }
+        
+        private void UnsubscribeFromInventory()
+        {
+            if (!inventorySubscribed) return;
+
+            playerInventory.InventoryUpdated -= Refresh;
+            inventorySubscribed = false;
+        }
+
+        #endregion
+
+        #region Handle Methods
+
+        private static void HandleSlotPressed(Gesture.OnPress evt, InventoryItemVisuals target, int index)
+        {
+            target.OnPressVisualOnly();
             evt.Consume();
         }
+
+        private void HandleSlotReleased(Gesture.OnRelease evt, InventoryItemVisuals target, int index)
+        {
+            target.OnRelease();
+
+            if (TryGetSlot(index, out InventorySlot slot) && !slot.IsEmpty)
+            {
+                SlotSelected?.Invoke(index, slot);
+            }
+
+            evt.Consume();
+        }
+
+        private void HandleCloseButtonPressed(Gesture.OnRelease evt, InventoryButtonVisuals target)
+        {
+            if (target.ButtonRoot != null)
+                target.ButtonRoot.Color = target.HoverColor;
+
+            panel.Close();
+            evt.Consume();
+        }
+
+        #endregion
     }
 }

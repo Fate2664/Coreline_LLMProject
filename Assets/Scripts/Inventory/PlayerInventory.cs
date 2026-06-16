@@ -10,7 +10,7 @@ namespace Coreline
 
         public event Action<InventoryItemData, int> ItemAddedToInventory;
 
-        public event Action InventoryChanged
+        public event Action InventoryUpdated
         {
             add => Container.Changed += value;
             remove

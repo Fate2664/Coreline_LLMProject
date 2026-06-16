@@ -305,7 +305,7 @@ public class UIManager : MonoBehaviour, ITimeTracker
             return;
         }
 
-        grid.AddDataBinder<InventoryItem, InventoryItemVisuals>(BindItem);
+        //grid.AddDataBinder<InventoryItem, InventoryItemVisuals>(BindItem);
 
         grid.SetSliceProvider(ProvideSlice);
 
@@ -324,7 +324,7 @@ public class UIManager : MonoBehaviour, ITimeTracker
         gridslice.Layout.Padding.Value = padding;
     }
     
-    private void BindItem(Data.OnBind<InventoryItem> evt, InventoryItemVisuals target, int index) => target.Bind(evt.UserData, this);
+   // private void BindItem(Data.OnBind<InventoryItem> evt, InventoryItemVisuals target, int index) => target.Bind(evt.UserData, this);
 
     private void RegisterStandaloneGestureHandlers()
     {
@@ -507,7 +507,7 @@ public class UIManager : MonoBehaviour, ITimeTracker
     {
         if (EquipItemRoot == null || !EquipItemRoot.TryGetVisuals(out InventoryItemVisuals visuals)) return;
         
-        visuals.Bind(equippedItem ?? emptyEquippedItem, this);
+        //visuals.Bind(equippedItem ?? emptyEquippedItem, this);
     }
 
     #endregion

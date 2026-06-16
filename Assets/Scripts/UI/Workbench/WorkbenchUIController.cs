@@ -593,7 +593,7 @@ namespace Coreline.Robots
             EnsurePlayerInventory(player);
             playerInventoryWasOpenOnOpen =
                 playerInventoryPanel != null && playerInventoryPanel.IsOpen;
-            playerInventoryPanel?.Open();
+            playerInventoryPanel.Panel.Toggle();
             SetPlayerInventoryCloseButtonEnabled(false);
         }
 
@@ -605,7 +605,7 @@ namespace Coreline.Robots
                 playerInventoryPanel != null &&
                 !playerInventoryWasOpenOnOpen)
             {
-                playerInventoryPanel.Close();
+                playerInventoryPanel.Panel.Toggle();
             }
 
             playerInventoryWasOpenOnOpen = false;

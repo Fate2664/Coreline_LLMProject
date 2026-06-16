@@ -289,10 +289,14 @@ namespace Coreline.Robots
                 playerTarget = player.gameObject.AddComponent<CommandTarget>();
             }
 
+            Transform playerDestination = player.PlayerCharacter != null
+                ? player.PlayerCharacter.transform
+                : player.transform;
+
             playerTarget.Configure(
                 PlayerTargetId,
                 CommandTargetType.Waypoint,
-                destination: player.transform,
+                destination: playerDestination,
                 radius: playerReturnStoppingDistance);
         }
 

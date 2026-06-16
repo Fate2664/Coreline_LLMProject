@@ -18,27 +18,10 @@ public class InventoryItemVisuals : ItemVisuals
     public Color HoverColor;
     public Color PressedColor;
 
-    private UIManager _uiManager;
     private InventoryItem boundItem;
     private InventorySlot boundSlot;
     private Coroutine toolTipCoroutine;
     private bool isHovered;
-
-    public void Bind(InventoryItem data, UIManager panel)
-    {
-        UnbindLegacyItem();
-
-        boundItem = data;
-        boundSlot = null;
-        _uiManager = panel;
-
-        if (boundItem != null)
-        {
-            boundItem.OnCountDecreased += InventoryItem_OnCountDecreased;
-        }
-
-        RefreshVisuals();
-    }
 
     public void Bind(InventorySlot slot)
     {
@@ -46,32 +29,31 @@ public class InventoryItemVisuals : ItemVisuals
 
         boundItem = null;
         boundSlot = slot;
-        _uiManager = null;
 
-        RefreshVisuals();
+        //Refresh slot
+        CancelToolTip();
+        if (!HasItem)
+        {
+            ContentRoot.gameObject.SetActive(false);
+            return;
+        }
+
+        ContentRoot.gameObject.SetActive(true);
+        Image.SetImage(BoundItemData.itemDesc.Icon);
+        Count.Text = BoundAmount > 1 ? BoundAmount.ToString() : string.Empty;
+        ItemRoot.Color = DefaultColor;
     }
 
     private void InventoryItem_OnCountDecreased()
     {
-        RefreshCount();
+        Count.Text = BoundAmount.ToString();
     }
 
-    private void RefreshCount()
-    {
-        if (Count != null)
-        {
-            Count.Text = BoundAmount.ToString();
-        }
-    }
-
-    #region ToolTips
+    #region Tooltips
 
     private void StartToolTipDelay()
     {
-        if (ToolTipRoot == null || !HasItem)
-        {
-            return;
-        }
+        if (!HasItem) return;
 
         CancelToolTip();
         isHovered = true;
@@ -106,147 +88,60 @@ public class InventoryItemVisuals : ItemVisuals
 
     #endregion
 
-    public void EquipItem()
-    {
-        if (boundItem != null && !boundItem.isEmpty && _uiManager != null)
-        {
-            _uiManager.EquipItem(boundItem);
-        }
-    }
-
     #region Gesture Methods
 
-    internal void OnHover()
-    {
-        if (ItemRoot != null)
-        {
-            ItemRoot.Color = HoverColor;
-        }
-
-        StartToolTipDelay();
-    }
-
-    internal void OnPress()
-    {
-        OnPressVisualOnly();
-        EquipItem();
-    }
-
-    internal void OnPressVisualOnly()
-    {
-        if (ItemRoot != null)
-        {
-            ItemRoot.Color = PressedColor;
-        }
-    }
-
-    internal void OnUnhover()
-    {
-        if (ItemRoot != null)
-        {
-            ItemRoot.Color = DefaultColor;
-        }
-
-        CancelToolTip();
-    }
-
-    internal void OnRelease()
-    {
-        if (ItemRoot != null)
-        {
-            ItemRoot.Color = HoverColor;
-        }
-    }
-
-    internal void OnCancel()
-    {
-        OnUnhover();
-    }
-
-    private InventoryItemData BoundItemData =>
-        boundSlot != null ? boundSlot.Item : boundItem?.item;
-
-    private int BoundAmount =>
-        boundSlot != null ? boundSlot.Amount : boundItem?.count ?? 0;
-
+    private InventoryItemData BoundItemData => boundSlot != null ? boundSlot.Item : boundItem?.item;
+    private int BoundAmount => boundSlot != null ? boundSlot.Amount : boundItem?.count ?? 0;
     private bool HasItem => BoundItemData != null && BoundAmount > 0;
-
-    private void RefreshVisuals()
-    {
-        CancelToolTip();
-
-        if (ItemRoot != null)
-        {
-            ItemRoot.Color = DefaultColor;
-        }
-
-        if (!HasItem)
-        {
-            if (ContentRoot != null)
-            {
-                ContentRoot.gameObject.SetActive(false);
-            }
-
-            return;
-        }
-
-        InventoryItemData item = BoundItemData;
-        ItemDescription description = item.itemDesc;
-
-        if (ContentRoot != null)
-        {
-            ContentRoot.gameObject.SetActive(true);
-        }
-
-        if (Image != null)
-        {
-            Image.SetImage(description?.Icon);
-        }
-
-        if (ToolTipText != null)
-        {
-            ToolTipText.Text = description?.ToolTip ?? string.Empty;
-        }
-
-        RefreshCount();
-    }
 
     private void UnbindLegacyItem()
     {
         if (boundItem != null)
-        {
             boundItem.OnCountDecreased -= InventoryItem_OnCountDecreased;
-        }
+    }
+
+    internal void OnPressVisualOnly()
+    {
+        ItemRoot.Color = PressedColor;
+    }
+
+    internal void OnRelease()
+    {
+        ItemRoot.Color = HoverColor;
     }
 
     internal static void HandleHover(Gesture.OnHover evt, InventoryItemVisuals target, int index)
     {
-        target.OnHover();
+        target.ItemRoot.Color = target.HoverColor;
+        target.StartToolTipDelay();
     }
 
     internal static void HandleHover(Gesture.OnHover evt, InventoryItemVisuals target)
     {
-        target.OnHover();
+        target.ItemRoot.Color = target.HoverColor;
+        target.StartToolTipDelay();
     }
 
     internal static void HandlePress(Gesture.OnPress evt, InventoryItemVisuals target, int index)
     {
-        target.OnPress();
+        target.ItemRoot.Color = target.PressedColor;
     }
 
     internal static void HandlePress(Gesture.OnPress evt, InventoryItemVisuals target)
     {
-        target.OnPress();
+        target.ItemRoot.Color = target.PressedColor;
     }
 
     internal static void HandleUnhover(Gesture.OnUnhover evt, InventoryItemVisuals target, int index)
     {
-        target.OnUnhover();
+        target.ItemRoot.Color = target.DefaultColor;
+        target.CancelToolTip();
     }
 
     internal static void HandleUnhover(Gesture.OnUnhover evt, InventoryItemVisuals target)
     {
-        target.OnUnhover();
+        target.ItemRoot.Color = target.DefaultColor;
+        target.CancelToolTip();
     }
 
     internal static void HandleRelease(Gesture.OnRelease evt, InventoryItemVisuals target, int index)

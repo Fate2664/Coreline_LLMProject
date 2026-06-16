@@ -342,7 +342,9 @@ namespace Coreline.Robots
 
         private static void BindItem(Data.OnBind<InventoryItem> evt, InventoryItemVisuals target, int index)
         {
-            target.Bind(evt.UserData, null);
+            InventorySlot slot = new();
+            slot.Add(evt.UserData.item, evt.UserData.count, InventorySlot.DefaultMaxStackSize);
+            target.Bind(slot);
         }
 
         private void HandleRobotItemPressed(Gesture.OnPress evt, InventoryItemVisuals target, int index)
@@ -645,7 +647,7 @@ namespace Coreline.Robots
             EnsurePlayerInventory(player);
             playerInventoryWasOpenOnOpen =
                 playerInventoryPanel != null && playerInventoryPanel.IsOpen;
-            playerInventoryPanel?.Open();
+            playerInventoryPanel.Panel.Toggle();
             SetPlayerInventoryCloseButtonEnabled(false);
         }
 
@@ -657,7 +659,7 @@ namespace Coreline.Robots
                 playerInventoryPanel != null &&
                 !playerInventoryWasOpenOnOpen)
             {
-                playerInventoryPanel.Close();
+                playerInventoryPanel.Panel.Toggle();
             }
 
             playerInventoryWasOpenOnOpen = false;
