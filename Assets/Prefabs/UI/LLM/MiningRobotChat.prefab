@@ -26,12 +26,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 96799017453268124}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -36.61, y: 241.6, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 671.1351, y: 241.59999, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7787365841168344438}
+  m_Father: {fileID: 2687301259811142518}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &9215875556705669841
 MonoBehaviour:
@@ -72,10 +72,10 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: -36.61
+        Raw: 671.1351
         Type: 0
       Y:
-        Raw: 241.6
+        Raw: 241.59999
         Type: 0
       Z:
         Raw: 0
@@ -1167,9 +1167,7 @@ Transform:
   m_LocalPosition: {x: 707.74506, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 7113780552087195013}
-  - {fileID: 7233085150968704593}
+  m_Children: []
   m_Father: {fileID: 2687301259811142518}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8476908165216644602
@@ -2143,12 +2141,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6142546592034831304}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -36.6, y: -227.92, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 671.145, y: -227.91998, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 7787365841168344438}
+  m_Father: {fileID: 2687301259811142518}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7860716923796999669
 MonoBehaviour:
@@ -2189,10 +2187,10 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: -36.6
+        Raw: 671.145
         Type: 0
       Y:
-        Raw: -227.92
+        Raw: -227.91998
         Type: 0
       Z:
         Raw: 0
@@ -3282,6 +3280,8 @@ Transform:
   - {fileID: 7530335539387263974}
   - {fileID: 7756946791613972724}
   - {fileID: 7787365841168344438}
+  - {fileID: 7113780552087195013}
+  - {fileID: 7233085150968704593}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3532936491637755661
@@ -3657,6 +3657,7 @@ MonoBehaviour:
   robotNameText: {fileID: 450508483885707329}
   robotNameField: {fileID: 450508484105589155}
   commandClient: {fileID: 9062335807522719323}
+  uiStateController: {fileID: 0}
   hideOnStart: 1
   unlockCursorWhileOpen: 1
   closeAfterSubmit: 0
