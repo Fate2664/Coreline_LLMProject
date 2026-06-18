@@ -71,6 +71,7 @@ GameObject:
   - component: {fileID: 6046964784671726268}
   - component: {fileID: 5169564672200163356}
   - component: {fileID: 8960400059630645396}
+  - component: {fileID: 9100000000000000002}
   m_Layer: 0
   m_Name: CollectionRobot
   m_TagString: CollectionRobot
@@ -93,7 +94,6 @@ Transform:
   m_Children:
   - {fileID: 4100424000594537716}
   - {fileID: 1438955226093258514}
-  - {fileID: 2216821983265655911}
   - {fileID: 5405639901700179678}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -132,7 +132,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.CollectingRobotController
   inventory: {fileID: 8376045740742776179}
-  visionTrigger: {fileID: 0}
   visionLayers:
     serializedVersion: 2
     m_Bits: 1024
@@ -212,12 +211,10 @@ MonoBehaviour:
   chatUI: {fileID: 0}
   miningRobotChatUI: {fileID: 0}
   collectingRobotChatUI: {fileID: 0}
-  collectingRobotInventoryUI: {fileID: 0}
   robotController: {fileID: 963391460434917103}
   closeChatWhenPlayerLeaves: 1
-  closeInventoryWhenPlayerLeaves: 1
   indicatorManager: {fileID: 1692271066441835741}
-  altIndicatorManager: {fileID: 5936273140731845236}
+  altIndicatorManager: {fileID: 0}
 --- !u!114 &6046964784671726268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -274,6 +271,44 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.5, y: 0.5, z: 0.78}
   m_Center: {x: 0, y: 0.33, z: 0.06}
+--- !u!114 &9100000000000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2621652997579401415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88ac3529d21439740b74609aa72e77a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotUpgradeController
+  walkingSpeedIcon: {fileID: 21300000, guid: 73b35fb5d78de2c4a99b8951bf730c21, type: 3}
+  walkingSpeedIncreasePercent: 10
+  walkingSpeedMaxLevel: 5
+  walkingSpeedCostMultiplier: 1.5
+  walkingSpeedCosts:
+  - oreType: 1
+    baseAmount: 5
+  miningSpeedIcon: {fileID: 0}
+  miningSpeedIncreasePercent: 10
+  miningSpeedMaxLevel: 5
+  miningSpeedCostMultiplier: 1.5
+  miningSpeedCosts:
+  - oreType: 0
+    baseAmount: 10
+  - oreType: 1
+    baseAmount: 5
+  carryingCapacityIcon: {fileID: -486055159, guid: eabc27461612b6f4489e70e3e924e0f2, type: 3}
+  carryingCapacityIncreasePercent: 10
+  carryingCapacityMaxLevel: 5
+  carryingCapacityCostMultiplier: 1.5
+  carryingCapacityCosts:
+  - oreType: 1
+    baseAmount: 10
+  walkingSpeedLevel: 0
+  miningSpeedLevel: 0
+  carryingCapacityLevel: 0
 --- !u!1001 &4570336247382346527
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -460,79 +495,6 @@ Transform:
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8432646220040300967, guid: 5e7e576f212b3d94cbaacfd4d5e8fc5b, type: 3}
   m_PrefabInstance: {fileID: 7096231135254220154}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4c92ab2a3af2dba4fae0f3b51df8ffab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IndicatorManager
---- !u!1001 &7753927199998839851
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1741097535463817190}
-    m_Modifications:
-    - target: {fileID: 5040677710193885414, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_Name
-      value: AltInteractIcon
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0.143
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.834
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
---- !u!4 &2216821983265655911 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8455719878680641612, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-  m_PrefabInstance: {fileID: 7753927199998839851}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &5936273140731845236 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4177822357494699615, guid: 2ec744f78ff38034990131d6e7393194, type: 3}
-  m_PrefabInstance: {fileID: 7753927199998839851}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1

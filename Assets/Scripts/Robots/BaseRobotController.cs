@@ -14,6 +14,8 @@ namespace Coreline.Robots
         private RobotCommandValidator commandValidator; 
         private BaseRobotCommandExecutor commandExecutor;
         private CommandTarget commandTarget;
+        private RobotUpgradeController upgradeController;
+        private float baseWalkingSpeed;
         private RobotWorkState currentState = RobotWorkState.Idle;
         private int pauseRequestCount;
         private RobotWorkState pausedWorkState = RobotWorkState.Idle;
@@ -27,18 +29,43 @@ namespace Coreline.Robots
         public BaseRobotCommandExecutor CommandExecutor => commandExecutor;
         public RobotCommandValidator CommandValidator => commandValidator;
         public CommandTarget CommandTarget => commandTarget;
+        public RobotUpgradeController Upgrades => EnsureUpgradeController();
         public string RobotTargetId => EnsureRobotCommandTarget().TargetId;
         public RobotWorkState CurrentState => currentState;
         public bool IsPaused => pauseRequestCount > 0;
+        public float BaseWalkingSpeed => baseWalkingSpeed;
+        public float CurrentWalkingSpeed => agent != null ? agent.speed : 0f;
         protected virtual string RobotTargetIdPrefix => "Robot";
 
         protected virtual void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
+            baseWalkingSpeed = agent != null ? agent.speed : 0f;
             commandQueue = GetComponent<RobotCommandQueue>();
             commandExecutor = GetComponent<BaseRobotCommandExecutor>();
             commandValidator = GetComponent<RobotCommandValidator>();
             EnsureRobotCommandTarget();
+            EnsureUpgradeController();
+        }
+
+        public void SetWalkingSpeedMultiplier(float multiplier)
+        {
+            if (agent == null)
+            {
+                agent = GetComponent<NavMeshAgent>();
+            }
+
+            if (agent == null)
+            {
+                return;
+            }
+
+            if (baseWalkingSpeed <= 0f)
+            {
+                baseWalkingSpeed = agent.speed;
+            }
+
+            agent.speed = baseWalkingSpeed * Mathf.Max(0.01f, multiplier);
         }
 
         public CommandTarget EnsureRobotCommandTarget()
@@ -295,6 +322,18 @@ namespace Coreline.Robots
             }
 
             return false;
+        }
+
+        private RobotUpgradeController EnsureUpgradeController()
+        {
+            if (this is not MiningRobotController && this is not CollectingRobotController)
+            {
+                return null;
+            }
+
+            upgradeController ??= GetComponent<RobotUpgradeController>();
+            upgradeController ??= gameObject.AddComponent<RobotUpgradeController>();
+            return upgradeController;
         }
     }
 }

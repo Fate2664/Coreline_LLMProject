@@ -3,6 +3,7 @@ using Coreline;
 using Nova;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 #if !ENABLE_LEGACY_INPUT_MANAGER
 using UnityEngine.InputSystem;
 #endif
@@ -11,32 +12,22 @@ namespace Coreline.Robots
 {
     public class CollectingRobotInventoryUIController : MonoBehaviour
     {
-        private const string DefaultRootName = "CollectionRobotInventoryRoot";
-        private const string RobotNameTextName = "RobotNameText";
-        private const string CloseButtonName = "CloseButton";
+        private const string DefaultRootName = "CollectionRobotChat";
+        private const string RobotGridName = "CollectionRobotInventory";
+        private const string PlayerGridName = "PlayerInventory";
 
-        [SerializeField] private GridView grid;
-        [SerializeField] private ItemView closeButtonRoot;
-        [SerializeField] private TextBlock robotNameText;
-        [SerializeField] private UIStateController uiStateController;
-        [SerializeField] private UIBlock2D visualRoot;
+        [Header("Embedded Grids")]
+        [FormerlySerializedAs("grid")]
+        [SerializeField] private GridView robotGrid;
+        [SerializeField] private GridView playerGrid;
+        [SerializeField, Min(0)] private int padding = 10;
+        [FormerlySerializedAs("slotCount")]
+        [SerializeField, Min(1)] private int robotSlotCount = 14;
+        [SerializeField] private List<OreItemSO> oreItemDefinitions = new();
 
-        [Header("Player Inventory")]
+        [Header("Player")]
         [SerializeField] private Player player;
         [SerializeField] private PlayerInventory playerInventory;
-        [SerializeField] private InventoryPanel playerInventoryPanel;
-        [SerializeField] private GameObject playerInventoryCloseButton;
-        [SerializeField] private bool disablePlayerInventoryCloseButtonWhileOpen = true;
-        [SerializeField] private bool closePlayerInventoryWhenRobotInventoryCloses = true;
-
-        [SerializeField] private bool hideOnStart = true;
-        [SerializeField] private bool unlockCursorWhileOpen = true;
-        [SerializeField] private int slotCount = 24;
-        [SerializeField] private int padding = 10;
-        [SerializeField] private List<OreItemSO> oreItemDefinitions = new();
-        [SerializeField, Min(0f)] private float openDuration = 0.25f;
-        [SerializeField, Min(0f)] private float closeDuration = 0.2f;
-        [SerializeField] private bool useUnscaledAnimationTime = true;
 
         [Header("Drag Preview")]
         [SerializeField] private UIBlock2D dragPreviewIcon;
@@ -45,19 +36,16 @@ namespace Coreline.Robots
         [SerializeField] private Vector2 dragPreviewOffset = new(22f, -22f);
         [SerializeField] private short dragPreviewZIndex = 2000;
 
-        private readonly List<InventoryItem> items = new();
-        private readonly List<RobotInventoryDisplaySource> itemSources = new();
+        private readonly List<InventoryItem> robotItems = new();
+        private readonly List<RobotInventoryDisplaySource> robotItemSources = new();
+        private readonly List<InventorySlot> playerSlots = new();
         private readonly Dictionary<uint, int> pressedRobotSlotIndices = new();
+        private readonly Dictionary<uint, int> pressedPlayerSlotIndices = new();
         private readonly List<UIBlockHit> uiBlockHits = new();
-        private bool gridInitialized;
-        private bool closeButtonSubscribed;
-        private bool isGameplayInputBlocked;
-        private bool isOpen;
-        private bool playerInventoryWasOpenOnOpen;
-        private bool playerInventoryCloseButtonWasActive;
-        private bool hasCachedPlayerInventoryCloseButtonState;
-        private CollectingRobotController pausedRobot;
-        private UIVisuals visuals;
+
+        private bool robotGridInitialized;
+        private bool playerGridInitialized;
+        private bool isBound;
 
         public static bool IsAnyOpen { get; private set; }
         public CollectingRobotController ActiveRobot { get; private set; }
@@ -65,196 +53,169 @@ namespace Coreline.Robots
         private void Awake()
         {
             EnsureReferences();
-        }
-
-        private void Start()
-        {
-            if (hideOnStart && !isOpen)
-            {
-                HideImmediate();
-            }
+            InitializeGrids();
         }
 
         private void OnEnable()
         {
             EnsureReferences();
-            InitializeGrid();
-            SubscribeToCloseButton();
+            InitializeGrids();
         }
 
         private void OnDisable()
         {
-            UnsubscribeFromActiveInventory();
-            UnsubscribeFromCloseButton();
-            UnregisterGameplayInputBlock();
-            ReleasePausedRobot();
-            visuals?.KillAnimation();
-
-            if (isOpen)
-            {
-                isOpen = false;
-                IsAnyOpen = false;
-            }
+            Unbind();
         }
 
         private void LateUpdate()
         {
-            if (!isOpen)
+            if (isBound)
             {
+                UpdateDragPreviewFromPointer();
+            }
+        }
+
+        public void Bind(CollectingRobotController robot, Player playerContext)
+        {
+            if (robot == null)
+            {
+                Debug.LogWarning(
+                    $"{nameof(CollectingRobotInventoryUIController)} cannot bind without a collecting robot.",
+                    this);
                 return;
             }
 
-            if (unlockCursorWhileOpen)
+            EnsureReferences();
+            InitializeGrids();
+            EnsurePlayerInventory(playerContext);
+
+            if (ActiveRobot != robot)
             {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
+                UnsubscribeFromRobotInventory();
+                ActiveRobot = robot;
+                SubscribeToRobotInventory();
             }
 
-            UpdateDragPreviewFromPointer();
+            SubscribeToPlayerInventory();
+            isBound = true;
+            IsAnyOpen = true;
+            RefreshAll();
+        }
+
+        public void Unbind()
+        {
+            HideDragPreview();
+            pressedRobotSlotIndices.Clear();
+            pressedPlayerSlotIndices.Clear();
+            UnsubscribeFromRobotInventory();
+            UnsubscribeFromPlayerInventory();
+            ActiveRobot = null;
+            isBound = false;
+            IsAnyOpen = false;
+        }
+
+        // Compatibility entry points now bind the embedded inventory instead of opening a second window.
+        public void OpenForRobot(CollectingRobotController robot, Player playerContext)
+        {
+            Bind(robot, playerContext);
         }
 
         public void ToggleForRobot(CollectingRobotController robot, Player playerContext)
         {
-            if (isOpen && ActiveRobot == robot)
+            if (isBound && ActiveRobot == robot)
             {
-                Close();
+                Unbind();
                 return;
             }
 
-            OpenForRobot(robot, playerContext);
-        }
-
-        public void OpenForRobot(CollectingRobotController robot, Player playerContext)
-        {
-            if (robot == null)
-            {
-                Debug.LogWarning($"{nameof(CollectingRobotInventoryUIController)} cannot open without a collecting robot.", this);
-                return;
-            }
-
-            isOpen = true;
-            IsAnyOpen = true;
-
-            if (!gameObject.activeSelf)
-            {
-                gameObject.SetActive(true);
-            }
-
-            EnsureReferences();
-            InitializeGrid();
-            SubscribeToCloseButton();
-            EnsurePlayerInventory(playerContext);
-            OpenPlayerInventory();
-            SetActiveRobot(robot);
-            RefreshInventory();
-            RefreshRobotNameText();
-            RegisterGameplayInputBlock();
-            ShowPanel();
-
-            if (unlockCursorWhileOpen)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
+            Bind(robot, playerContext);
         }
 
         public void Close()
         {
-            HideDragPreview();
-            RestorePlayerInventoryState();
-            UnsubscribeFromActiveInventory();
-            UnregisterGameplayInputBlock();
-            ReleasePausedRobot();
-            ActiveRobot = null;
-            isOpen = false;
-            IsAnyOpen = false;
-            HidePanel();
+            CollectingRobotChatUIController chatController =
+                GetComponent<CollectingRobotChatUIController>() ??
+                GetComponentInParent<CollectingRobotChatUIController>();
+
+            if (chatController != null)
+            {
+                chatController.Close();
+                return;
+            }
+
+            Unbind();
+        }
+
+        public void RefreshAll()
+        {
+            RefreshRobotInventory();
+            RefreshPlayerInventory();
         }
 
         public void RefreshInventory()
         {
-            BuildInventoryItems();
-
-            if (grid == null || !grid.gameObject.activeInHierarchy)
-            {
-                return;
-            }
-
-            grid.Refresh();
+            RefreshAll();
         }
 
-        private void SetActiveRobot(CollectingRobotController robot)
+        private void RefreshRobotInventory()
         {
-            if (ActiveRobot != null && ActiveRobot.Inventory != null)
+            BuildRobotInventoryItems();
+
+            if (robotGridInitialized && robotGrid != null && robotGrid.gameObject.activeInHierarchy)
             {
-                ActiveRobot.Inventory.InventoryChanged -= HandleInventoryChanged;
-            }
-
-            ReleasePausedRobot();
-            ActiveRobot = robot;
-
-            if (ActiveRobot != null && ActiveRobot.Inventory != null)
-            {
-                ActiveRobot.Inventory.InventoryChanged += HandleInventoryChanged;
-            }
-
-            SetPausedRobot(ActiveRobot);
-        }
-
-        private void SetPausedRobot(CollectingRobotController robot)
-        {
-            if (pausedRobot == robot)
-            {
-                return;
-            }
-
-            ReleasePausedRobot();
-            pausedRobot = robot;
-            pausedRobot?.PauseForInteraction();
-        }
-
-        private void ReleasePausedRobot()
-        {
-            if (pausedRobot == null)
-            {
-                return;
-            }
-
-            pausedRobot.ResumeFromInteraction();
-            pausedRobot = null;
-        }
-
-        private void HandleInventoryChanged()
-        {
-            if (isOpen)
-            {
-                RefreshInventory();
+                robotGrid.Refresh();
             }
         }
 
-        private void BuildInventoryItems()
+        private void RefreshPlayerInventory()
         {
-            items.Clear();
-            itemSources.Clear();
+            BuildPlayerInventorySlots();
+
+            if (playerGridInitialized && playerGrid != null && playerGrid.gameObject.activeInHierarchy)
+            {
+                playerGrid.Refresh();
+            }
+        }
+
+        private void BuildRobotInventoryItems()
+        {
+            robotItems.Clear();
+            robotItemSources.Clear();
 
             CollectingRobotInventory inventory = ActiveRobot != null ? ActiveRobot.Inventory : null;
             if (inventory != null)
             {
-                AddItemStacks(inventory);
-                AddResourceStacks(inventory);
+                AddRobotItemStacks(inventory);
+                AddRobotResourceStacks(inventory);
             }
 
-            int targetSlotCount = Mathf.Max(slotCount, items.Count);
-            while (items.Count < targetSlotCount)
+            int targetSlotCount = Mathf.Max(robotSlotCount, robotItems.Count);
+            while (robotItems.Count < targetSlotCount)
             {
-                items.Add(new InventoryItem());
-                itemSources.Add(RobotInventoryDisplaySource.Empty);
+                robotItems.Add(new InventoryItem());
+                robotItemSources.Add(RobotInventoryDisplaySource.Empty);
             }
 
-            grid?.SetDataSource(items);
+            robotGrid?.SetDataSource(robotItems);
         }
 
-        private void AddItemStacks(CollectingRobotInventory inventory)
+        private void BuildPlayerInventorySlots()
+        {
+            playerSlots.Clear();
+
+            if (playerInventory != null)
+            {
+                IReadOnlyList<InventorySlot> slots = playerInventory.Slots;
+                for (int i = 0; i < slots.Count; i++)
+                {
+                    playerSlots.Add(slots[i]);
+                }
+            }
+
+            playerGrid?.SetDataSource(playerSlots);
+        }
+
+        private void AddRobotItemStacks(CollectingRobotInventory inventory)
         {
             foreach (RobotInventoryItemStack stack in inventory.ItemStacks)
             {
@@ -263,30 +224,33 @@ namespace Coreline.Robots
                     continue;
                 }
 
-                items.Add(new InventoryItem
+                robotItems.Add(new InventoryItem
                 {
                     item = stack.item,
                     count = stack.amount
                 });
-                itemSources.Add(RobotInventoryDisplaySource.FromItem(stack.item, stack.amount));
+                robotItemSources.Add(RobotInventoryDisplaySource.FromItem(stack.item, stack.amount));
             }
         }
 
-        private void AddResourceStacks(CollectingRobotInventory inventory)
+        private void AddRobotResourceStacks(CollectingRobotInventory inventory)
         {
             foreach (RobotResourceStack stack in inventory.ResourceStacks)
             {
-                if (stack == null || stack.amount <= 0 || !TryFindOreItemDefinition(stack.oreType, out OreItemSO itemData))
+                if (stack == null ||
+                    stack.amount <= 0 ||
+                    !TryFindOreItemDefinition(stack.oreType, out OreItemSO itemData))
                 {
                     continue;
                 }
 
-                items.Add(new InventoryItem
+                robotItems.Add(new InventoryItem
                 {
                     item = itemData,
                     count = stack.amount
                 });
-                itemSources.Add(RobotInventoryDisplaySource.FromResource(stack.oreType, itemData, stack.amount));
+                robotItemSources.Add(
+                    RobotInventoryDisplaySource.FromResource(stack.oreType, itemData, stack.amount));
             }
         }
 
@@ -315,22 +279,46 @@ namespace Coreline.Robots
             return false;
         }
 
-        private void InitializeGrid()
+        private void InitializeGrids()
         {
-            if (gridInitialized || grid == null)
+            InitializeRobotGrid();
+            InitializePlayerGrid();
+        }
+
+        private void InitializeRobotGrid()
+        {
+            if (robotGridInitialized || robotGrid == null)
             {
                 return;
             }
 
-            grid.AddDataBinder<InventoryItem, InventoryItemVisuals>(BindItem);
-            grid.SetSliceProvider(ProvideSlice);
-            grid.AddGestureHandler<Gesture.OnHover, InventoryItemVisuals>(InventoryItemVisuals.HandleHover);
-            grid.AddGestureHandler<Gesture.OnUnhover, InventoryItemVisuals>(InventoryItemVisuals.HandleUnhover);
-            grid.AddGestureHandler<Gesture.OnPress, InventoryItemVisuals>(HandleRobotItemPressed);
-            grid.AddGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandleRobotItemReleased);
-            grid.AddGestureHandler<Gesture.OnCancel, InventoryItemVisuals>(HandleRobotItemCanceled);
-            grid.SetDataSource(items);
-            gridInitialized = true;
+            robotGrid.AddDataBinder<InventoryItem, InventoryItemVisuals>(BindRobotItem);
+            robotGrid.SetSliceProvider(ProvideSlice);
+            robotGrid.AddGestureHandler<Gesture.OnHover, InventoryItemVisuals>(InventoryItemVisuals.HandleHover);
+            robotGrid.AddGestureHandler<Gesture.OnUnhover, InventoryItemVisuals>(InventoryItemVisuals.HandleUnhover);
+            robotGrid.AddGestureHandler<Gesture.OnPress, InventoryItemVisuals>(HandleRobotItemPressed);
+            robotGrid.AddGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandleRobotItemReleased);
+            robotGrid.AddGestureHandler<Gesture.OnCancel, InventoryItemVisuals>(HandleRobotItemCanceled);
+            robotGrid.SetDataSource(robotItems);
+            robotGridInitialized = true;
+        }
+
+        private void InitializePlayerGrid()
+        {
+            if (playerGridInitialized || playerGrid == null)
+            {
+                return;
+            }
+
+            playerGrid.AddDataBinder<InventorySlot, InventoryItemVisuals>(BindPlayerItem);
+            playerGrid.SetSliceProvider(ProvideSlice);
+            playerGrid.AddGestureHandler<Gesture.OnHover, InventoryItemVisuals>(InventoryItemVisuals.HandleHover);
+            playerGrid.AddGestureHandler<Gesture.OnUnhover, InventoryItemVisuals>(InventoryItemVisuals.HandleUnhover);
+            playerGrid.AddGestureHandler<Gesture.OnPress, InventoryItemVisuals>(HandlePlayerItemPressed);
+            playerGrid.AddGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandlePlayerItemReleased);
+            playerGrid.AddGestureHandler<Gesture.OnCancel, InventoryItemVisuals>(HandlePlayerItemCanceled);
+            playerGrid.SetDataSource(playerSlots);
+            playerGridInitialized = true;
         }
 
         private void ProvideSlice(int sliceIndex, GridView gridView, ref GridSlice2D gridSlice)
@@ -340,77 +328,146 @@ namespace Coreline.Robots
             gridSlice.Layout.Padding.Value = padding;
         }
 
-        private static void BindItem(Data.OnBind<InventoryItem> evt, InventoryItemVisuals target, int index)
+        private static void BindRobotItem(
+            Data.OnBind<InventoryItem> evt,
+            InventoryItemVisuals target,
+            int index)
         {
             InventorySlot slot = new();
             slot.Add(evt.UserData.item, evt.UserData.count, InventorySlot.DefaultMaxStackSize);
             target.Bind(slot);
         }
 
-        private void HandleRobotItemPressed(Gesture.OnPress evt, InventoryItemVisuals target, int index)
+        private static void BindPlayerItem(
+            Data.OnBind<InventorySlot> evt,
+            InventoryItemVisuals target,
+            int index)
         {
-            if (!IsValidTransferSlot(index))
+            target.Bind(evt.UserData);
+        }
+
+        private void HandleRobotItemPressed(
+            Gesture.OnPress evt,
+            InventoryItemVisuals target,
+            int index)
+        {
+            if (!IsValidRobotSlot(index))
             {
                 return;
             }
 
             pressedRobotSlotIndices[evt.Interaction.ControlID] = index;
-
-            if (target.ItemRoot != null)
-            {
-                target.ItemRoot.Color = target.PressedColor;
-            }
-
-            ShowDragPreview(items[index].item.itemDesc.Icon, evt.PointerWorldPosition, evt.Interaction.ControlID);
+            target.OnPressVisualOnly();
+            ShowDragPreview(robotItems[index].item.itemDesc.Icon, evt.PointerWorldPosition);
             evt.Consume();
         }
 
-        private void HandleRobotItemReleased(Gesture.OnRelease evt, InventoryItemVisuals target, int index)
+        private void HandleRobotItemReleased(
+            Gesture.OnRelease evt,
+            InventoryItemVisuals target,
+            int index)
         {
             uint controlId = evt.Interaction.ControlID;
+            target.OnRelease();
 
-            if (target.ItemRoot != null)
-            {
-                target.ItemRoot.Color = target.HoverColor;
-            }
-
-            bool shouldTransfer = pressedRobotSlotIndices.TryGetValue(controlId, out int pressedIndex) &&
-                                  IsPointerOverPlayerInventory(evt.Interaction.Ray);
+            bool shouldTransfer =
+                pressedRobotSlotIndices.TryGetValue(controlId, out int pressedIndex) &&
+                IsPointerOverGrid(evt.Interaction.Ray, playerGrid);
 
             pressedRobotSlotIndices.Remove(controlId);
-
             HideDragPreview();
 
             if (shouldTransfer)
             {
-                TransferSlotToPlayerInventory(pressedIndex);
+                TransferRobotSlotToPlayer(pressedIndex);
                 evt.Consume();
             }
         }
 
-        private void HandleRobotItemCanceled(Gesture.OnCancel evt, InventoryItemVisuals target, int index)
+        private void HandleRobotItemCanceled(
+            Gesture.OnCancel evt,
+            InventoryItemVisuals target,
+            int index)
         {
             pressedRobotSlotIndices.Remove(evt.Interaction.ControlID);
-            HideDragPreview();
-
             if (target.ItemRoot != null)
             {
                 target.ItemRoot.Color = target.DefaultColor;
             }
+            HideDragPreview();
         }
 
-        private bool IsValidTransferSlot(int index)
+        private void HandlePlayerItemPressed(
+            Gesture.OnPress evt,
+            InventoryItemVisuals target,
+            int index)
+        {
+            if (!IsValidPlayerSlot(index))
+            {
+                return;
+            }
+
+            pressedPlayerSlotIndices[evt.Interaction.ControlID] = index;
+            target.OnPressVisualOnly();
+            ShowDragPreview(playerSlots[index].Item.itemDesc.Icon, evt.PointerWorldPosition);
+            evt.Consume();
+        }
+
+        private void HandlePlayerItemReleased(
+            Gesture.OnRelease evt,
+            InventoryItemVisuals target,
+            int index)
+        {
+            uint controlId = evt.Interaction.ControlID;
+            target.OnRelease();
+
+            bool shouldTransfer =
+                pressedPlayerSlotIndices.TryGetValue(controlId, out int pressedIndex) &&
+                IsPointerOverGrid(evt.Interaction.Ray, robotGrid);
+
+            pressedPlayerSlotIndices.Remove(controlId);
+            HideDragPreview();
+
+            if (shouldTransfer)
+            {
+                TransferPlayerSlotToRobot(pressedIndex);
+                evt.Consume();
+            }
+        }
+
+        private void HandlePlayerItemCanceled(
+            Gesture.OnCancel evt,
+            InventoryItemVisuals target,
+            int index)
+        {
+            pressedPlayerSlotIndices.Remove(evt.Interaction.ControlID);
+            if (target.ItemRoot != null)
+            {
+                target.ItemRoot.Color = target.DefaultColor;
+            }
+            HideDragPreview();
+        }
+
+        private bool IsValidRobotSlot(int index)
         {
             return index >= 0 &&
-                   index < items.Count &&
-                   index < itemSources.Count &&
-                   !items[index].isEmpty &&
-                   itemSources[index].SourceType != RobotInventoryDisplaySourceType.Empty;
+                   index < robotItems.Count &&
+                   index < robotItemSources.Count &&
+                   !robotItems[index].isEmpty &&
+                   robotItemSources[index].SourceType != RobotInventoryDisplaySourceType.Empty;
         }
 
-        private bool IsPointerOverPlayerInventory(Ray pointerRay)
+        private bool IsValidPlayerSlot(int index)
         {
-            if (playerInventoryPanel == null || playerInventoryPanel.Grid == null)
+            return index >= 0 &&
+                   index < playerSlots.Count &&
+                   playerSlots[index] != null &&
+                   !playerSlots[index].IsEmpty;
+        }
+
+        private bool IsPointerOverGrid(Ray pointerRay, GridView targetGrid)
+        {
+            if (targetGrid == null)
             {
                 return false;
             }
@@ -418,11 +475,11 @@ namespace Coreline.Robots
             uiBlockHits.Clear();
             Interaction.RaycastAll(pointerRay, uiBlockHits);
 
-            Transform playerGridTransform = playerInventoryPanel.Grid.transform;
+            Transform gridTransform = targetGrid.transform;
             for (int i = 0; i < uiBlockHits.Count; i++)
             {
                 UIBlock hitBlock = uiBlockHits[i].UIBlock;
-                if (hitBlock != null && hitBlock.transform.IsChildOf(playerGridTransform))
+                if (hitBlock != null && hitBlock.transform.IsChildOf(gridTransform))
                 {
                     return true;
                 }
@@ -431,22 +488,18 @@ namespace Coreline.Robots
             return false;
         }
 
-        private bool TransferSlotToPlayerInventory(int index)
+        private bool TransferRobotSlotToPlayer(int index)
         {
-            if (!IsValidTransferSlot(index) || ActiveRobot == null || ActiveRobot.Inventory == null)
+            if (!IsValidRobotSlot(index) ||
+                ActiveRobot == null ||
+                ActiveRobot.Inventory == null ||
+                playerInventory == null)
             {
                 return false;
             }
 
-            EnsurePlayerInventory(player);
-            if (playerInventory == null)
-            {
-                Debug.LogWarning("Cannot transfer item because no player inventory was found.", this);
-                return false;
-            }
-
-            RobotInventoryDisplaySource source = itemSources[index];
-            InventoryItem item = items[index];
+            RobotInventoryDisplaySource source = robotItemSources[index];
+            InventoryItem item = robotItems[index];
             if (!playerInventory.CanAcceptItem(item.item, source.Amount))
             {
                 return false;
@@ -454,8 +507,10 @@ namespace Coreline.Robots
 
             bool removedFromRobot = source.SourceType switch
             {
-                RobotInventoryDisplaySourceType.ItemStack => ActiveRobot.Inventory.TryRemoveItem(source.Item, source.Amount),
-                RobotInventoryDisplaySourceType.ResourceStack => ActiveRobot.Inventory.TryRemoveResource(source.OreType, source.Amount),
+                RobotInventoryDisplaySourceType.ItemStack =>
+                    ActiveRobot.Inventory.TryRemoveItem(source.Item, source.Amount),
+                RobotInventoryDisplaySourceType.ResourceStack =>
+                    ActiveRobot.Inventory.TryRemoveResource(source.OreType, source.Amount),
                 _ => false
             };
 
@@ -466,17 +521,153 @@ namespace Coreline.Robots
 
             if (playerInventory.TryAddItem(item.item, source.Amount))
             {
-                RefreshInventory();
-                playerInventoryPanel?.Refresh();
+                RefreshAll();
                 return true;
             }
 
             RestoreRobotInventorySource(source);
-            RefreshInventory();
+            RefreshAll();
             return false;
         }
 
-        private void ShowDragPreview(Sprite icon, Vector3 pointerWorldPosition, uint controlId)
+        private bool TransferPlayerSlotToRobot(int index)
+        {
+            if (!IsValidPlayerSlot(index) ||
+                ActiveRobot == null ||
+                ActiveRobot.Inventory == null ||
+                playerInventory == null)
+            {
+                return false;
+            }
+
+            InventorySlot slot = playerSlots[index];
+            InventoryItemData item = slot.Item;
+            int amount = slot.Amount;
+            bool canAccept = item is OreItemSO oreItem
+                ? ActiveRobot.Inventory.CanAcceptResource(oreItem.oreType, amount)
+                : ActiveRobot.Inventory.CanAcceptItem(item, amount);
+
+            if (!canAccept || !playerInventory.TryRemoveFromSlot(index, amount))
+            {
+                return false;
+            }
+
+            bool addedToRobot = item is OreItemSO ore
+                ? ActiveRobot.Inventory.TryAddResource(ore.oreType, amount)
+                : ActiveRobot.Inventory.TryAddItem(item, amount);
+
+            if (addedToRobot)
+            {
+                RefreshAll();
+                return true;
+            }
+
+            playerInventory.TryAddItem(item, amount, countForProgression: false);
+            RefreshAll();
+            return false;
+        }
+
+        private void RestoreRobotInventorySource(RobotInventoryDisplaySource source)
+        {
+            if (ActiveRobot == null || ActiveRobot.Inventory == null)
+            {
+                return;
+            }
+
+            switch (source.SourceType)
+            {
+                case RobotInventoryDisplaySourceType.ItemStack:
+                    ActiveRobot.Inventory.TryAddItem(source.Item, source.Amount);
+                    break;
+                case RobotInventoryDisplaySourceType.ResourceStack:
+                    ActiveRobot.Inventory.TryAddResource(source.OreType, source.Amount);
+                    break;
+            }
+        }
+
+        private void SubscribeToRobotInventory()
+        {
+            if (ActiveRobot?.Inventory != null)
+            {
+                ActiveRobot.Inventory.InventoryChanged -= HandleRobotInventoryChanged;
+                ActiveRobot.Inventory.InventoryChanged += HandleRobotInventoryChanged;
+            }
+        }
+
+        private void UnsubscribeFromRobotInventory()
+        {
+            if (ActiveRobot?.Inventory != null)
+            {
+                ActiveRobot.Inventory.InventoryChanged -= HandleRobotInventoryChanged;
+            }
+        }
+
+        private void SubscribeToPlayerInventory()
+        {
+            if (playerInventory != null)
+            {
+                playerInventory.InventoryUpdated -= HandlePlayerInventoryChanged;
+                playerInventory.InventoryUpdated += HandlePlayerInventoryChanged;
+            }
+        }
+
+        private void UnsubscribeFromPlayerInventory()
+        {
+            if (playerInventory != null)
+            {
+                playerInventory.InventoryUpdated -= HandlePlayerInventoryChanged;
+            }
+        }
+
+        private void HandleRobotInventoryChanged()
+        {
+            if (isBound)
+            {
+                RefreshRobotInventory();
+            }
+        }
+
+        private void HandlePlayerInventoryChanged()
+        {
+            if (isBound)
+            {
+                RefreshPlayerInventory();
+            }
+        }
+
+        private void EnsurePlayerInventory(Player playerContext)
+        {
+            player = playerContext != null ? playerContext : player;
+            playerInventory = player != null
+                ? player.GetComponent<PlayerInventory>() ??
+                  player.GetComponentInParent<PlayerInventory>()
+                : playerInventory;
+            playerInventory ??=
+                FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
+        }
+
+        private void EnsureReferences()
+        {
+            robotGrid ??= FindGridByName(RobotGridName);
+            playerGrid ??= FindGridByName(PlayerGridName);
+            EnsurePlayerInventory(player);
+        }
+
+        private GridView FindGridByName(string objectName)
+        {
+            GridView[] grids = GetComponentsInChildren<GridView>(true);
+            for (int i = 0; i < grids.Length; i++)
+            {
+                if (grids[i] != null && grids[i].name == objectName)
+                {
+                    return grids[i];
+                }
+            }
+
+            return null;
+        }
+
+        private void ShowDragPreview(Sprite icon, Vector3 pointerWorldPosition)
         {
             if (icon == null)
             {
@@ -561,7 +752,6 @@ namespace Coreline.Robots
             SortGroup sortGroup = previewObject.AddComponent<SortGroup>();
             sortGroup.RenderQueue = 4001;
             sortGroup.RenderOverOpaqueGeometry = true;
-
             dragPreviewIcon.gameObject.SetActive(false);
         }
 
@@ -573,11 +763,7 @@ namespace Coreline.Robots
             }
 
             dragPreviewCamera = Camera.main;
-            if (dragPreviewCamera == null)
-            {
-                dragPreviewCamera = FindFirstObjectByType<Camera>();
-            }
-
+            dragPreviewCamera ??= FindFirstObjectByType<Camera>();
             return dragPreviewCamera;
         }
 
@@ -602,284 +788,6 @@ namespace Coreline.Robots
             pointerPosition = Mouse.current.position.ReadValue();
             return true;
 #endif
-        }
-
-        private void RestoreRobotInventorySource(RobotInventoryDisplaySource source)
-        {
-            if (ActiveRobot == null || ActiveRobot.Inventory == null)
-            {
-                return;
-            }
-
-            switch (source.SourceType)
-            {
-                case RobotInventoryDisplaySourceType.ItemStack:
-                    ActiveRobot.Inventory.TryAddItem(source.Item, source.Amount);
-                    break;
-                case RobotInventoryDisplaySourceType.ResourceStack:
-                    ActiveRobot.Inventory.TryAddResource(source.OreType, source.Amount);
-                    break;
-            }
-        }
-
-        private void EnsurePlayerInventory(Player playerContext)
-        {
-            player ??= playerContext;
-            playerInventory ??= player != null
-                ? player.GetComponent<PlayerInventory>() ??
-                  player.GetComponentInParent<PlayerInventory>()
-                : null;
-            playerInventory ??=
-                FindFirstObjectByType<PlayerInventory>(FindObjectsInactive.Include);
-            playerInventoryPanel ??=
-                FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
-
-            if (playerInventoryPanel != null && playerInventory != null)
-            {
-                playerInventoryPanel.Bind(playerInventory);
-            }
-
-            EnsurePlayerInventoryCloseButton();
-        }
-
-        private void OpenPlayerInventory()
-        {
-            EnsurePlayerInventory(player);
-            playerInventoryWasOpenOnOpen =
-                playerInventoryPanel != null && playerInventoryPanel.IsOpen;
-            playerInventoryPanel.Panel.Toggle();
-            SetPlayerInventoryCloseButtonEnabled(false);
-        }
-
-        private void RestorePlayerInventoryState()
-        {
-            SetPlayerInventoryCloseButtonEnabled(true);
-
-            if (closePlayerInventoryWhenRobotInventoryCloses &&
-                playerInventoryPanel != null &&
-                !playerInventoryWasOpenOnOpen)
-            {
-                playerInventoryPanel.Panel.Toggle();
-            }
-
-            playerInventoryWasOpenOnOpen = false;
-        }
-
-        private void SetPlayerInventoryCloseButtonEnabled(bool enabled)
-        {
-            EnsurePlayerInventoryCloseButton();
-
-            if (!disablePlayerInventoryCloseButtonWhileOpen || playerInventoryCloseButton == null)
-            {
-                return;
-            }
-
-            if (!enabled)
-            {
-                playerInventoryCloseButtonWasActive = playerInventoryCloseButton.activeSelf;
-                hasCachedPlayerInventoryCloseButtonState = true;
-                playerInventoryCloseButton.SetActive(false);
-                return;
-            }
-
-            if (hasCachedPlayerInventoryCloseButtonState)
-            {
-                playerInventoryCloseButton.SetActive(playerInventoryCloseButtonWasActive);
-                hasCachedPlayerInventoryCloseButtonState = false;
-            }
-        }
-
-        private void EnsurePlayerInventoryCloseButton()
-        {
-            if (playerInventoryCloseButton != null || playerInventoryPanel == null)
-            {
-                return;
-            }
-
-            Transform closeButton = FindChildRecursive(
-                playerInventoryPanel.transform,
-                CloseButtonName);
-            if (closeButton != null)
-            {
-                playerInventoryCloseButton = closeButton.gameObject;
-            }
-        }
-
-        private void SubscribeToCloseButton()
-        {
-            if (closeButtonSubscribed || closeButtonRoot == null)
-            {
-                return;
-            }
-
-            closeButtonRoot.UIBlock.AddGestureHandler<Gesture.OnHover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleHover);
-            closeButtonRoot.UIBlock.AddGestureHandler<Gesture.OnUnhover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleUnhover);
-            closeButtonRoot.UIBlock.AddGestureHandler<Gesture.OnPress, InventoryButtonVisuals>(InventoryButtonVisuals.HandlePress);
-            closeButtonRoot.UIBlock.AddGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(InventoryButtonVisuals.HandleRelease);
-
-            if (closeButtonRoot.TryGetVisuals(out InventoryButtonVisuals visuals))
-            {
-                visuals.OnClicked.AddListener(Close);
-            }
-
-            closeButtonSubscribed = true;
-        }
-
-        private void UnsubscribeFromCloseButton()
-        {
-            if (!closeButtonSubscribed || closeButtonRoot == null)
-            {
-                return;
-            }
-
-            closeButtonRoot.UIBlock.RemoveGestureHandler<Gesture.OnHover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleHover);
-            closeButtonRoot.UIBlock.RemoveGestureHandler<Gesture.OnUnhover, InventoryButtonVisuals>(InventoryButtonVisuals.HandleUnhover);
-            closeButtonRoot.UIBlock.RemoveGestureHandler<Gesture.OnPress, InventoryButtonVisuals>(InventoryButtonVisuals.HandlePress);
-            closeButtonRoot.UIBlock.RemoveGestureHandler<Gesture.OnRelease, InventoryButtonVisuals>(InventoryButtonVisuals.HandleRelease);
-
-            if (closeButtonRoot.TryGetVisuals(out InventoryButtonVisuals visuals))
-            {
-                visuals.OnClicked.RemoveListener(Close);
-            }
-
-            closeButtonSubscribed = false;
-        }
-
-        private void UnsubscribeFromActiveInventory()
-        {
-            if (ActiveRobot != null && ActiveRobot.Inventory != null)
-            {
-                ActiveRobot.Inventory.InventoryChanged -= HandleInventoryChanged;
-            }
-        }
-
-        private void RefreshRobotNameText()
-        {
-            if (robotNameText == null)
-            {
-                return;
-            }
-
-            robotNameText.Text = ActiveRobot != null ? ActiveRobot.RobotTargetId : string.Empty;
-        }
-
-        private void EnsureReferences()
-        {
-            visualRoot ??= GetComponent<UIBlock2D>();
-            visualRoot ??= GetComponentInChildren<UIBlock2D>(true);
-            visuals ??= new UIVisuals(visualRoot != null ? visualRoot.transform : transform);
-            grid ??= GetComponentInChildren<GridView>(true);
-            closeButtonRoot ??= FindChildItemViewWithVisuals<InventoryButtonVisuals>(CloseButtonName);
-            robotNameText ??= FindChildComponentByName<TextBlock>(RobotNameTextName);
-            uiStateController ??= UIStateController.Instance;
-            uiStateController ??=
-                FindFirstObjectByType<UIStateController>(FindObjectsInactive.Include);
-        }
-
-        private void ShowPanel()
-        {
-            EnsureReferences();
-            visuals?.ShowUI(openDuration, useUnscaledAnimationTime);
-        }
-
-        private void HidePanel()
-        {
-            EnsureReferences();
-
-            if (!gameObject.activeSelf)
-            {
-                return;
-            }
-
-            visuals?.HideUI(closeDuration, useUnscaledAnimationTime, () =>
-            {
-                if (!isOpen && gameObject.activeSelf)
-                {
-                    gameObject.SetActive(false);
-                }
-            });
-        }
-
-        private void HideImmediate()
-        {
-            EnsureReferences();
-            visuals?.HideImmediate();
-
-            if (gameObject.activeSelf)
-            {
-                gameObject.SetActive(false);
-            }
-        }
-
-        private ItemView FindChildItemViewWithVisuals<TVisuals>(string preferredObjectName)
-            where TVisuals : ItemVisuals
-        {
-            ItemView fallback = null;
-            ItemView[] itemViews = GetComponentsInChildren<ItemView>(true);
-
-            for (int i = 0; i < itemViews.Length; i++)
-            {
-                ItemView itemView = itemViews[i];
-                if (itemView == null || !itemView.TryGetVisuals(out TVisuals _))
-                {
-                    continue;
-                }
-
-                if (itemView.name == preferredObjectName)
-                {
-                    return itemView;
-                }
-
-                fallback ??= itemView;
-            }
-
-            return fallback;
-        }
-
-        private T FindChildComponentByName<T>(string objectName) where T : Component
-        {
-            T[] components = GetComponentsInChildren<T>(true);
-            for (int i = 0; i < components.Length; i++)
-            {
-                if (components[i].name == objectName)
-                {
-                    return components[i];
-                }
-            }
-
-            return null;
-        }
-
-        private void RegisterGameplayInputBlock()
-        {
-            if (isGameplayInputBlocked)
-            {
-                return;
-            }
-
-            EnsureReferences();
-
-            if (uiStateController == null)
-            {
-                Debug.LogWarning(
-                    $"{nameof(CollectingRobotInventoryUIController)} cannot block player input because no {nameof(UIStateController)} exists in the scene.",
-                    this);
-                return;
-            }
-
-            uiStateController.RegisterModalInputBlock(unlockCursorWhileOpen);
-            isGameplayInputBlocked = true;
-        }
-
-        private void UnregisterGameplayInputBlock()
-        {
-            if (!isGameplayInputBlocked)
-            {
-                return;
-            }
-
-            uiStateController?.UnregisterModalInputBlock(unlockCursorWhileOpen);
-            isGameplayInputBlocked = false;
         }
 
         public static CollectingRobotInventoryUIController FindOrCreateInScene()
@@ -911,8 +819,7 @@ namespace Coreline.Robots
                     continue;
                 }
 
-                GameObject[] rootObjects = scene.GetRootGameObjects();
-                foreach (GameObject rootObject in rootObjects)
+                foreach (GameObject rootObject in scene.GetRootGameObjects())
                 {
                     Transform found = FindChildRecursive(rootObject.transform, objectName);
                     if (found != null)
@@ -953,14 +860,19 @@ namespace Coreline.Robots
 
         private readonly struct RobotInventoryDisplaySource
         {
-            public static readonly RobotInventoryDisplaySource Empty = new(RobotInventoryDisplaySourceType.Empty, null, default, 0);
+            public static readonly RobotInventoryDisplaySource Empty =
+                new(RobotInventoryDisplaySourceType.Empty, null, default, 0);
 
             public readonly RobotInventoryDisplaySourceType SourceType;
             public readonly InventoryItemData Item;
             public readonly OreType OreType;
             public readonly int Amount;
 
-            private RobotInventoryDisplaySource(RobotInventoryDisplaySourceType sourceType, InventoryItemData item, OreType oreType, int amount)
+            private RobotInventoryDisplaySource(
+                RobotInventoryDisplaySourceType sourceType,
+                InventoryItemData item,
+                OreType oreType,
+                int amount)
             {
                 SourceType = sourceType;
                 Item = item;
@@ -970,12 +882,23 @@ namespace Coreline.Robots
 
             public static RobotInventoryDisplaySource FromItem(InventoryItemData item, int amount)
             {
-                return new RobotInventoryDisplaySource(RobotInventoryDisplaySourceType.ItemStack, item, default, amount);
+                return new RobotInventoryDisplaySource(
+                    RobotInventoryDisplaySourceType.ItemStack,
+                    item,
+                    default,
+                    amount);
             }
 
-            public static RobotInventoryDisplaySource FromResource(OreType oreType, InventoryItemData item, int amount)
+            public static RobotInventoryDisplaySource FromResource(
+                OreType oreType,
+                InventoryItemData item,
+                int amount)
             {
-                return new RobotInventoryDisplaySource(RobotInventoryDisplaySourceType.ResourceStack, item, oreType, amount);
+                return new RobotInventoryDisplaySource(
+                    RobotInventoryDisplaySourceType.ResourceStack,
+                    item,
+                    oreType,
+                    amount);
             }
         }
     }

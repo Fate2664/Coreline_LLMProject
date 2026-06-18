@@ -17,6 +17,10 @@ namespace Coreline.Robots
         private const string NoMiningRobotSelection = "None";
         private const string RobotNameTextName = "RobotNameText";
         private const string RobotTypeTextName = "RobotTypeText";
+        private const string TabRootName = "TabRoot";
+        private const string BodyRootName = "Body";
+        private const string TabSuffix = "Tab";
+        private const string BodySuffix = "Body";
 
         [SerializeField] private NeocortexTextChatInput chatInput;
         [SerializeField] private NeocortexChatPanel chatPanel;
@@ -43,6 +47,11 @@ namespace Coreline.Robots
         private BaseRobotController pausedRobot;
         private string lastAppliedRobotName = string.Empty;
         private DropDownVisuals miningRobotDropdownVisuals;
+        private RobotUpgradeUIController upgradeUI;
+        private readonly List<UIBlock2D> tabButtons = new();
+        private readonly List<GameObject> tabBodies = new();
+        private bool tabHandlersRegistered;
+        private int selectedTabIndex = -1;
         private readonly MultiOptionSetting miningRobotDropdownSetting = new()
         {
             Key = "collecting_robot_selected_mining_robot",
@@ -77,10 +86,12 @@ namespace Coreline.Robots
         private void OnEnable()
         {
             EnsureReferences();
+            InitializeTabs();
         }
 
         private void OnDisable()
         {
+            UnregisterTabHandlers();
             UnsubscribeFromInput();
             UnsubscribeFromCommandClient();
             UnsubscribeFromMiningRobotDropdown();
@@ -135,6 +146,7 @@ namespace Coreline.Robots
             }
 
             EnsureReferences();
+            SelectTab(0);
             SubscribeToInput();
             SubscribeToCommandClient();
             SubscribeToMiningRobotDropdown();
@@ -149,6 +161,9 @@ namespace Coreline.Robots
             RefreshMiningRobotDropdown(robot);
             isOpen = true;
             IsAnyOpen = true;
+            ClosePlayerInventory();
+            upgradeUI?.Bind(robot, player);
+            OnOpenedForRobot(robot, player);
             RegisterGameplayInputBlock();
 
             if (clearMessagesOnOpen)
@@ -165,6 +180,8 @@ namespace Coreline.Robots
 
         public void Close()
         {
+            upgradeUI?.Unbind();
+            OnClosing();
             ReleasePausedRobot();
             ActiveRobot = null;
             activeRobotTarget = null;
@@ -269,11 +286,29 @@ namespace Coreline.Robots
             {
                 commandClient = gameObject.AddComponent<OllamaRobotCommandClient>();
             }
+
+            if (FindChildRecursive(transform, "UpgradesBody") != null)
+            {
+                upgradeUI ??= GetComponent<RobotUpgradeUIController>();
+                upgradeUI ??= gameObject.AddComponent<RobotUpgradeUIController>();
+            }
         }
 
         protected virtual bool CanOpenForRobot(BaseRobotController robot)
         {
             return robot != null;
+        }
+
+        protected virtual void OnOpenedForRobot(BaseRobotController robot, Coreline.Player player)
+        {
+        }
+
+        protected virtual void OnClosing()
+        {
+        }
+
+        protected virtual void OnTabSelected(string bodyName)
+        {
         }
 
         private void EnsurePlayerTarget(Coreline.Player player)
@@ -457,7 +492,7 @@ namespace Coreline.Robots
                 options[i + 1] = GetMiningRobotDropdownLabel(miningRobot);
             }
 
-            //miningRobotDropdownSetting.SetOptions(options, selectedIndex);
+            miningRobotDropdownSetting.SetOptions(options, selectedIndex);
             collectingRobot.SetSelectedMiningRobot(miningRobotDropdownRobots[miningRobotDropdownSetting.SelectedIndex]);
             miningRobotDropdownVisuals.Refresh(miningRobotDropdownSetting);
         }
@@ -815,6 +850,186 @@ namespace Coreline.Robots
 
             uiStateController?.UnregisterModalInputBlock(unlockCursorWhileOpen);
             isGameplayInputBlocked = false;
+        }
+
+        private void InitializeTabs()
+        {
+            ResolveTabBindings();
+            RegisterTabHandlers();
+
+            if (tabBodies.Count == 0)
+            {
+                return;
+            }
+
+            int initialTabIndex = selectedTabIndex;
+            if (initialTabIndex < 0 || initialTabIndex >= tabBodies.Count)
+            {
+                initialTabIndex = FindActiveTabIndex();
+            }
+
+            SelectTab(initialTabIndex >= 0 ? initialTabIndex : 0);
+        }
+
+        private void ResolveTabBindings()
+        {
+            tabButtons.Clear();
+            tabBodies.Clear();
+
+            Transform tabRoot = FindChildRecursive(transform, TabRootName);
+            Transform bodyRoot = FindChildRecursive(transform, BodyRootName);
+            if (tabRoot == null || bodyRoot == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < tabRoot.childCount; i++)
+            {
+                Transform tab = tabRoot.GetChild(i);
+                UIBlock2D tabButton = tab.GetComponent<UIBlock2D>();
+                if (tabButton == null)
+                {
+                    Debug.LogWarning(
+                        $"{GetType().Name} cannot register tab {tab.name} because it has no {nameof(UIBlock2D)}.",
+                        tab);
+                    continue;
+                }
+
+                string bodyName = GetMatchingBodyName(tab.name);
+                Transform body = FindDirectChild(bodyRoot, bodyName);
+                if (body == null)
+                {
+                    Debug.LogWarning(
+                        $"{GetType().Name} could not find {bodyName} under {BodyRootName} for tab {tab.name}.",
+                        this);
+                    continue;
+                }
+
+                tabButtons.Add(tabButton);
+                tabBodies.Add(body.gameObject);
+            }
+        }
+
+        private void RegisterTabHandlers()
+        {
+            if (tabHandlersRegistered)
+            {
+                return;
+            }
+
+            for (int i = 0; i < tabButtons.Count; i++)
+            {
+                tabButtons[i].AddGestureHandler<Gesture.OnClick>(HandleTabClicked);
+            }
+
+            tabHandlersRegistered = tabButtons.Count > 0;
+        }
+
+        private void UnregisterTabHandlers()
+        {
+            if (!tabHandlersRegistered)
+            {
+                return;
+            }
+
+            for (int i = 0; i < tabButtons.Count; i++)
+            {
+                if (tabButtons[i] != null)
+                {
+                    tabButtons[i].RemoveGestureHandler<Gesture.OnClick>(HandleTabClicked);
+                }
+            }
+
+            tabHandlersRegistered = false;
+        }
+
+        private void HandleTabClicked(Gesture.OnClick evt)
+        {
+            for (int i = 0; i < tabButtons.Count; i++)
+            {
+                if (tabButtons[i] == evt.Receiver)
+                {
+                    SelectTab(i);
+                    return;
+                }
+            }
+        }
+
+        private void SelectTab(int tabIndex)
+        {
+            if (tabIndex < 0 || tabIndex >= tabBodies.Count)
+            {
+                return;
+            }
+
+            selectedTabIndex = tabIndex;
+
+            for (int i = 0; i < tabBodies.Count; i++)
+            {
+                GameObject body = tabBodies[i];
+                if (body != null && body.activeSelf != (i == selectedTabIndex))
+                {
+                    body.SetActive(i == selectedTabIndex);
+                }
+            }
+
+            OnTabSelected(tabBodies[selectedTabIndex].name);
+
+            if (string.Equals(
+                    tabBodies[selectedTabIndex].name,
+                    RobotUpgradeUIController.UpgradesBodyName,
+                    System.StringComparison.OrdinalIgnoreCase))
+            {
+                upgradeUI?.RefreshAll();
+            }
+        }
+
+        private int FindActiveTabIndex()
+        {
+            for (int i = 0; i < tabBodies.Count; i++)
+            {
+                if (tabBodies[i] != null && tabBodies[i].activeSelf)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static string GetMatchingBodyName(string tabName)
+        {
+            if (tabName.EndsWith(TabSuffix, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return tabName.Substring(0, tabName.Length - TabSuffix.Length) + BodySuffix;
+            }
+
+            return tabName + BodySuffix;
+        }
+
+        private static Transform FindDirectChild(Transform parent, string childName)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (string.Equals(child.name, childName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return child;
+                }
+            }
+
+            return null;
+        }
+
+        private static void ClosePlayerInventory()
+        {
+            InventoryPanel inventoryPanel =
+                FindFirstObjectByType<InventoryPanel>(FindObjectsInactive.Include);
+
+            if (inventoryPanel != null && inventoryPanel.IsOpen)
+            {
+                inventoryPanel.Panel.Close();
+            }
         }
 
         private static bool AnyChatControllerOpen()

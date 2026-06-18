@@ -30,11 +30,21 @@ namespace Coreline.Robots
         [SerializeField] private List<RobotInventoryItemStack> itemStacks = new();
         [SerializeField] private List<RobotResourceStack> resourceStacks = new();
 
+        private float capacityMultiplier = 1f;
+
         public event Action InventoryChanged;
 
         public IReadOnlyList<RobotInventoryItemStack> ItemStacks => itemStacks;
         public IReadOnlyList<RobotResourceStack> ResourceStacks => resourceStacks;
         public bool HasAnyItems => itemStacks.Count > 0 || resourceStacks.Count > 0;
+        public int BaseMaxItemStacks => Mathf.Max(1, maxItemStacks);
+        public int MaxItemStacks => EffectiveMaxItemStacks;
+
+        public void SetCapacityMultiplier(float multiplier)
+        {
+            capacityMultiplier = Mathf.Max(0.01f, multiplier);
+            InventoryChanged?.Invoke();
+        }
 
         public bool CanAcceptItem(InventoryItemData item, int amount = 1)
         {
@@ -261,7 +271,8 @@ namespace Coreline.Robots
         }
 
         private int UsedStackCount => itemStacks.Count + resourceStacks.Count;
-        private int EffectiveMaxItemStacks => Mathf.Max(1, maxItemStacks);
+        private int EffectiveMaxItemStacks =>
+            Mathf.Max(1, Mathf.RoundToInt(BaseMaxItemStacks * capacityMultiplier));
         private int EffectiveMaxAmountPerStack => Mathf.Max(1, maxAmountPerStack);
         private int FreeStackSlotCount => Mathf.Max(0, EffectiveMaxItemStacks - UsedStackCount);
         private bool HasFreeStackSlot => FreeStackSlotCount > 0;

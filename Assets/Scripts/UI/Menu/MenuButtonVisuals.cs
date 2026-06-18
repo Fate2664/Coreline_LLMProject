@@ -29,9 +29,17 @@ namespace Platformer
         private Color defaultTextColor;
         private bool defaultBodyEnabled;
         private bool isHovered;
+        private bool handlersRegistered;
 
         private void Awake()
         {
+            background ??= GetComponent<UIBlock2D>();
+            if (background == null)
+            {
+                enabled = false;
+                return;
+            }
+
             defaultScale = background.transform.localScale;
             defaultBackgroundColor = background.Color;
             defaultBodyEnabled = background.BodyEnabled;
@@ -44,12 +52,34 @@ namespace Platformer
 
         private void OnEnable()
         {
+            if (background == null || handlersRegistered)
+            {
+                return;
+            }
+
             background.AddGestureHandler<Gesture.OnHover>(HandleHover);
             background.AddGestureHandler<Gesture.OnUnhover>(HandleUnhover);
             background.AddGestureHandler<Gesture.OnPress>(HandlePress);
             background.AddGestureHandler<Gesture.OnRelease>(HandleRelease);
             background.AddGestureHandler<Gesture.OnCancel>(HandleCancel);
             background.AddGestureHandler<Gesture.OnClick>(HandleClick);
+            handlersRegistered = true;
+        }
+
+        private void OnDisable()
+        {
+            if (background == null || !handlersRegistered)
+            {
+                return;
+            }
+
+            background.RemoveGestureHandler<Gesture.OnHover>(HandleHover);
+            background.RemoveGestureHandler<Gesture.OnUnhover>(HandleUnhover);
+            background.RemoveGestureHandler<Gesture.OnPress>(HandlePress);
+            background.RemoveGestureHandler<Gesture.OnRelease>(HandleRelease);
+            background.RemoveGestureHandler<Gesture.OnCancel>(HandleCancel);
+            background.RemoveGestureHandler<Gesture.OnClick>(HandleClick);
+            handlersRegistered = false;
         }
 
         private void HandleHover(Gesture.OnHover evt)
@@ -63,7 +93,7 @@ namespace Platformer
                 buttonLabel.Color = hoverTextColor;
             }
             
-            AudioManager.Instance.Play("HoverSound");
+            AudioManager.Instance?.Play("HoverSound");
             AnimateScale(defaultScale * hoverScale, Ease.OutBack);
         }
 
@@ -82,7 +112,7 @@ namespace Platformer
 
         private void HandlePress(Gesture.OnPress evt)
         {
-            AudioManager.Instance.Play("ClickSound");
+            AudioManager.Instance?.Play("ClickSound");
             AnimateScale(defaultScale * pressedScale, Ease.OutQuad);
         }
 

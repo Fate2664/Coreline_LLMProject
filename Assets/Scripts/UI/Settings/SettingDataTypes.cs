@@ -123,6 +123,15 @@ public class MultiOptionSetting : Setting
     }
     
     public string CurrentSelection => SelectedIndex >= 0 && SelectedIndex < Options.Length ? Options[SelectedIndex] : NothingSelected;
+
+    public void SetOptions(string[] options, int selectedIndex = 0)
+    {
+        Options = options ?? Array.Empty<string>();
+        SelectedIndex = Options.Length == 0
+            ? -1
+            : Mathf.Clamp(selectedIndex, 0, Options.Length - 1);
+    }
+
     public override bool HasUnsavedChanges => SelectedIndex != PlayerPrefs.GetInt(Key, DefaultIndex);
     public void Save() => PlayerPrefs.SetInt(Key, SelectedIndex);
     public void Load() => SelectedIndex = PlayerPrefs.GetInt(Key, DefaultIndex);

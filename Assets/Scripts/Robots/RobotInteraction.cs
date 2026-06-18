@@ -9,10 +9,8 @@ namespace Coreline
         [SerializeField] private RobotChatUIController chatUI;
         [SerializeField] private MiningRobotChatUIController miningRobotChatUI;
         [SerializeField] private CollectingRobotChatUIController collectingRobotChatUI;
-        [SerializeField] private CollectingRobotInventoryUIController collectingRobotInventoryUI;
         [SerializeField] private BaseRobotController robotController;
         [SerializeField] private bool closeChatWhenPlayerLeaves = true;
-        [SerializeField] private bool closeInventoryWhenPlayerLeaves = true;
         [SerializeField] IndicatorManager indicatorManager;
         [SerializeField] IndicatorManager altIndicatorManager;
         
@@ -58,13 +56,6 @@ namespace Coreline
                 chatUI.Close();
             }
 
-            if (closeInventoryWhenPlayerLeaves &&
-                !isCurrentTarget &&
-                collectingRobotInventoryUI != null &&
-                ReferenceEquals(collectingRobotInventoryUI.ActiveRobot, robotController))
-            {
-                collectingRobotInventoryUI.Close();
-            }
         }
 
         public void Interact(Player player)
@@ -85,27 +76,18 @@ namespace Coreline
                 return;
             }
 
-            collectingRobotInventoryUI?.Close();
             CloseOtherChatControllers(chatUI);
             chatUI.OpenForRobot(robotController, player);
         }
 
         public void AltInteract(Player player)
         {
-            if (robotController is not CollectingRobotController collectingRobot)
+            if (robotController is not CollectingRobotController)
             {
                 return;
             }
 
-            collectingRobotInventoryUI ??= CollectingRobotInventoryUIController.FindOrCreateInScene();
-            if (collectingRobotInventoryUI == null)
-            {
-                Debug.LogWarning("Cannot open collection robot inventory because CollectionRobotInventoryRoot was not found.", this);
-                return;
-            }
-
-            chatUI?.Close();
-            collectingRobotInventoryUI.ToggleForRobot(collectingRobot, player);
+            Interact(player);
         }
 
         private RobotChatUIController ResolveChatUIForRobot()
@@ -131,7 +113,6 @@ namespace Coreline
         {
             playerInteractionDetector ??= FindFirstObjectByType<PlayerInteractionDetector>();
             chatUI ??= ResolveChatUIForRobot();
-            collectingRobotInventoryUI ??= CollectingRobotInventoryUIController.FindOrCreateInScene();
         }
 
         private string GetExpectedChatRootName()

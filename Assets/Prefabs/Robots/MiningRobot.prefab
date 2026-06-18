@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: -6950230881026546860}
   - component: {fileID: -1585244337402810226}
   - component: {fileID: 6983384821587486641}
+  - component: {fileID: 9100000000000000001}
   m_Layer: 0
   m_Name: MiningRobot
   m_TagString: MiningRobot
@@ -135,10 +136,8 @@ MonoBehaviour:
   chatUI: {fileID: 0}
   miningRobotChatUI: {fileID: 0}
   collectingRobotChatUI: {fileID: 0}
-  collectingRobotInventoryUI: {fileID: 0}
   robotController: {fileID: 6622030324545740117}
   closeChatWhenPlayerLeaves: 1
-  closeInventoryWhenPlayerLeaves: 0
   indicatorManager: {fileID: 3932363290492414191}
   altIndicatorManager: {fileID: 0}
 --- !u!114 &-6950230881026546860
@@ -199,6 +198,44 @@ CapsuleCollider:
   m_Height: 1.62
   m_Direction: 1
   m_Center: {x: 0, y: 0.75, z: 0}
+--- !u!114 &9100000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1773679889532012981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88ac3529d21439740b74609aa72e77a5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Coreline.Robots.RobotUpgradeController
+  walkingSpeedIcon: {fileID: 21300000, guid: 73b35fb5d78de2c4a99b8951bf730c21, type: 3}
+  walkingSpeedIncreasePercent: 10
+  walkingSpeedMaxLevel: 5
+  walkingSpeedCostMultiplier: 1.5
+  walkingSpeedCosts:
+  - oreType: 1
+    baseAmount: 5
+  miningSpeedIcon: {fileID: 718868974, guid: eabc27461612b6f4489e70e3e924e0f2, type: 3}
+  miningSpeedIncreasePercent: 10
+  miningSpeedMaxLevel: 5
+  miningSpeedCostMultiplier: 1.5
+  miningSpeedCosts:
+  - oreType: 0
+    baseAmount: 10
+  - oreType: 1
+    baseAmount: 5
+  carryingCapacityIcon: {fileID: 0}
+  carryingCapacityIncreasePercent: 10
+  carryingCapacityMaxLevel: 5
+  carryingCapacityCostMultiplier: 1.5
+  carryingCapacityCosts:
+  - oreType: 1
+    baseAmount: 10
+  walkingSpeedLevel: 0
+  miningSpeedLevel: 0
+  carryingCapacityLevel: 0
 --- !u!1 &1981485598797330877
 GameObject:
   m_ObjectHideFlags: 0

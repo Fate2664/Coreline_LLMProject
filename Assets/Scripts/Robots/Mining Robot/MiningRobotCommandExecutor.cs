@@ -15,11 +15,26 @@ namespace Coreline.Robots
         [SerializeField] private float repeatMineRetryInterval = 1f;
 
         private MiningRobotController miningRobot;
+        private float baseMiningInterval;
+
+        public float BaseMiningInterval => baseMiningInterval;
+        public float CurrentMiningInterval => miningInterval;
 
         protected override void Awake()
         {
             base.Awake();
             miningRobot = GetComponent<MiningRobotController>();
+            baseMiningInterval = Mathf.Max(0.01f, miningInterval);
+        }
+
+        public void SetMiningSpeedMultiplier(float multiplier)
+        {
+            if (baseMiningInterval <= 0f)
+            {
+                baseMiningInterval = Mathf.Max(0.01f, miningInterval);
+            }
+
+            miningInterval = baseMiningInterval / Mathf.Max(0.01f, multiplier);
         }
 
         public override void CancelCurrentCommand()
