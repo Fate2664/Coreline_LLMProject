@@ -93,7 +93,7 @@ namespace Coreline.Robots
                 case RobotCommandAction.Pickup:
                     return ValidatePickupCommand(command, registry, robot, robotPosition, out error);
                 case RobotCommandAction.Deliver:
-                    return ValidateDeliverCommand(command, registry, robotPosition, out error);
+                    return ValidateDeliverCommand(command, registry, robot, robotPosition, out error);
                 case RobotCommandAction.Wait:
                 case RobotCommandAction.Stop:
                     return true;
@@ -316,8 +316,26 @@ namespace Coreline.Robots
             return !string.IsNullOrWhiteSpace(command.target) && registry.TryGetTarget(command.target, robotPosition, out target);
         }
 
-        private bool ValidateDeliverCommand(RobotCommand command, CommandTargetRegistry registry, Vector3 robotPosition, out string error)
+        private bool ValidateDeliverCommand(
+            RobotCommand command,
+            CommandTargetRegistry registry,
+            BaseRobotController robot,
+            Vector3 robotPosition,
+            out string error)
         {
+            if (RobotCommand.IsSelectedChestReference(command.target))
+            {
+                if (robot is not CollectingRobotController collectingRobot ||
+                    collectingRobot.SelectedDeliveryChest == null ||
+                    collectingRobot.SelectedDeliveryChest.CommandTarget == null)
+                {
+                    error = "No chest is selected for the collecting robot.";
+                    return false;
+                }
+
+                command.target = collectingRobot.SelectedDeliveryChest.CommandTarget.TargetId;
+            }
+
             if (!RequireTarget(command, registry, robotPosition, out error))
             {
                 return false;

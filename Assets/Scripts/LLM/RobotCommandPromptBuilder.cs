@@ -62,6 +62,8 @@ namespace Coreline.Robots
             builder.AppendLine("For collection requests like collect all ores you can see, return {\"action\":\"pickup\",\"priority\":\"normal\"} with no target.");
             builder.AppendLine("For collection requests like continue to collect any ores that you see, return {\"action\":\"pickup\",\"repeat\":true,\"priority\":\"normal\"} with no target.");
             builder.AppendLine("For collection requests like follow this robot and collect nearby ores, return {\"action\":\"pickup\",\"target\":\"selected_mining_robot_id\",\"priority\":\"normal\"} using the selected mining robot id from the user prompt context.");
+            builder.AppendLine("For collection requests like collect ores and then deliver them to this chest, return a pickup command followed by a deliver command whose target is the exact id stored in selected_chest in the user prompt context.");
+            builder.AppendLine("When the player says this chest, selected chest, chosen chest, or assigned chest, use the value of selected_chest exactly. Never substitute another Storage target.");
             builder.AppendLine();
             builder.AppendLine("If multiple actions are needed, wrap them in an object with a sequence array. Do not return a top-level JSON array.");
 
@@ -106,12 +108,19 @@ namespace Coreline.Robots
             string selectedMiningRobotId = collectingRobot.SelectedMiningRobot != null
                 ? collectingRobot.SelectedMiningRobot.RobotTargetId
                 : "None";
+            string selectedChestId = collectingRobot.SelectedDeliveryChest != null &&
+                                     collectingRobot.SelectedDeliveryChest.CommandTarget != null
+                ? collectingRobot.SelectedDeliveryChest.CommandTarget.TargetId
+                : "None";
 
             builder.AppendLine("Collecting robot context:");
             builder.AppendLine($"- selected_mining_robot=\"{selectedMiningRobotId}\"");
+            builder.AppendLine($"- selected_chest=\"{selectedChestId}\"");
             builder.AppendLine("- If selected_mining_robot is None, collect visible ores with {\"action\":\"pickup\",\"priority\":\"normal\"} and no target.");
             builder.AppendLine("- If the player says this robot, selected robot, assigned robot, or follow this robot, use selected_mining_robot as the pickup target.");
             builder.AppendLine("- A pickup command targeting a robot means follow that robot and collect visible nearby pickup items.");
+            builder.AppendLine("- If the player says this chest, selected chest, chosen chest, or assigned chest, use the id stored in selected_chest as the deliver target.");
+            builder.AppendLine("- If selected_chest is None, do not invent a storage target.");
         }
 
         private void AppendTargets(StringBuilder builder, CommandTargetRegistry registry, BaseRobotController viewerRobot)

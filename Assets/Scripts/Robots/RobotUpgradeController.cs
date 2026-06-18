@@ -11,6 +11,12 @@ namespace Coreline.Robots
         CarryingCapacity
     }
 
+    public enum RobotUpgradeEffectValueType
+    {
+        Percentage,
+        Fixed
+    }
+
     [Serializable]
     public sealed class RobotUpgradeCost
     {
@@ -45,7 +51,9 @@ namespace Coreline.Robots
         public string Description { get; }
         public string EffectLabel { get; }
         public Sprite Icon { get; }
-        public float PercentageIncrease { get; }
+        public RobotUpgradeEffectValueType EffectValueType { get; }
+        public float EffectIncrease { get; }
+        public string EffectUnit { get; }
         public int MaxLevel { get; }
         public float CostMultiplierPerLevel { get; }
         public IReadOnlyList<RobotUpgradeCost> Costs { get; }
@@ -56,7 +64,9 @@ namespace Coreline.Robots
             string description,
             string effectLabel,
             Sprite icon,
-            float percentageIncrease,
+            RobotUpgradeEffectValueType effectValueType,
+            float effectIncrease,
+            string effectUnit,
             int maxLevel,
             float costMultiplierPerLevel,
             IReadOnlyList<RobotUpgradeCost> costs)
@@ -66,10 +76,19 @@ namespace Coreline.Robots
             Description = description;
             EffectLabel = effectLabel;
             Icon = icon;
-            PercentageIncrease = Mathf.Max(0f, percentageIncrease);
+            EffectValueType = effectValueType;
+            EffectIncrease = Mathf.Max(0f, effectIncrease);
+            EffectUnit = effectUnit ?? string.Empty;
             MaxLevel = Mathf.Max(1, maxLevel);
             CostMultiplierPerLevel = Mathf.Max(1f, costMultiplierPerLevel);
             Costs = costs ?? Array.Empty<RobotUpgradeCost>();
+        }
+
+        public string GetFormattedEffectIncrease()
+        {
+            return EffectValueType == RobotUpgradeEffectValueType.Percentage
+                ? $"+{EffectIncrease:0.#}%"
+                : $"+{EffectIncrease:0.#}{(string.IsNullOrWhiteSpace(EffectUnit) ? string.Empty : $" {EffectUnit}")}";
         }
     }
 
@@ -100,7 +119,7 @@ namespace Coreline.Robots
 
         [Header("Carrying Capacity")]
         [SerializeField] private Sprite carryingCapacityIcon;
-        [SerializeField, Min(0f)] private float carryingCapacityIncreasePercent = 10f;
+        [SerializeField, Min(0)] private int carryingCapacityIncreaseSlots = 2;
         [SerializeField, Min(1)] private int carryingCapacityMaxLevel = 5;
         [SerializeField, Min(1f)] private float carryingCapacityCostMultiplier = 1.5f;
         [SerializeField] private List<RobotUpgradeCost> carryingCapacityCosts = new()
@@ -145,6 +164,7 @@ namespace Coreline.Robots
             walkingSpeedMaxLevel = Mathf.Max(1, walkingSpeedMaxLevel);
             miningSpeedMaxLevel = Mathf.Max(1, miningSpeedMaxLevel);
             carryingCapacityMaxLevel = Mathf.Max(1, carryingCapacityMaxLevel);
+            carryingCapacityIncreaseSlots = Mathf.Max(0, carryingCapacityIncreaseSlots);
 
             walkingSpeedLevel = Mathf.Clamp(walkingSpeedLevel, 0, walkingSpeedMaxLevel);
             miningSpeedLevel = Mathf.Clamp(miningSpeedLevel, 0, miningSpeedMaxLevel);
@@ -289,9 +309,11 @@ namespace Coreline.Robots
                 RobotUpgradeType.WalkingSpeed,
                 "Walking Speed",
                 "Increases this robot's movement speed.",
-                "Walking Speed",
+                "Walking Speed: ",
                 walkingSpeedIcon,
+                RobotUpgradeEffectValueType.Percentage,
                 walkingSpeedIncreasePercent,
+                string.Empty,
                 walkingSpeedMaxLevel,
                 walkingSpeedCostMultiplier,
                 walkingSpeedCosts));
@@ -302,9 +324,11 @@ namespace Coreline.Robots
                     RobotUpgradeType.MiningSpeed,
                     "Mining Speed",
                     "Reduces the delay between mining hits.",
-                    "Mining Speed",
+                    "Mining Speed: ",
                     miningSpeedIcon,
+                    RobotUpgradeEffectValueType.Percentage,
                     miningSpeedIncreasePercent,
+                    string.Empty,
                     miningSpeedMaxLevel,
                     miningSpeedCostMultiplier,
                     miningSpeedCosts));
@@ -314,10 +338,12 @@ namespace Coreline.Robots
                 definitions.Add(new RobotUpgradeDefinition(
                     RobotUpgradeType.CarryingCapacity,
                     "Carrying Capacity",
-                    "Increases the number of inventory stacks this robot can carry.",
-                    "Carrying Capacity",
+                    "Adds inventory stack slots to this robot.",
+                    "Carrying Capacity: ",
                     carryingCapacityIcon,
-                    carryingCapacityIncreasePercent,
+                    RobotUpgradeEffectValueType.Fixed,
+                    carryingCapacityIncreaseSlots,
+                    "slots",
                     carryingCapacityMaxLevel,
                     carryingCapacityCostMultiplier,
                     carryingCapacityCosts));
@@ -359,17 +385,23 @@ namespace Coreline.Robots
                 return;
             }
 
-            float multiplier = 1f + GetLevel(definition.Type) * definition.PercentageIncrease / 100f;
+            int level = GetLevel(definition.Type);
             switch (definition.Type)
             {
                 case RobotUpgradeType.WalkingSpeed:
-                    robot?.SetWalkingSpeedMultiplier(multiplier);
+                    float walkingMultiplier =
+                        1f + level * definition.EffectIncrease / 100f;
+                    robot?.SetWalkingSpeedMultiplier(walkingMultiplier);
                     break;
                 case RobotUpgradeType.MiningSpeed:
-                    miningExecutor?.SetMiningSpeedMultiplier(multiplier);
+                    float miningMultiplier =
+                        1f + level * definition.EffectIncrease / 100f;
+                    miningExecutor?.SetMiningSpeedMultiplier(miningMultiplier);
                     break;
                 case RobotUpgradeType.CarryingCapacity:
-                    collectingInventory?.SetCapacityMultiplier(multiplier);
+                    int additionalSlots =
+                        Mathf.RoundToInt(level * definition.EffectIncrease);
+                    collectingInventory?.SetCapacityBonusSlots(additionalSlots);
                     break;
             }
         }

@@ -202,7 +202,11 @@ namespace Coreline
             ToggleInventory();
         }
         
-        private static bool InventoryToggleBlocked() => RobotChatUIController.IsAnyOpen || CollectingRobotInventoryUIController.IsAnyOpen || WorkbenchUIController.IsAnyOpen;
+        private static bool InventoryToggleBlocked() =>
+            RobotChatUIController.IsAnyOpen ||
+            CollectingRobotInventoryUIController.IsAnyOpen ||
+            WorkbenchUIController.IsAnyOpen ||
+            ChestInventoryUIController.IsAnyOpen;
 
        
         #endregion

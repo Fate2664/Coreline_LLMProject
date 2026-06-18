@@ -46,7 +46,8 @@ public class PlayerController : MonoBehaviour
     private bool IsUiInputBlocked => IsInventoryOpen ||
                                      RobotChatUIController.IsAnyOpen ||
                                      CollectingRobotInventoryUIController.IsAnyOpen ||
-                                     WorkbenchUIController.IsAnyOpen;
+                                     WorkbenchUIController.IsAnyOpen ||
+                                     ChestInventoryUIController.IsAnyOpen;
 
     #endregion
 
@@ -140,7 +141,8 @@ public class PlayerController : MonoBehaviour
         if (toggleInventoryPressed &&
             !wasToggleInventoryPressed &&
             !CollectingRobotInventoryUIController.IsAnyOpen &&
-            !WorkbenchUIController.IsAnyOpen)
+            !WorkbenchUIController.IsAnyOpen &&
+            !ChestInventoryUIController.IsAnyOpen)
         {
             ToggleInventory();
         }

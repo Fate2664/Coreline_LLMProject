@@ -284,6 +284,7 @@ namespace Coreline.Robots
             if (!promptRequestsImmediateStop)
             {
                 NormalizeCollectingRobotFollowAndCollectCommands(sequence, playerPrompt, robot, promptResources);
+                NormalizeCollectingRobotSelectedChestDelivery(sequence, playerPrompt, robot, promptResources);
                 ExpandMiningResourceCommands(sequence, promptResources, prioritizedResources, robot, playerPrompt);
                 ReorderPrioritizedMiningCommands(sequence);
                 RemoveUnrequestedScannerMovementCommands(sequence, playerPrompt, robot, registry);
@@ -355,6 +356,82 @@ namespace Coreline.Robots
             pickupCommand.Normalize();
         }
 
+        private static void NormalizeCollectingRobotSelectedChestDelivery(
+            RobotCommandSequence sequence,
+            string playerPrompt,
+            BaseRobotController robot,
+            List<string> promptResources)
+        {
+            if (sequence == null ||
+                sequence.sequence == null ||
+                robot is not CollectingRobotController ||
+                !PromptReferencesSelectedChest(playerPrompt) ||
+                !PromptMentionsDelivery(playerPrompt))
+            {
+                return;
+            }
+
+            RobotCommand pickupCommand = null;
+            RobotCommand deliveryCommand = null;
+
+            for (int i = sequence.sequence.Count - 1; i >= 0; i--)
+            {
+                RobotCommand command = sequence.sequence[i];
+                if (command == null)
+                {
+                    continue;
+                }
+
+                command.Normalize();
+                if (command.ActionType == RobotCommandAction.Pickup)
+                {
+                    pickupCommand ??= command;
+                    continue;
+                }
+
+                if (command.ActionType == RobotCommandAction.Deliver)
+                {
+                    deliveryCommand ??= command;
+                    sequence.sequence.RemoveAt(i);
+                }
+            }
+
+            if (pickupCommand == null && PromptMentionsCollecting(playerPrompt))
+            {
+                pickupCommand = new RobotCommand
+                {
+                    action = "pickup",
+                    priority = "normal"
+                };
+
+                if (promptResources.Count == 1)
+                {
+                    pickupCommand.resource = promptResources[0];
+                }
+
+                pickupCommand.Normalize();
+                sequence.sequence.Insert(0, pickupCommand);
+            }
+
+            deliveryCommand ??= new RobotCommand
+            {
+                action = "deliver",
+                priority = "normal"
+            };
+            deliveryCommand.action = "deliver";
+            deliveryCommand.target = "selected_chest";
+            deliveryCommand.resource = string.Empty;
+            deliveryCommand.Normalize();
+
+            int pickupIndex = pickupCommand != null
+                ? sequence.sequence.IndexOf(pickupCommand)
+                : -1;
+            int deliveryIndex = pickupIndex >= 0
+                ? pickupIndex + 1
+                : sequence.sequence.Count;
+            sequence.sequence.Insert(deliveryIndex, deliveryCommand);
+        }
+
         private static bool PromptReferencesSelectedRobot(string playerPrompt)
         {
             if (string.IsNullOrWhiteSpace(playerPrompt))
@@ -370,6 +447,36 @@ namespace Coreline.Robots
                    normalizedPrompt.Contains("assigned mining robot", System.StringComparison.Ordinal) ||
                    normalizedPrompt.Contains("mining robot", System.StringComparison.Ordinal) ||
                    normalizedPrompt.Contains("miner", System.StringComparison.Ordinal);
+        }
+
+        private static bool PromptReferencesSelectedChest(string playerPrompt)
+        {
+            if (string.IsNullOrWhiteSpace(playerPrompt))
+            {
+                return false;
+            }
+
+            string normalizedPrompt = playerPrompt.ToLowerInvariant();
+            return normalizedPrompt.Contains("this chest", System.StringComparison.Ordinal) ||
+                   normalizedPrompt.Contains("selected chest", System.StringComparison.Ordinal) ||
+                   normalizedPrompt.Contains("chosen chest", System.StringComparison.Ordinal) ||
+                   normalizedPrompt.Contains("assigned chest", System.StringComparison.Ordinal);
+        }
+
+        private static bool PromptMentionsDelivery(string playerPrompt)
+        {
+            if (string.IsNullOrWhiteSpace(playerPrompt))
+            {
+                return false;
+            }
+
+            string normalizedPrompt = playerPrompt.ToLowerInvariant();
+            return normalizedPrompt.Contains("deliver", System.StringComparison.Ordinal) ||
+                   normalizedPrompt.Contains("deposit", System.StringComparison.Ordinal) ||
+                   normalizedPrompt.Contains("drop off", System.StringComparison.Ordinal) ||
+                   normalizedPrompt.Contains("dropoff", System.StringComparison.Ordinal) ||
+                   normalizedPrompt.Contains("put it in", System.StringComparison.Ordinal) ||
+                   normalizedPrompt.Contains("put them in", System.StringComparison.Ordinal);
         }
 
         private static bool IsSelectedRobotOrPlayerTarget(string target)

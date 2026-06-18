@@ -25,12 +25,12 @@ namespace Coreline.Robots
 
     public class CollectingRobotInventory : MonoBehaviour
     {
-        [SerializeField] private int maxItemStacks = 24;
+        [SerializeField] private int maxItemStacks = 16;
         [SerializeField] private int maxAmountPerStack = 99;
         [SerializeField] private List<RobotInventoryItemStack> itemStacks = new();
         [SerializeField] private List<RobotResourceStack> resourceStacks = new();
 
-        private float capacityMultiplier = 1f;
+        private int capacityBonusSlots;
 
         public event Action InventoryChanged;
 
@@ -40,9 +40,9 @@ namespace Coreline.Robots
         public int BaseMaxItemStacks => Mathf.Max(1, maxItemStacks);
         public int MaxItemStacks => EffectiveMaxItemStacks;
 
-        public void SetCapacityMultiplier(float multiplier)
+        public void SetCapacityBonusSlots(int bonusSlots)
         {
-            capacityMultiplier = Mathf.Max(0.01f, multiplier);
+            capacityBonusSlots = Mathf.Max(0, bonusSlots);
             InventoryChanged?.Invoke();
         }
 
@@ -272,7 +272,7 @@ namespace Coreline.Robots
 
         private int UsedStackCount => itemStacks.Count + resourceStacks.Count;
         private int EffectiveMaxItemStacks =>
-            Mathf.Max(1, Mathf.RoundToInt(BaseMaxItemStacks * capacityMultiplier));
+            BaseMaxItemStacks + capacityBonusSlots;
         private int EffectiveMaxAmountPerStack => Mathf.Max(1, maxAmountPerStack);
         private int FreeStackSlotCount => Mathf.Max(0, EffectiveMaxItemStacks - UsedStackCount);
         private bool HasFreeStackSlot => FreeStackSlotCount > 0;

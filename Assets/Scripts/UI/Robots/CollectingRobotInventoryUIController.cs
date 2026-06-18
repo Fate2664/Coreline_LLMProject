@@ -36,9 +36,12 @@ namespace Coreline.Robots
         [SerializeField] private Vector2 dragPreviewOffset = new(22f, -22f);
         [SerializeField] private short dragPreviewZIndex = 2000;
 
-        private readonly List<InventoryItem> robotItems = new();
-        private readonly List<RobotInventoryDisplaySource> robotItemSources = new();
-        private readonly List<InventorySlot> playerSlots = new();
+        private List<InventoryItem> robotItems = new();
+        private List<RobotInventoryDisplaySource> robotItemSources = new();
+        private readonly List<InventoryItem> pendingRobotItems = new();
+        private readonly List<RobotInventoryDisplaySource> pendingRobotItemSources = new();
+        private List<InventorySlot> playerSlots = new();
+        private readonly List<InventorySlot> pendingPlayerSlots = new();
         private readonly Dictionary<uint, int> pressedRobotSlotIndices = new();
         private readonly Dictionary<uint, int> pressedPlayerSlotIndices = new();
         private readonly List<UIBlockHit> uiBlockHits = new();
@@ -46,6 +49,8 @@ namespace Coreline.Robots
         private bool robotGridInitialized;
         private bool playerGridInitialized;
         private bool isBound;
+        private int boundRobotSlotCount = -1;
+        private int boundPlayerSlotCount = -1;
 
         public static bool IsAnyOpen { get; private set; }
         public CollectingRobotController ActiveRobot { get; private set; }
@@ -161,26 +166,30 @@ namespace Coreline.Robots
         {
             BuildRobotInventoryItems();
 
-            if (robotGridInitialized && robotGrid != null && robotGrid.gameObject.activeInHierarchy)
+            if (!robotGridInitialized || robotGrid == null || !robotGrid.gameObject.activeInHierarchy)
             {
-                robotGrid.Refresh();
+                return;
             }
+
+            ApplyRobotInventoryItems();
         }
 
         private void RefreshPlayerInventory()
         {
             BuildPlayerInventorySlots();
 
-            if (playerGridInitialized && playerGrid != null && playerGrid.gameObject.activeInHierarchy)
+            if (!playerGridInitialized || playerGrid == null || !playerGrid.gameObject.activeInHierarchy)
             {
-                playerGrid.Refresh();
+                return;
             }
+
+            ApplyPlayerInventorySlots();
         }
 
         private void BuildRobotInventoryItems()
         {
-            robotItems.Clear();
-            robotItemSources.Clear();
+            pendingRobotItems.Clear();
+            pendingRobotItemSources.Clear();
 
             CollectingRobotInventory inventory = ActiveRobot != null ? ActiveRobot.Inventory : null;
             if (inventory != null)
@@ -189,30 +198,29 @@ namespace Coreline.Robots
                 AddRobotResourceStacks(inventory);
             }
 
-            int targetSlotCount = Mathf.Max(robotSlotCount, robotItems.Count);
-            while (robotItems.Count < targetSlotCount)
+            int inventorySlotCount = inventory != null
+                ? inventory.MaxItemStacks
+                : robotSlotCount;
+            int targetSlotCount = Mathf.Max(inventorySlotCount, pendingRobotItems.Count);
+            while (pendingRobotItems.Count < targetSlotCount)
             {
-                robotItems.Add(new InventoryItem());
-                robotItemSources.Add(RobotInventoryDisplaySource.Empty);
+                pendingRobotItems.Add(new InventoryItem());
+                pendingRobotItemSources.Add(RobotInventoryDisplaySource.Empty);
             }
-
-            robotGrid?.SetDataSource(robotItems);
         }
 
         private void BuildPlayerInventorySlots()
         {
-            playerSlots.Clear();
+            pendingPlayerSlots.Clear();
 
             if (playerInventory != null)
             {
                 IReadOnlyList<InventorySlot> slots = playerInventory.Slots;
                 for (int i = 0; i < slots.Count; i++)
                 {
-                    playerSlots.Add(slots[i]);
+                    pendingPlayerSlots.Add(slots[i]);
                 }
             }
-
-            playerGrid?.SetDataSource(playerSlots);
         }
 
         private void AddRobotItemStacks(CollectingRobotInventory inventory)
@@ -224,12 +232,13 @@ namespace Coreline.Robots
                     continue;
                 }
 
-                robotItems.Add(new InventoryItem
+                pendingRobotItems.Add(new InventoryItem
                 {
                     item = stack.item,
                     count = stack.amount
                 });
-                robotItemSources.Add(RobotInventoryDisplaySource.FromItem(stack.item, stack.amount));
+                pendingRobotItemSources.Add(
+                    RobotInventoryDisplaySource.FromItem(stack.item, stack.amount));
             }
         }
 
@@ -244,14 +253,55 @@ namespace Coreline.Robots
                     continue;
                 }
 
-                robotItems.Add(new InventoryItem
+                pendingRobotItems.Add(new InventoryItem
                 {
                     item = itemData,
                     count = stack.amount
                 });
-                robotItemSources.Add(
+                pendingRobotItemSources.Add(
                     RobotInventoryDisplaySource.FromResource(stack.oreType, itemData, stack.amount));
             }
+        }
+
+        private void ApplyRobotInventoryItems()
+        {
+            if (boundRobotSlotCount != pendingRobotItems.Count ||
+                robotItems.Count != pendingRobotItems.Count)
+            {
+                robotItems = new List<InventoryItem>(pendingRobotItems);
+                robotItemSources =
+                    new List<RobotInventoryDisplaySource>(pendingRobotItemSources);
+                robotGrid.SetDataSource(robotItems);
+                boundRobotSlotCount = robotItems.Count;
+                return;
+            }
+
+            for (int i = 0; i < pendingRobotItems.Count; i++)
+            {
+                robotItems[i] = pendingRobotItems[i];
+                robotItemSources[i] = pendingRobotItemSources[i];
+            }
+
+            robotGrid.Refresh();
+        }
+
+        private void ApplyPlayerInventorySlots()
+        {
+            if (boundPlayerSlotCount != pendingPlayerSlots.Count ||
+                playerSlots.Count != pendingPlayerSlots.Count)
+            {
+                playerSlots = new List<InventorySlot>(pendingPlayerSlots);
+                playerGrid.SetDataSource(playerSlots);
+                boundPlayerSlotCount = playerSlots.Count;
+                return;
+            }
+
+            for (int i = 0; i < pendingPlayerSlots.Count; i++)
+            {
+                playerSlots[i] = pendingPlayerSlots[i];
+            }
+
+            playerGrid.Refresh();
         }
 
         private bool TryFindOreItemDefinition(OreType oreType, out OreItemSO itemData)
@@ -300,6 +350,7 @@ namespace Coreline.Robots
             robotGrid.AddGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandleRobotItemReleased);
             robotGrid.AddGestureHandler<Gesture.OnCancel, InventoryItemVisuals>(HandleRobotItemCanceled);
             robotGrid.SetDataSource(robotItems);
+            boundRobotSlotCount = robotItems.Count;
             robotGridInitialized = true;
         }
 
@@ -318,6 +369,7 @@ namespace Coreline.Robots
             playerGrid.AddGestureHandler<Gesture.OnRelease, InventoryItemVisuals>(HandlePlayerItemReleased);
             playerGrid.AddGestureHandler<Gesture.OnCancel, InventoryItemVisuals>(HandlePlayerItemCanceled);
             playerGrid.SetDataSource(playerSlots);
+            boundPlayerSlotCount = playerSlots.Count;
             playerGridInitialized = true;
         }
 

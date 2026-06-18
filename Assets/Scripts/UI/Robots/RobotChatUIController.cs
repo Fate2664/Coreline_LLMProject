@@ -14,6 +14,7 @@ namespace Coreline.Robots
         private const string CollectingChatRootName = "CollectionRobotChat";
         private const string PlayerTargetId = "player";
         private const string MiningRobotDropdownName = "DropDownSetting";
+        private const string MiningRobotDropdownRootName = "RobotToFollowRoot";
         private const string NoMiningRobotSelection = "None";
         private const string RobotNameTextName = "RobotNameText";
         private const string RobotTypeTextName = "RobotTypeText";
@@ -248,7 +249,12 @@ namespace Coreline.Robots
         {
             chatInput ??= GetComponentInChildren<NeocortexTextChatInput>(true);
             chatPanel ??= GetComponentInChildren<NeocortexChatPanel>(true);
-            miningRobotDropdownView ??= FindChildItemViewWithVisuals<DropDownVisuals>(MiningRobotDropdownName);
+            Transform miningRobotDropdownRoot =
+                FindChildRecursive(transform, MiningRobotDropdownRootName);
+            miningRobotDropdownView ??=
+                FindChildItemViewWithVisuals<DropDownVisuals>(
+                    MiningRobotDropdownName,
+                    miningRobotDropdownRoot);
             robotTypeText ??= FindChildComponentByName<TextBlock>(RobotTypeTextName);
             robotNameField ??= FindChildComponentByName<TextField>(RobotNameTextName);
             robotNameText ??= FindChildComponentByName<TextBlock>(RobotNameTextName);
@@ -593,6 +599,12 @@ namespace Coreline.Robots
 
         private static string BuildRejectedResponse(string reason)
         {
+            if (!string.IsNullOrWhiteSpace(reason) &&
+                reason.Contains("No chest is selected", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return "Please select a chest from the Chest to Deliver dropdown first.";
+            }
+
             string resource = ExtractResourceFromMissingResourceError(reason);
             if (!string.IsNullOrWhiteSpace(resource))
             {
@@ -720,11 +732,15 @@ namespace Coreline.Robots
             }
         }
 
-        private ItemView FindChildItemViewWithVisuals<TVisuals>(string preferredObjectName)
+        private ItemView FindChildItemViewWithVisuals<TVisuals>(
+            string preferredObjectName,
+            Transform searchRoot = null)
             where TVisuals : ItemVisuals
         {
             ItemView fallback = null;
-            ItemView[] itemViews = GetComponentsInChildren<ItemView>(true);
+            ItemView[] itemViews = searchRoot != null
+                ? searchRoot.GetComponentsInChildren<ItemView>(true)
+                : GetComponentsInChildren<ItemView>(true);
 
             for (int i = 0; i < itemViews.Length; i++)
             {

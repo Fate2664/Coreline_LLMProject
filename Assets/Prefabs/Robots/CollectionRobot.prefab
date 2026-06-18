@@ -300,7 +300,7 @@ MonoBehaviour:
   - oreType: 1
     baseAmount: 5
   carryingCapacityIcon: {fileID: -486055159, guid: eabc27461612b6f4489e70e3e924e0f2, type: 3}
-  carryingCapacityIncreasePercent: 10
+  carryingCapacityIncreaseSlots: 2
   carryingCapacityMaxLevel: 5
   carryingCapacityCostMultiplier: 1.5
   carryingCapacityCosts:

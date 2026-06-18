@@ -227,7 +227,7 @@ MonoBehaviour:
   - oreType: 1
     baseAmount: 5
   carryingCapacityIcon: {fileID: 0}
-  carryingCapacityIncreasePercent: 10
+  carryingCapacityIncreaseSlots: 2
   carryingCapacityMaxLevel: 5
   carryingCapacityCostMultiplier: 1.5
   carryingCapacityCosts:

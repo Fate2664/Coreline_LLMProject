@@ -13,6 +13,7 @@ namespace Coreline.Robots
         [SerializeField] private bool orePickupsRequireScan = true;
 
         private MiningRobotController selectedMiningRobot;
+        private global::Coreline.ChestInventory selectedDeliveryChest;
         private readonly HashSet<CommandTarget> visiblePickupTargets = new();
         private readonly HashSet<CommandTarget> ignoredPickupTargets = new();
         private Animator animator;
@@ -20,6 +21,7 @@ namespace Coreline.Robots
 
         public CollectingRobotInventory Inventory => inventory;
         public MiningRobotController SelectedMiningRobot => selectedMiningRobot;
+        public global::Coreline.ChestInventory SelectedDeliveryChest => selectedDeliveryChest;
         protected override string RobotTargetIdPrefix => "CollectionRobot";
 
         protected override void Awake()
@@ -56,6 +58,11 @@ namespace Coreline.Robots
         public void SetSelectedMiningRobot(MiningRobotController miningRobot)
         {
             selectedMiningRobot = miningRobot;
+        }
+
+        public void SetSelectedDeliveryChest(global::Coreline.ChestInventory chest)
+        {
+            selectedDeliveryChest = chest;
         }
 
         public bool TryGetNearestVisiblePickup(string resource, Vector3 origin, out CommandTarget target)

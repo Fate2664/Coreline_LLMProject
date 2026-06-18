@@ -3,7 +3,22 @@ guid: 7039a28cbd11a054eba1eaceab9c19ba
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ChestLight
+    second: {fileID: 2100000, guid: b1b913a77af6925488cc25e4d8e5a2d1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ChestMat1
+    second: {fileID: 2100000, guid: 7a21b1d3d537b5942aff9af7e3ac6b3b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: ChestMat2
+    second: {fileID: 2100000, guid: 8476ce04257b0e0478e3211223a4861b, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

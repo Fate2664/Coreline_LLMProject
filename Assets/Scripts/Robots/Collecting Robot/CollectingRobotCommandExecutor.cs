@@ -279,6 +279,13 @@ namespace Coreline.Robots
 
         private IEnumerator ExecuteDeliver(RobotCommand command)
         {
+            if (RobotCommand.IsSelectedChestReference(command.target) &&
+                collectingRobot.SelectedDeliveryChest != null &&
+                collectingRobot.SelectedDeliveryChest.CommandTarget != null)
+            {
+                command.target = collectingRobot.SelectedDeliveryChest.CommandTarget.TargetId;
+            }
+
             if (!TryResolveTarget(command, out CommandTarget target))
             {
                 yield break;
@@ -498,5 +505,6 @@ namespace Coreline.Robots
                     return false;
             }
         }
+
     }
 }

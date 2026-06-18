@@ -266,8 +266,31 @@ namespace Coreline.Robots
             return resources;
         }
 
+        public static bool IsSelectedChestReference(string value)
+        {
+            switch (NormalizeToken(value))
+            {
+                case "this_chest":
+                case "this chest":
+                case "selected_chest":
+                case "selected chest":
+                case "chosen_chest":
+                case "chosen chest":
+                case "assigned_chest":
+                case "assigned chest":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private static string NormalizeTargetAlias(string value)
         {
+            if (IsSelectedChestReference(value))
+            {
+                return "selected_chest";
+            }
+
             switch (value)
             {
                 case "me":

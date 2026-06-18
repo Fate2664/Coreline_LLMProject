@@ -255,7 +255,7 @@ namespace Coreline.Robots
 
             if (effectPercentage != null)
             {
-                effectPercentage.Text = $"+{selected.PercentageIncrease:0.#}%";
+                effectPercentage.Text = selected.GetFormattedEffectIncrease();
             }
 
             RefreshCosts(selected, currentLevel, maxLevel);

@@ -127,7 +127,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: 52.2
+        Raw: 52.199997
         Type: 0
       Y:
         Raw: 0
@@ -500,7 +500,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: 42.2
+        Raw: 7.348442
         Type: 0
       Y:
         Raw: 0
@@ -1165,7 +1165,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: 62.2
+        Raw: 97.05156
         Type: 0
       Y:
         Raw: 0
@@ -1345,8 +1345,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281874627
-  m_fontColor: {r: 0.764151, g: 0.2198736, b: 0.2198736, a: 1}
+    rgba: 4294967295
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1662,5 +1662,5 @@ MonoBehaviour:
         Icon: {fileID: 8194872548944010598}
         PlayerAmountText: {fileID: 2719788305068915849}
         CostAmountText: {fileID: 5358886351916143737}
-        EnoughColor: {r: 1, g: 1, b: 1, a: 1}
+        EnoughColor: {r: 0.34385645, g: 1, b: 0.25943398, a: 1}
         MissingColor: {r: 0.764, g: 0.22, b: 0.22, a: 1}
