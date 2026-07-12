@@ -27,7 +27,6 @@ public class TabButtonVisuals : ItemVisuals
     internal static void HandlePress(Gesture.OnPress evt, TabButtonVisuals target, int index)
     {
         //Play Audio SFX
-        AudioManager.Instance.Play("ClickSound");
     }
 
     internal static void HandleHover(Gesture.OnHover evt, TabButtonVisuals target, int index)
@@ -35,7 +34,6 @@ public class TabButtonVisuals : ItemVisuals
         target.label.DOKill();
         target.label.transform.DOScale(target.label.transform.localScale * HoverScale, 0.2f).SetEase(Ease.OutBack);
         //Play Audio SFX
-        AudioManager.Instance.Play("HoverSound");
     }
 
     internal static void HandleUnHover(Gesture.OnUnhover evt, TabButtonVisuals target, int index)

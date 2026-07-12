@@ -101,7 +101,7 @@ MonoBehaviour:
   followStoppingDistance: 2
   followRepathInterval: 0.2
   miningInterval: 0.1
-  miningDamage: 10
+  miningDamage: 5
   maxMiningHits: 200
   faceTargetTurnSpeed: 540
   faceTargetAngleTolerance: 2
@@ -215,16 +215,16 @@ MonoBehaviour:
   walkingSpeedMaxLevel: 5
   walkingSpeedCostMultiplier: 1.5
   walkingSpeedCosts:
-  - oreType: 1
+  - oreType: 5
     baseAmount: 5
   miningSpeedIcon: {fileID: 718868974, guid: eabc27461612b6f4489e70e3e924e0f2, type: 3}
   miningSpeedIncreasePercent: 10
   miningSpeedMaxLevel: 5
   miningSpeedCostMultiplier: 1.5
   miningSpeedCosts:
-  - oreType: 0
+  - oreType: 5
     baseAmount: 10
-  - oreType: 1
+  - oreType: 6
     baseAmount: 5
   carryingCapacityIcon: {fileID: 0}
   carryingCapacityIncreaseSlots: 2

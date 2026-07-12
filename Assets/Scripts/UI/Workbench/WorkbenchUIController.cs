@@ -18,13 +18,14 @@ namespace Coreline.Robots
         private const string CraftButtonTextName = "CraftText";
 
         [Header("Recipes")]
-        [SerializeField] private List<RobotCraftingRecipe> recipes = new();
+        [SerializeField] private List<CraftingRecipe> recipes = new();
 
         [Header("UI Roots")]
         [SerializeField] private UIBlock2D visualRoot;
         [SerializeField] private Transform optionsRoot;
         [SerializeField] private Transform requirementsRoot;
         [SerializeField] private List<ItemView> optionSlots = new();
+        [SerializeField] private ItemView optionSlotPrefab;
         [SerializeField] private List<ItemView> requirementSlots = new();
         [SerializeField] private ItemView requirementSlotPrefab;
 
@@ -80,7 +81,8 @@ namespace Coreline.Robots
         private UIVisuals visuals;
 
         public static bool IsAnyOpen { get; private set; }
-        public RobotCraftingRecipe SelectedRecipe => TryGetSelectedRecipe(out RobotCraftingRecipe recipe) ? recipe : null;
+        public CraftingRecipe SelectedRecipe =>
+            TryGetSelectedRecipe(out CraftingRecipe recipe) ? recipe : null;
 
         private void Awake()
         {
@@ -201,9 +203,9 @@ namespace Coreline.Robots
 
         public void TryCraftSelected()
         {
-            if (!TryGetSelectedRecipe(out RobotCraftingRecipe recipe))
+            if (!TryGetSelectedRecipe(out CraftingRecipe recipe))
             {
-                SetStatus("Select a robot to craft.");
+                SetStatus("Select an item to craft.");
                 return;
             }
 
@@ -238,7 +240,7 @@ namespace Coreline.Robots
             RefreshCraftButton();
         }
 
-        private bool TryGetSelectedRecipe(out RobotCraftingRecipe recipe)
+        private bool TryGetSelectedRecipe(out CraftingRecipe recipe)
         {
             recipe = null;
             if (selectedRecipeIndex < 0 || selectedRecipeIndex >= recipes.Count)
@@ -276,7 +278,7 @@ namespace Coreline.Robots
             }
         }
 
-        private bool CanCraft(RobotCraftingRecipe recipe)
+        private bool CanCraft(CraftingRecipe recipe)
         {
             return craftingService.Evaluate(recipe, playerInventory).Succeeded;
         }
@@ -284,6 +286,7 @@ namespace Coreline.Robots
         private void RefreshOptionSlots()
         {
             EnsureOptionSlots();
+            CreateMissingOptionSlots(recipes.Count);
             optionVisualIndices.Clear();
 
             for (int i = 0; i < optionSlots.Count; i++)
@@ -307,7 +310,11 @@ namespace Coreline.Robots
             }
         }
 
-        private void BindOptionSlot(InventoryItemVisuals visuals, RobotCraftingRecipe recipe, bool isSelected, bool canCraft)
+        private void BindOptionSlot(
+            InventoryItemVisuals visuals,
+            CraftingRecipe recipe,
+            bool isSelected,
+            bool canCraft)
         {
             if (visuals.ContentRoot != null)
             {
@@ -348,7 +355,7 @@ namespace Coreline.Robots
         {
             EnsureRequirementSlots();
 
-            if (!TryGetSelectedRecipe(out RobotCraftingRecipe recipe))
+            if (!TryGetSelectedRecipe(out CraftingRecipe recipe))
             {
                 HideRequirementSlots();
                 return;
@@ -457,7 +464,7 @@ namespace Coreline.Robots
 
         private void RefreshInfoPanel()
         {
-            if (!TryGetSelectedRecipe(out RobotCraftingRecipe recipe))
+            if (!TryGetSelectedRecipe(out CraftingRecipe recipe))
             {
                 if (craftInfoText != null)
                 {
@@ -475,7 +482,7 @@ namespace Coreline.Robots
 
         private void RefreshCraftButton()
         {
-            if (!TryGetSelectedRecipe(out RobotCraftingRecipe recipe))
+            if (!TryGetSelectedRecipe(out CraftingRecipe recipe))
             {
                 SetCraftButtonColor(craftButtonDefaultColor);
                 if (craftButtonText != null)
@@ -517,7 +524,7 @@ namespace Coreline.Robots
             }
         }
 
-        private string BuildMissingRequirementsMessage(RobotCraftingRecipe recipe)
+        private string BuildMissingRequirementsMessage(CraftingRecipe recipe)
         {
             foreach (CraftingIngredient requirement in recipe.Requirements)
             {
@@ -537,7 +544,9 @@ namespace Coreline.Robots
             return "Missing required items.";
         }
 
-        private string BuildCraftingFailureMessage(RobotCraftingRecipe recipe, CraftingResult result)
+        private string BuildCraftingFailureMessage(
+            CraftingRecipe recipe,
+            CraftingResult result)
         {
             switch (result.FailureReason)
             {
@@ -735,6 +744,36 @@ namespace Coreline.Robots
             }
         }
 
+        private void CreateMissingOptionSlots(int requiredCount)
+        {
+            if (requiredCount <= optionSlots.Count || optionsRoot == null)
+            {
+                return;
+            }
+
+            ItemView source = optionSlotPrefab;
+            if (source == null && optionSlots.Count > 0)
+            {
+                source = optionSlots[0];
+            }
+
+            if (source == null)
+            {
+                Debug.LogWarning(
+                    $"{nameof(WorkbenchUIController)} needs an option slot prefab " +
+                    $"to display {requiredCount} recipes.",
+                    this);
+                return;
+            }
+
+            while (optionSlots.Count < requiredCount)
+            {
+                ItemView slot = Instantiate(source, optionsRoot, false);
+                slot.name = $"CraftOption_{optionSlots.Count + 1}";
+                optionSlots.Add(slot);
+            }
+        }
+
         private void EnsureRequirementSlots()
         {
             requirementSlots.RemoveAll(slot => slot == null);
@@ -832,6 +871,7 @@ namespace Coreline.Robots
         private void RegisterOptionSlotHandlers()
         {
             EnsureOptionSlots();
+            CreateMissingOptionSlots(recipes.Count);
 
             foreach (ItemView slot in optionSlots)
             {

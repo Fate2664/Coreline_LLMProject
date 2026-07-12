@@ -15,26 +15,21 @@ namespace Coreline.Robots
         [SerializeField] private float repeatMineRetryInterval = 1f;
 
         private MiningRobotController miningRobot;
-        private float baseMiningInterval;
+        private float baseMiningDamage;
 
-        public float BaseMiningInterval => baseMiningInterval;
-        public float CurrentMiningInterval => miningInterval;
+        public float BaseMiningDamage => baseMiningDamage;
+        public float CurrentMiningDamage => miningDamage;
 
         protected override void Awake()
         {
             base.Awake();
             miningRobot = GetComponent<MiningRobotController>();
-            baseMiningInterval = Mathf.Max(0.01f, miningInterval);
+            baseMiningDamage = Mathf.Max(0f, miningDamage);
         }
 
-        public void SetMiningSpeedMultiplier(float multiplier)
+        public void SetMiningDamageMultiplier(float multiplier)
         {
-            if (baseMiningInterval <= 0f)
-            {
-                baseMiningInterval = Mathf.Max(0.01f, miningInterval);
-            }
-
-            miningInterval = baseMiningInterval / Mathf.Max(0.01f, multiplier);
+            miningDamage = baseMiningDamage * Mathf.Max(0f, multiplier);
         }
 
         public override void CancelCurrentCommand()
@@ -162,7 +157,12 @@ namespace Coreline.Robots
 
                     BuildMiningHit(target, out Vector3 point, out Vector3 normal);
 
-                    bool depleted = mineable.Mine(new global::MiningHit(miningRobot.ToolTransform, point, normal, miningDamage));
+                    bool depleted = mineable.Mine(new global::MiningHit(
+                        miningRobot.ToolTransform,
+                        point,
+                        normal,
+                        miningDamage,
+                        global::MiningSourceType.MiningRobot));
                     if (depleted)
                     {
                         robot.SetStatus(RobotWorkState.Idle);

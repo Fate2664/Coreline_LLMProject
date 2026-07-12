@@ -498,7 +498,8 @@ namespace Coreline.Robots
                 options[i + 1] = GetMiningRobotDropdownLabel(miningRobot);
             }
 
-            miningRobotDropdownSetting.SetOptions(options, selectedIndex);
+            miningRobotDropdownSetting.Options = options;
+            miningRobotDropdownSetting.SelectedIndex = selectedIndex;
             collectingRobot.SetSelectedMiningRobot(miningRobotDropdownRobots[miningRobotDropdownSetting.SelectedIndex]);
             miningRobotDropdownVisuals.Refresh(miningRobotDropdownSetting);
         }

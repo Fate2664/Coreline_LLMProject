@@ -141,7 +141,8 @@ namespace Coreline.Robots
                 options[i + 1] = GetChestDropdownLabel(chest);
             }
 
-            chestDropdownSetting.SetOptions(options, selectedIndex);
+            chestDropdownSetting.Options = options;
+            chestDropdownSetting.SelectedIndex = selectedIndex;
             collectingRobot.SetSelectedDeliveryChest(
                 chestDropdownChests[chestDropdownSetting.SelectedIndex]);
             chestDropdownVisuals.Refresh(chestDropdownSetting);

@@ -17,6 +17,7 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public event UnityAction<bool> ToggleInventory = delegate { };
     public event UnityAction<bool> Sprint = delegate { };
     public event UnityAction<bool> CrouchSlide = delegate { }; 
+    public event UnityAction<bool> Pause = delegate { }; 
     
     //UI Actions
     public event UnityAction<bool> Exit  =  delegate { };
@@ -102,6 +103,11 @@ public class GameInput : ScriptableObject, PlayerInputActions.IPlayerActions, Pl
     public void OnCrouchSlide(InputAction.CallbackContext context)
     {
         CrouchSlide.Invoke(context.ReadValueAsButton());
+    }
+
+    public void OnPause(InputAction.CallbackContext context)
+    {
+        Pause.Invoke(context.ReadValueAsButton());
     }
 
     #endregion

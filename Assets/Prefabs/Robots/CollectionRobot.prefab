@@ -288,7 +288,7 @@ MonoBehaviour:
   walkingSpeedMaxLevel: 5
   walkingSpeedCostMultiplier: 1.5
   walkingSpeedCosts:
-  - oreType: 1
+  - oreType: 5
     baseAmount: 5
   miningSpeedIcon: {fileID: 0}
   miningSpeedIncreasePercent: 10
@@ -304,8 +304,10 @@ MonoBehaviour:
   carryingCapacityMaxLevel: 5
   carryingCapacityCostMultiplier: 1.5
   carryingCapacityCosts:
-  - oreType: 1
+  - oreType: 5
     baseAmount: 10
+  - oreType: 6
+    baseAmount: 20
   walkingSpeedLevel: 0
   miningSpeedLevel: 0
   carryingCapacityLevel: 0

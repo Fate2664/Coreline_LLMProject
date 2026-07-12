@@ -9,7 +9,7 @@ public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance;
 
-    public SettingsCollection AudioCollection;
+    //public SettingsCollection AudioCollection;
     public SettingsCollection VideoCollection;
     [NonSerialized] public SettingsMenu Menu;
 
@@ -26,7 +26,7 @@ public class SettingsManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         settingsLookup = new Dictionary<string, Setting>();
-        AddSettingsFromCollection(AudioCollection);
+        //AddSettingsFromCollection(AudioCollection);
         AddSettingsFromCollection(VideoCollection);
 
         LoadAllSettings();
@@ -141,6 +141,16 @@ public class SettingsManager : MonoBehaviour
         }
         return defualtValue;
     }
+
+    private T GetSetting<T>(string key) where T : Setting
+    {
+        if (settingsLookup != null && settingsLookup.TryGetValue(key, out Setting setting))
+        {
+            return setting as T;
+        }
+
+        return null;
+    }
     
     #endregion
 
@@ -150,6 +160,8 @@ public class SettingsManager : MonoBehaviour
     public float MusicVolume => GetFloat("MusicVolume", 1f);
     public float EffectsVolume => GetFloat("SoundEffectsVolume", 1f);
     public float MenuVolume => GetFloat("MenuVolume", 1f);
+    public ResolutionSetting Resolution => GetSetting<ResolutionSetting>("Resolution");
+    public int RenderMode => GetInt("RenderMode", 2);
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
@@ -179,6 +191,7 @@ public class SettingsManager : MonoBehaviour
                 case MultiOptionSetting multiOptionSetting: multiOptionSetting.Load(); break;
             }
         }
+        ApplyVideoSettings();
         Menu?.SettingsList?.Refresh();
     }
 
@@ -194,6 +207,7 @@ public class SettingsManager : MonoBehaviour
             }
         }
         PlayerPrefs.Save();
+        ApplyVideoSettings();
         Menu?.SettingsList?.Refresh();
     }
 
@@ -216,6 +230,19 @@ public class SettingsManager : MonoBehaviour
         {
             
         }
+    }
+
+    private void ApplyVideoSettings()
+    {
+        Resolution resolution = Resolution.GetSelectedResolution();
+        FullScreenMode mode = RenderMode switch
+        {
+            0 => FullScreenMode.Windowed,
+            1 => FullScreenMode.FullScreenWindow,
+            2 => FullScreenMode.ExclusiveFullScreen
+        };
+        
+        Screen.SetResolution(resolution.width, resolution.height, mode, resolution.refreshRateRatio);
     }
 
     #endregion

@@ -284,7 +284,8 @@ namespace Coreline.Robots
                     int owned = playerInventory != null
                         ? playerInventory.GetOreCount(cost.OreType)
                         : 0;
-                    OreItemSO item = upgradeController.ResolveCostItem(cost.OreType, playerInventory);
+                    InventoryItemData item =
+                        upgradeController.ResolveCostItem(cost.OreType, playerInventory);
                     costData.Add(new RobotUpgradeCostViewData(item, owned, required));
                 }
             }
@@ -464,7 +465,7 @@ namespace Coreline.Robots
             }
 
             RobotUpgradeCost firstCost = definition.Costs[0];
-            OreItemSO item = firstCost != null
+            InventoryItemData item = firstCost != null
                 ? upgradeController.ResolveCostItem(firstCost.OreType, playerInventory)
                 : null;
             return item != null ? item.itemDesc?.Icon : null;

@@ -2484,6 +2484,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 6e9e778353322f544bcb53d43eee43e4, type: 2}
   - {fileID: 11400000, guid: 2a152356e4a0a214bad0c75484feee93, type: 2}
   - {fileID: 11400000, guid: 06e57196491b9d74999fee9d27b0d44d, type: 2}
+  - {fileID: 11400000, guid: d10d2cb357748a94e8595ab7e5c31f67, type: 2}
+  - {fileID: 11400000, guid: da4a8e47f50884b479fe279a8148668d, type: 2}
   oreItemDefinitions:
   - {fileID: 11400000, guid: af51f0f7cbb7bb74484bcc154ed84959, type: 2}
   - {fileID: 11400000, guid: cf23b6ce0c63f85418a5bc296dc4e060, type: 2}
@@ -2496,6 +2498,7 @@ MonoBehaviour:
   - {fileID: 5367350302150776104}
   - {fileID: 4852629306748519585}
   - {fileID: 3703470689766293540}
+  optionSlotPrefab: {fileID: 5367350302150776104}
   requirementSlots: []
   requirementSlotPrefab: {fileID: 2748903491163396903, guid: caae0de169cec0047af2091394b4b06a, type: 3}
   craftInfoText: {fileID: 6048544063048155221}

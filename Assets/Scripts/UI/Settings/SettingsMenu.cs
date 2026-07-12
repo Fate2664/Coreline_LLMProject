@@ -46,6 +46,7 @@ public class SettingsMenu : MonoBehaviour
     private void Start()
     {
         SettingsManager.Instance.Menu = this;
+        gameInput.EnableActions();
         
         //Visual
         Root.AddGestureHandler<Gesture.OnHover, StepperSettingVisuals>(StepperSettingVisuals.HandleHover);

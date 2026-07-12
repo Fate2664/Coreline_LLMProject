@@ -47,6 +47,7 @@ namespace Coreline
 
         private void Awake()
         {
+            EnsureUniqueChestName();
             Container.EnsureInitialized();
             ConfigureCommandTarget();
         }
@@ -173,6 +174,102 @@ namespace Coreline
                 CommandTargetType.Storage,
                 destination: deliveryPoint != null ? deliveryPoint : transform,
                 radius: deliveryRadius);
+        }
+
+        private void EnsureUniqueChestName()
+        {
+            string requestedName = string.IsNullOrWhiteSpace(chestName)
+                ? string.Empty
+                : chestName.Trim();
+
+            if (string.IsNullOrWhiteSpace(requestedName) ||
+                string.Equals(requestedName, "Chest", StringComparison.OrdinalIgnoreCase) ||
+                IsChestNameInUse(requestedName, this))
+            {
+                chestName = GenerateUniqueChestName(this);
+                return;
+            }
+
+            chestName = requestedName;
+        }
+
+        private static string GenerateUniqueChestName(ChestInventory self)
+        {
+            for (int i = 1; i < 1000; i++)
+            {
+                string candidate = $"Chest_{i}";
+                if (!IsChestNameInUse(candidate, self))
+                {
+                    return candidate;
+                }
+            }
+
+            return $"Chest_{Mathf.Abs(self.GetInstanceID())}";
+        }
+
+        private static bool IsChestNameInUse(
+            string candidate,
+            ChestInventory self)
+        {
+            if (string.IsNullOrWhiteSpace(candidate))
+            {
+                return false;
+            }
+
+            ChestInventory[] chests = FindObjectsByType<ChestInventory>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < chests.Length; i++)
+            {
+                ChestInventory chest = chests[i];
+                if (chest == null ||
+                    chest == self ||
+                    !chest.isActiveAndEnabled ||
+                    (chest.gameObject.hideFlags & HideFlags.DontSave) != 0)
+                {
+                    continue;
+                }
+
+                if (string.Equals(
+                        chest.ChestName,
+                        candidate,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            CommandTarget selfTarget = self != null
+                ? self.GetComponent<CommandTarget>()
+                : null;
+            CommandTarget[] targets = FindObjectsByType<CommandTarget>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+
+            for (int i = 0; i < targets.Length; i++)
+            {
+                CommandTarget target = targets[i];
+                if (target == null ||
+                    target == selfTarget ||
+                    !target.isActiveAndEnabled ||
+                    target.TargetType != CommandTargetType.Storage ||
+                    !target.HasConfiguredTargetId ||
+                    (target.gameObject.hideFlags & HideFlags.DontSave) != 0)
+                {
+                    continue;
+                }
+
+                if (string.Equals(
+                        target.ConfiguredTargetId,
+                        candidate,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void AddTransferAmount(

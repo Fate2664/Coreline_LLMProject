@@ -1,5 +1,6 @@
 using System;
 using Coreline.Robots;
+using Platformer;
 using UnityEngine;
 
 namespace Coreline
@@ -9,7 +10,8 @@ namespace Coreline
         [SerializeField] private GameInput input;
         [SerializeField] private UIStateController uiStateController;
         [SerializeField] private InventoryPanel inventoryPanel;
-        [SerializeField] private BuildPlacer buildPlacer; 
+        [SerializeField] private BuildPlacer buildPlacer;
+        [SerializeField] private GameUIManager gameUIManager;
 
         private PlayerCharacter playerCharacter;
         private PlayerCamera playerCamera;
@@ -18,7 +20,9 @@ namespace Coreline
         private CharacterInput characterInput;
         private PlayerInventory playerInventory;
         private CountDownTimer toggleInventoryTimer;
+        private CountDownTimer togglePauseTimer;
         private bool wasToggleInventoryPressed;
+        private bool wasTogglePausePressed;
         private const float ToggleInventoryCooldown = 0.1f;
         
         public CharacterInput CharacterInput => characterInput;
@@ -65,6 +69,9 @@ namespace Coreline
         //Interact
         private bool interactInput;
         private void OnInteract(bool pressed) => interactInput = pressed;
+        //Pause
+        private bool pauseInput;
+        private void OnPause(bool pressed) => pauseInput = pressed;
         
         #endregion
 
@@ -78,6 +85,7 @@ namespace Coreline
             playerCameraTilt = GetComponentInChildren<CameraTilt>();
             playerInventory = GetComponent<PlayerInventory>();
             toggleInventoryTimer = new CountDownTimer(ToggleInventoryCooldown);
+            togglePauseTimer = new CountDownTimer(ToggleInventoryCooldown);
         }
 
         private void Start()
@@ -103,6 +111,7 @@ namespace Coreline
             input.ToggleInventory += OnToggleInventory;
             input.Interact += OnInteract;
             inventoryPanel.SlotSelected += HandleItemSlotSelected;
+            input.Pause += OnPause;
         }
 
         private void OnDisable()
@@ -116,6 +125,7 @@ namespace Coreline
             input.ToggleInventory -= OnToggleInventory;
             input.Interact -=  OnInteract;
             inventoryPanel.SlotSelected -= HandleItemSlotSelected;
+            input.Pause -= OnPause;
             input.DisableActions();
         }
 
@@ -125,6 +135,17 @@ namespace Coreline
 
         private void Update()
         {
+            togglePauseTimer.Tick(Time.deltaTime);
+            
+            //Pause Toggle
+            bool togglePauseThisFrame = pauseInput && !wasTogglePausePressed;
+            if (togglePauseThisFrame && !togglePauseTimer.IsRunning && pauseInput)
+                gameUIManager.TogglePauseMenu();
+            
+            wasTogglePausePressed = pauseInput;
+            if (gameUIManager.IsPaused)
+                return;
+            
             toggleInventoryTimer.Tick(Time.deltaTime);
 
             bool gameplayInputBlocked = uiStateController != null && uiStateController.BlocksGameplayInput;
@@ -164,6 +185,7 @@ namespace Coreline
             
             wasToggleInventoryPressed = toggleInventoryInput;
             
+            
         }
 
         private void LateUpdate()
@@ -192,11 +214,34 @@ namespace Coreline
 
         private void HandleItemSlotSelected(int slotIndex, InventorySlot slot)
         {
-            //Check for robot selected
-            if (InventoryToggleBlocked() || slot.Item is not RobotCraftingRecipe recipe)  return;
-
-            buildPlacer.BeginPrefabPlacement(recipe.RobotPrefab, placedObject =>
+            if (InventoryToggleBlocked() || slot?.Item is not CraftingRecipe recipe)
             {
+                return;
+            }
+
+            GameObject prefab = recipe switch
+            {
+                RobotCraftingRecipe robotRecipe => robotRecipe.RobotPrefab,
+                BuildsCraftingRecipe buildRecipe => buildRecipe.BuildPrefab,
+                _ => null
+            };
+
+            if (prefab == null || buildPlacer == null)
+            {
+                Debug.LogWarning(
+                    $"Cannot place {recipe.DisplayName} because its prefab or BuildPlacer is missing.",
+                    this);
+                return;
+            }
+
+            buildPlacer.BeginPrefabPlacement(prefab, placedObject =>
+            {
+                if (placedObject != null &&
+                    placedObject.TryGetComponent(out BaseRobotController robotController))
+                {
+                    robotController.EnsureRobotCommandTarget();
+                }
+
                 playerInventory?.TryRemoveItem(recipe, 1);
             });
             ToggleInventory();
@@ -206,7 +251,8 @@ namespace Coreline
             RobotChatUIController.IsAnyOpen ||
             CollectingRobotInventoryUIController.IsAnyOpen ||
             WorkbenchUIController.IsAnyOpen ||
-            ChestInventoryUIController.IsAnyOpen;
+            ChestInventoryUIController.IsAnyOpen ||
+            FurnaceInventoryUIController.IsAnyOpen;
 
        
         #endregion

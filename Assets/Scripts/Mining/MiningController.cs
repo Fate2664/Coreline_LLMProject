@@ -119,6 +119,11 @@ public class MiningController : MonoBehaviour
         else
             hitNormal.Normalize();
 
-        mineable.Mine(new MiningHit(pickaxeHitbox, hitPoint, hitNormal, damagePerHit));
+        mineable.Mine(new MiningHit(
+            pickaxeHitbox,
+            hitPoint,
+            hitNormal,
+            damagePerHit,
+            MiningSourceType.Player));
     }
 }

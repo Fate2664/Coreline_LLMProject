@@ -1,5 +1,4 @@
 using KinematicCharacterController;
-using UnityEditor.Search;
 using UnityEngine;
 
 namespace Coreline

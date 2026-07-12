@@ -46,6 +46,7 @@ public class PlayerInteractionDetector : MonoBehaviour
 
         if (!RobotChatUIController.IsAnyOpen &&
             !WorkbenchUIController.IsAnyOpen &&
+            !FurnaceInventoryUIController.IsAnyOpen &&
             isAltInteractPressed &&
             !wasAltInteractPressed &&
             currentTarget is IAltInteractable altInteractable)

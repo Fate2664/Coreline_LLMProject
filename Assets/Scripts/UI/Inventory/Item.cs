@@ -15,7 +15,9 @@ namespace Coreline
         Iron,
         Gold,
         Diamond,
-        Emerald
+        Emerald,
+        IronIngot,
+        GoldIngot
     }
 
     [System.Serializable]

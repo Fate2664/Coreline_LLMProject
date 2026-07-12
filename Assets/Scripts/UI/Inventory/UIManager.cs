@@ -380,7 +380,21 @@ public class UIManager : MonoBehaviour, ITimeTracker
 
         if (item.item is RobotCraftingRecipe robotRecipe)
         {
-            BeginRobotPlacement(item, robotRecipe);
+            BeginCraftedPrefabPlacement(
+                item,
+                robotRecipe,
+                robotRecipe.RobotPrefab,
+                initializeRobot: true);
+            return;
+        }
+
+        if (item.item is BuildsCraftingRecipe buildRecipe)
+        {
+            BeginCraftedPrefabPlacement(
+                item,
+                buildRecipe,
+                buildRecipe.BuildPrefab,
+                initializeRobot: false);
             return;
         }
 
@@ -435,25 +449,33 @@ public class UIManager : MonoBehaviour, ITimeTracker
         return tool != null && tool.toolType == ToolType.Pickaxe;
     }
 
-    private void BeginRobotPlacement(InventoryItem inventorySlot, RobotCraftingRecipe recipe)
+    private void BeginCraftedPrefabPlacement(
+        InventoryItem inventorySlot,
+        CraftingRecipe recipe,
+        GameObject prefab,
+        bool initializeRobot)
     {
         if (buildPlacer == null)
         {
-            Debug.LogWarning("Cannot place robot because no BuildPlacer is assigned.", this);
+            Debug.LogWarning("Cannot place crafted item because no BuildPlacer is assigned.", this);
             RefreshEquippedItem();
             return;
         }
 
-        if (recipe == null || recipe.RobotPrefab == null)
+        if (recipe == null || prefab == null)
         {
-            Debug.LogWarning("Cannot place robot because the selected robot item has no prefab assigned.", this);
+            Debug.LogWarning(
+                "Cannot place crafted item because its recipe has no prefab assigned.",
+                this);
             RefreshEquippedItem();
             return;
         }
 
-        buildPlacer.BeginPrefabPlacement(recipe.RobotPrefab, placedObject =>
+        buildPlacer.BeginPrefabPlacement(prefab, placedObject =>
         {
-            if (placedObject != null && placedObject.TryGetComponent(out BaseRobotController robotController))
+            if (initializeRobot &&
+                placedObject != null &&
+                placedObject.TryGetComponent(out BaseRobotController robotController))
             {
                 robotController.EnsureRobotCommandTarget();
             }

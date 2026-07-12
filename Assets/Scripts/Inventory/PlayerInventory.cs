@@ -86,8 +86,7 @@ namespace Coreline
 
         public int GetOreCount(OreType oreType)
         {
-            return Container.GetCount(item =>
-                item is OreItemSO oreItem && oreItem.oreType == oreType);
+            return Container.GetCount(item => MatchesOreType(item, oreType));
         }
 
         public bool HasOre(OreType oreType, int amount = 1)
@@ -98,8 +97,36 @@ namespace Coreline
         public bool TryRemoveOre(OreType oreType, int amount = 1)
         {
             return Container.TryRemove(
-                item => item is OreItemSO oreItem && oreItem.oreType == oreType,
+                item => MatchesOreType(item, oreType),
                 amount);
+        }
+
+        public InventoryItemData FindOreItem(OreType oreType)
+        {
+            IReadOnlyList<InventorySlot> slots = Slots;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                InventoryItemData item = slots[i]?.Item;
+                if (MatchesOreType(item, oreType))
+                {
+                    return item;
+                }
+            }
+
+            return null;
+        }
+
+        public static bool MatchesOreType(
+            InventoryItemData item,
+            OreType oreType)
+        {
+            return item switch
+            {
+                OreItemSO oreItem => oreItem.oreType == oreType,
+                FurnaceProductItemSO furnaceProduct =>
+                    furnaceProduct.oreType == oreType,
+                _ => false
+            };
         }
 
         public void Clear()

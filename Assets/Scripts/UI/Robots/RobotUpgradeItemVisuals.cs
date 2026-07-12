@@ -26,13 +26,16 @@ namespace Coreline.Robots
 
     public sealed class RobotUpgradeCostViewData
     {
-        public OreItemSO Item { get; }
+        public InventoryItemData Item { get; }
         public int OwnedAmount { get; }
         public int RequiredAmount { get; }
 
         public bool HasEnough => OwnedAmount >= RequiredAmount;
 
-        public RobotUpgradeCostViewData(OreItemSO item, int ownedAmount, int requiredAmount)
+        public RobotUpgradeCostViewData(
+            InventoryItemData item,
+            int ownedAmount,
+            int requiredAmount)
         {
             Item = item;
             OwnedAmount = Mathf.Max(0, ownedAmount);

@@ -106,7 +106,7 @@ namespace Coreline.Robots
             new RobotUpgradeCost(OreType.Iron, 5)
         };
 
-        [Header("Mining Speed")]
+        [Header("Mining Damage")]
         [SerializeField] private Sprite miningSpeedIcon;
         [SerializeField, Min(0f)] private float miningSpeedIncreasePercent = 10f;
         [SerializeField, Min(1)] private int miningSpeedMaxLevel = 5;
@@ -268,17 +268,16 @@ namespace Coreline.Robots
             return true;
         }
 
-        public OreItemSO ResolveCostItem(OreType oreType, PlayerInventory inventory = null)
+        public InventoryItemData ResolveCostItem(
+            OreType oreType,
+            PlayerInventory inventory = null)
         {
             if (inventory != null)
             {
-                IReadOnlyList<InventorySlot> slots = inventory.Slots;
-                for (int i = 0; i < slots.Count; i++)
+                InventoryItemData inventoryItem = inventory.FindOreItem(oreType);
+                if (inventoryItem != null)
                 {
-                    if (slots[i]?.Item is OreItemSO inventoryOre && inventoryOre.oreType == oreType)
-                    {
-                        return inventoryOre;
-                    }
+                    return inventoryItem;
                 }
             }
 
@@ -288,6 +287,17 @@ namespace Coreline.Robots
                 if (loadedItems[i] != null && loadedItems[i].oreType == oreType)
                 {
                     return loadedItems[i];
+                }
+            }
+
+            FurnaceProductItemSO[] loadedProducts =
+                Resources.FindObjectsOfTypeAll<FurnaceProductItemSO>();
+            for (int i = 0; i < loadedProducts.Length; i++)
+            {
+                if (loadedProducts[i] != null &&
+                    loadedProducts[i].oreType == oreType)
+                {
+                    return loadedProducts[i];
                 }
             }
 
@@ -322,9 +332,9 @@ namespace Coreline.Robots
             {
                 definitions.Add(new RobotUpgradeDefinition(
                     RobotUpgradeType.MiningSpeed,
-                    "Mining Speed",
-                    "Reduces the delay between mining hits.",
-                    "Mining Speed: ",
+                    "Mining Damage",
+                    "Increases the damage dealt by each mining hit.",
+                    "Mining Damage: ",
                     miningSpeedIcon,
                     RobotUpgradeEffectValueType.Percentage,
                     miningSpeedIncreasePercent,
@@ -396,7 +406,7 @@ namespace Coreline.Robots
                 case RobotUpgradeType.MiningSpeed:
                     float miningMultiplier =
                         1f + level * definition.EffectIncrease / 100f;
-                    miningExecutor?.SetMiningSpeedMultiplier(miningMultiplier);
+                    miningExecutor?.SetMiningDamageMultiplier(miningMultiplier);
                     break;
                 case RobotUpgradeType.CarryingCapacity:
                     int additionalSlots =

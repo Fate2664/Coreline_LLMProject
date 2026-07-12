@@ -174,6 +174,15 @@ namespace Coreline
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Pause"",
+                    ""type"": ""Button"",
+                    ""id"": ""42a161ef-f90f-4eaf-bf3b-4b47029ac23a"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -317,6 +326,17 @@ namespace Coreline
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Crouch/Slide"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fa24e558-2f7f-44df-942f-dfdaec165048"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Pause"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -530,6 +550,7 @@ namespace Coreline
             m_Player_AltInteract = m_Player.FindAction("AltInteract", throwIfNotFound: true);
             m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
             m_Player_CrouchSlide = m_Player.FindAction("Crouch/Slide", throwIfNotFound: true);
+            m_Player_Pause = m_Player.FindAction("Pause", throwIfNotFound: true);
             // UI
             m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
             m_UI_Exit = m_UI.FindAction("Exit", throwIfNotFound: true);
@@ -628,6 +649,7 @@ namespace Coreline
         private readonly InputAction m_Player_AltInteract;
         private readonly InputAction m_Player_Sprint;
         private readonly InputAction m_Player_CrouchSlide;
+        private readonly InputAction m_Player_Pause;
         /// <summary>
         /// Provides access to input actions defined in input action map "Player".
         /// </summary>
@@ -675,6 +697,10 @@ namespace Coreline
             /// Provides access to the underlying input action "Player/CrouchSlide".
             /// </summary>
             public InputAction @CrouchSlide => m_Wrapper.m_Player_CrouchSlide;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/Pause".
+            /// </summary>
+            public InputAction @Pause => m_Wrapper.m_Player_Pause;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -728,6 +754,9 @@ namespace Coreline
                 @CrouchSlide.started += instance.OnCrouchSlide;
                 @CrouchSlide.performed += instance.OnCrouchSlide;
                 @CrouchSlide.canceled += instance.OnCrouchSlide;
+                @Pause.started += instance.OnPause;
+                @Pause.performed += instance.OnPause;
+                @Pause.canceled += instance.OnPause;
             }
 
             /// <summary>
@@ -766,6 +795,9 @@ namespace Coreline
                 @CrouchSlide.started -= instance.OnCrouchSlide;
                 @CrouchSlide.performed -= instance.OnCrouchSlide;
                 @CrouchSlide.canceled -= instance.OnCrouchSlide;
+                @Pause.started -= instance.OnPause;
+                @Pause.performed -= instance.OnPause;
+                @Pause.canceled -= instance.OnPause;
             }
 
             /// <summary>
@@ -1020,6 +1052,13 @@ namespace Coreline
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnCrouchSlide(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Pause" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnPause(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

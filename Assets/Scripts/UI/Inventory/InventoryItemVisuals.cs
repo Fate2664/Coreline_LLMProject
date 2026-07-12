@@ -53,7 +53,7 @@ public class InventoryItemVisuals : ItemVisuals
 
     private void StartToolTipDelay()
     {
-        if (!HasItem) return;
+        if (!HasItem || View == null) return;
 
         CancelToolTip();
         isHovered = true;
@@ -64,7 +64,7 @@ public class InventoryItemVisuals : ItemVisuals
     {
         yield return new WaitForSeconds(ToolTipDelay);
 
-        if (isHovered)
+        if (isHovered && ToolTipRoot != null)
         {
             ToolTipRoot.gameObject.SetActive(true);
         }
@@ -74,16 +74,22 @@ public class InventoryItemVisuals : ItemVisuals
 
     private void CancelToolTip()
     {
-        if (ToolTipRoot == null) return;
         isHovered = false;
 
         if (toolTipCoroutine != null)
         {
-            View.StopCoroutine(toolTipCoroutine);
+            if (View != null)
+            {
+                View.StopCoroutine(toolTipCoroutine);
+            }
+
             toolTipCoroutine = null;
         }
 
-        ToolTipRoot.gameObject.SetActive(false);
+        if (ToolTipRoot != null)
+        {
+            ToolTipRoot.gameObject.SetActive(false);
+        }
     }
 
     #endregion

@@ -29,7 +29,6 @@ public class SliderSettingVisuals : ItemVisuals
     {
         if (SettingsMenu.Instance.popup.IsOpen) return;
         
-        AudioManager.Instance.Play("HoverSound");
         target.MainBackground.DOKill();
         target.MainBackground.transform.DOScale(target.SettingLabel.transform.localScale * HoverScale, 0.15f).SetEase(Ease.OutBack);
         target.isSelected = true;

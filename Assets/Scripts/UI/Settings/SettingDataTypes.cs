@@ -117,24 +117,19 @@ public class MultiOptionSetting : Setting
         get => selectedIndex;
         set
         {
-            this.selectedIndex = value;
+            this.selectedIndex = Options != null && Options.Length > 0
+                ? Mathf.Clamp(value, 0, Options.Length - 1)
+                : value;
             OnIndexChanged?.Invoke(this);
         }
     }
     
-    public string CurrentSelection => SelectedIndex >= 0 && SelectedIndex < Options.Length ? Options[SelectedIndex] : NothingSelected;
-
-    public void SetOptions(string[] options, int selectedIndex = 0)
-    {
-        Options = options ?? Array.Empty<string>();
-        SelectedIndex = Options.Length == 0
-            ? -1
-            : Mathf.Clamp(selectedIndex, 0, Options.Length - 1);
-    }
-
+    public string CurrentSelection => Options != null && SelectedIndex >= 0 && SelectedIndex < Options.Length
+        ? Options[SelectedIndex]
+        : NothingSelected;
     public override bool HasUnsavedChanges => SelectedIndex != PlayerPrefs.GetInt(Key, DefaultIndex);
-    public void Save() => PlayerPrefs.SetInt(Key, SelectedIndex);
-    public void Load() => SelectedIndex = PlayerPrefs.GetInt(Key, DefaultIndex);
+    public virtual void Save() => PlayerPrefs.SetInt(Key, SelectedIndex);
+    public virtual void Load() => SelectedIndex = PlayerPrefs.GetInt(Key, DefaultIndex);
 
     public override void ResetToDefault()
     {
@@ -144,28 +139,61 @@ public class MultiOptionSetting : Setting
 }
 
 [System.Serializable]
-public class ResolutionSetting : MultiOptionSetting
+public class ResolutionSetting : StepperSetting
 {
     public Resolution[] Resolutions;
+
     public void Initialize()
     {
-        Resolutions = Screen.resolutions;
-        Options = new string[Resolutions.Length];
-        int j = 0;
-        for (int i = Resolutions.Length - 1; i >= 0; i--)
+        Resolution[] availableResolutions = Screen.resolutions;
+        if (availableResolutions == null || availableResolutions.Length == 0)
         {
-            Resolution r =  Resolutions[i];
-            Options[j] = $"{r.width} x {r.height} @ {r.refreshRateRatio}Hz";
+            availableResolutions = new[] { Screen.currentResolution };
+        }
+
+        int previousIndex = SelectedIndex;
+        Resolutions = new Resolution[availableResolutions.Length];
+        Options = new string[availableResolutions.Length];
+
+        int j = 0;
+        for (int i = availableResolutions.Length - 1; i >= 0; i--)
+        {
+            Resolution resolution = availableResolutions[i];
+            Resolutions[j] = resolution;
+            Options[j] = $"{resolution.width} x {resolution.height} @ {GetRefreshRate(resolution):0.##}Hz";
             j++;
         }
+
+        SelectedIndex = previousIndex;
     }
+
+    public override void Load()
+    {
+        Initialize();
+        base.Load();
+    }
+
+    public override void ResetToDefault()
+    {
+        Initialize();
+        base.ResetToDefault();
+    }
+
     public Resolution GetSelectedResolution()
     {
         if (Resolutions == null || Resolutions.Length == 0)
         {
             Initialize();
         }
+
         return Resolutions[Mathf.Clamp(SelectedIndex, 0, Resolutions.Length - 1)];
+    }
+
+    private static double GetRefreshRate(Resolution resolution)
+    {
+        return resolution.refreshRateRatio.denominator == 0
+            ? 0
+            : (double)resolution.refreshRateRatio.numerator / resolution.refreshRateRatio.denominator;
     }
 }
 
