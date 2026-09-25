@@ -4791,7 +4791,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &159199829
 Transform:
   m_ObjectHideFlags: 0
@@ -13297,7 +13297,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &393468730
 Transform:
   m_ObjectHideFlags: 0
@@ -15841,7 +15841,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &487591601
 Transform:
   m_ObjectHideFlags: 0
@@ -21734,6 +21734,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PauseRoot
       objectReference: {fileID: 0}
+    - target: {fileID: 2428265841405856038, guid: 2126109c2daf0e84c8f99a84eea12ba5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2654888663638579698, guid: 2126109c2daf0e84c8f99a84eea12ba5, type: 3}
       propertyPath: onClicked.m_PersistentCalls.m_Calls.Array.size
       value: 1
@@ -22515,7 +22519,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5470150821171254563, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6461417242919277303, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
       propertyPath: visuals.Color.b
@@ -23020,7 +23024,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5647151702522648315, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6380911320452671045, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       propertyPath: layout.Position.Z.Raw
@@ -23112,7 +23116,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2725942259133872309, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
       propertyPath: visuals.CornerRadius.Raw
@@ -30512,7 +30516,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: -547.0586
+        Raw: -340.62006
         Type: 0
       Y:
         Raw: 0
@@ -32177,7 +32181,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1055079965
 Transform:
   m_ObjectHideFlags: 0
@@ -33887,7 +33891,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8748411735145936670, guid: 3ff4196dda2a1254b9e31e1b40d35965, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -57119,7 +57123,7 @@ MonoBehaviour:
         Raw: 0
         Type: 0
       Y:
-        Raw: 53.26668
+        Raw: 94.186676
         Type: 0
       Z:
         Raw: 0
@@ -59729,7 +59733,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: 285.1736
+        Raw: 0
         Type: 0
       Y:
         Raw: 0
@@ -63268,7 +63272,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1953325109
 Transform:
   m_ObjectHideFlags: 0
@@ -73081,7 +73085,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: -651.755
+        Raw: -362.45084
         Type: 0
       Y:
         Raw: 0
@@ -74931,7 +74935,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 8}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &6878086933237905497
 MonoBehaviour:
@@ -76268,7 +76272,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 8}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8867148614728998242
 MonoBehaviour:
@@ -76297,7 +76301,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: -657.383
+        Raw: -426.12463
         Type: 0
       Y:
         Raw: 0
@@ -76704,7 +76708,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &9062335809353024235
 MonoBehaviour:
   m_ObjectHideFlags: 0
