@@ -4645,7 +4645,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InitializeInventoryItems
   playerInventory: {fileID: 157549777}
-  items: []
+  items:
+  - item: {fileID: 11400000, guid: 2a152356e4a0a214bad0c75484feee93, type: 2}
+    count: 4
+  - item: {fileID: 11400000, guid: 6e9e778353322f544bcb53d43eee43e4, type: 2}
+    count: 4
+  - item: {fileID: 11400000, guid: 06e57196491b9d74999fee9d27b0d44d, type: 2}
+    count: 4
   countForProgression: 1
 --- !u!114 &157549777
 MonoBehaviour:
@@ -4791,7 +4797,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &159199829
 Transform:
   m_ObjectHideFlags: 0
@@ -13297,7 +13303,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &393468730
 Transform:
   m_ObjectHideFlags: 0
@@ -21736,7 +21742,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2428265841405856038, guid: 2126109c2daf0e84c8f99a84eea12ba5, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2654888663638579698, guid: 2126109c2daf0e84c8f99a84eea12ba5, type: 3}
       propertyPath: onClicked.m_PersistentCalls.m_Calls.Array.size
@@ -22519,7 +22525,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5470150821171254563, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6461417242919277303, guid: 0b023b136fb90cc4cbb8a8c80c7b173a, type: 3}
       propertyPath: visuals.Color.b
@@ -23024,7 +23030,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5647151702522648315, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6380911320452671045, guid: 611ad9889cb284a439313ffa1b10cc7e, type: 3}
       propertyPath: layout.Position.Z.Raw
@@ -23116,7 +23122,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 795221907819826415, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2725942259133872309, guid: 5b39eec0687df544081fc42472a6558b, type: 3}
       propertyPath: visuals.CornerRadius.Raw
@@ -30516,7 +30522,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: -340.62006
+        Raw: -547.0586
         Type: 0
       Y:
         Raw: 0
@@ -31270,10 +31276,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 4373174537098040861, guid: 856102de87fcb95428c7f9b30975039e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 856102de87fcb95428c7f9b30975039e, type: 3}
 --- !u!4 &1028984113 stripped
 Transform:
@@ -33891,7 +33894,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8748411735145936670, guid: 3ff4196dda2a1254b9e31e1b40d35965, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -73085,7 +73088,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: -362.45084
+        Raw: -651.755
         Type: 0
       Y:
         Raw: 0
@@ -74322,10 +74325,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 4373174537098040861, guid: 856102de87fcb95428c7f9b30975039e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 856102de87fcb95428c7f9b30975039e, type: 3}
 --- !u!4 &5781503741763593107 stripped
 Transform:
@@ -76272,7 +76272,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 8}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &8867148614728998242
 MonoBehaviour:
@@ -76301,7 +76301,7 @@ MonoBehaviour:
         Type: 0
     Position:
       X:
-        Raw: -426.12463
+        Raw: -657.383
         Type: 0
       Y:
         Raw: 0
@@ -76708,7 +76708,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &9062335809353024235
 MonoBehaviour:
   m_ObjectHideFlags: 0
